@@ -1888,45 +1888,41 @@ function App() {
               <>
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }} onClick={() => setShowMenu(false)} />
                 <div className="hamburger-menu">
-                  <div className="menu-category" style={{ fontSize: '0.45rem', opacity: 0.4, padding: '10px 15px 5px', fontWeight: 900, letterSpacing: '1px' }}>PRINCIPAL</div>
-                  <div className="menu-item" onClick={() => { setShowPixDeposit(true); setShowMenu(false); }}>💸 DEPOSITAR</div>
-                  <div className="menu-item" onClick={() => { setShowCurrencyModal(true); setShowMenu(false); }}>🌎 CÂMBIO WORLD</div>
-                  <div className="menu-item" onClick={() => { setShowSalaryProjectionModal(true); setShowMenu(false); }}>💰 PROJEÇÃO SALARIAL</div>
-                  <div className="menu-item" onClick={() => { setShowDebtsModal(true); setShowMenu(false); }}>💳 DÍVIDAS</div>
+                  <div className="menu-item" onClick={() => { setShowPixDeposit(true); setShowMenu(false); }}>🏦 NOVO APORTE</div>
+                  <div className="menu-item" onClick={() => { setShowCurrencyModal(true); setShowMenu(false); }}>🌎 CÂMBIO INTERNACIONAL</div>
+                  <div className="menu-item" onClick={() => { setShowSalaryProjectionModal(true); setShowMenu(false); }}>📊 PROJEÇÃO DE RENDIMENTOS</div>
+                  <div className="menu-item" onClick={() => { setShowDebtsModal(true); setShowMenu(false); }}>💳 GESTÃO DE PASSIVOS</div>
 
-                  <div className="menu-category" style={{ fontSize: '0.45rem', opacity: 0.4, padding: '15px 15px 5px', fontWeight: 900, letterSpacing: '1px', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '5px' }}>GAME DESIGN</div>
                   <div className="menu-item" onClick={() => { setShowMissions(true); setShowMenu(false); }} style={{ position: 'relative' }}>
-                    📋 MISSÕES
+                    🎯 METAS & OBJETIVOS
                     {missions.some((m: any) => (xp + balance) >= m.target && !m.claimed) && (
                       <div className="notification-dot"></div>
                     )}
                   </div>
                   <div className="menu-item" onClick={() => { setShowAchievementsModal(true); setShowMenu(false); }} style={{ position: 'relative' }}>
-                    🏆 CONQUISTAS ({processedAchievements.filter(a => a.unlocked).length}/{processedAchievements.length})
+                    🏆 MARCOS DE CARREIRA ({processedAchievements.filter(a => a.unlocked).length}/{processedAchievements.length})
                     {processedAchievements.some(a => a.unlocked && !a.notified) && (
                       <div className="notification-dot"></div>
                     )}
                   </div>
-                  <div className="menu-item" onClick={() => { setShowSkillsModal(true); setShowMenu(false); }}>🧠 HABILIDADES (Loja XP)</div>
+                  <div className="menu-item" onClick={() => { setShowSkillsModal(true); setShowMenu(false); }}>🧠 SKILLS & UPGRADES</div>
 
-                  <div className="menu-category" style={{ fontSize: '0.45rem', opacity: 0.4, padding: '15px 15px 5px', fontWeight: 900, letterSpacing: '1px', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '5px' }}>ANÁLISES</div>
-                  <div className="menu-item" onClick={() => { setShowPortfolioChart(true); setShowMenu(false); }}>🥧 COMPOSIÇÃO CARTEIRA</div>
-                  <div className="menu-item" onClick={() => { setShowBenchmarksModal(true); setShowMenu(false); }}>📊 COMPARAR PERFORMANCE</div>
+                  <div className="menu-item" onClick={() => { setShowPortfolioChart(true); setShowMenu(false); }}>🥧 ALOCAÇÃO DE ATIVOS</div>
+                  <div className="menu-item" onClick={() => { setShowBenchmarksModal(true); setShowMenu(false); }}>📈 BENCHMARK DE MERCADO</div>
                   <div className="menu-item" onClick={() => {
                     setSimInitial(balance + xp + (usdBalance * apiRates.USD) + (jpyBalance * apiRates.JPY));
                     setSimMonthly(1000);
                     setSimRate(cdiAnual * 100);
                     setShowStairwayChart(true);
                     setShowMenu(false);
-                  }}>📈 SIMULADOR 1 ANO</div>
+                  }}>📅 PLANEJAMENTO FUTURO</div>
 
-                  <div className="menu-category" style={{ fontSize: '0.45rem', opacity: 0.4, padding: '15px 15px 5px', fontWeight: 900, letterSpacing: '1px', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '5px' }}>SISTEMA</div>
                   <div className="menu-item" onClick={() => { setViewMode(viewMode === 'mobile' ? 'pc' : 'mobile'); setShowMenu(false); }}>
-                    {viewMode === 'mobile' ? '🖥️ MODO PC' : '📱 MODO MOBILE'}
+                    {viewMode === 'mobile' ? '💻 LAYOUT DESKTOP' : '📱 LAYOUT MOBILE'}
                   </div>
-                  <div className="menu-item" onClick={() => { setShowHelpModal(true); setShowMenu(false); }}>❓ AJUDA & TUTORIAL</div>
-                  <div className="menu-item" onClick={() => { setShowPixConfig(true); setShowMenu(false); }}>⚙️ CONFIGURAÇÕES (Geral)</div>
-                  <div className="menu-item danger" onClick={() => { setSession(null); setShowMenu(false); }}>SAIR</div>
+                  <div className="menu-item" onClick={() => { setShowHelpModal(true); setShowMenu(false); }}>❓ CENTRAL DE AJUDA</div>
+                  <div className="menu-item" onClick={() => { setShowPixConfig(true); setShowMenu(false); }}>⚙️ AJUSTES DO SISTEMA</div>
+                  <div className="menu-item danger" onClick={() => { setSession(null); setShowMenu(false); }}>DESCONECTAR</div>
                 </div>
               </>
             )}

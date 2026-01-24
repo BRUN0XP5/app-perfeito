@@ -5,7 +5,7 @@ import basicSsl from '@vitejs/plugin-basic-ssl'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/cdi-tycoon/',
+  base: './', // Caminho relativo para funcionar em qualquer lugar
   plugins: [
     react(),
     basicSsl(),
@@ -41,8 +41,8 @@ export default defineConfig({
     })
   ],
   server: {
-    host: true,
+    host: '0.0.0.0', // Permite acesso externo (mobile)
     port: 5173,
-    https: true as any
+    https: false // Desabilita SSL para evitar erro de certificado no celular (modo desenvolvimento)
   }
 })
