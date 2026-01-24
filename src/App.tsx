@@ -3022,6 +3022,9 @@ function App() {
                         <span>☕</span> APOIAR DESENVOLVIMENTO (DOAR)
                       </button>
                     </div>
+                    <div style={{ marginTop: '1rem', fontSize: '0.55rem', opacity: 0.3, textAlign: 'center', fontWeight: 800 }}>
+                      VERSION v0.37.0
+                    </div>
                   </div>
                 </div>
 
