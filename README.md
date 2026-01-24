@@ -1,73 +1,102 @@
-# React + TypeScript + Vite
+# 💰 CDI Tycoon - Simulador de Investimentos
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![Version](https://img.shields.io/badge/version-0.37.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![React](https://img.shields.io/badge/React-19.2.0-61dafb)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
 
-Currently, two official plugins are available:
+Um simulador gamificado de investimentos em CDI com mecânicas de RPG, desenvolvido com React, TypeScript e Supabase.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🎮 Características
 
-## React Compiler
+### Sistema de Investimentos
+- 💹 **Máquinas de CDI**: Investimentos automatizados com rendimento em tempo real
+- 🏛️ **Fundos Imobiliários (FIIs)**: Dados reais da B3 com dividendos mensais
+- 🌎 **Câmbio Internacional**: Conversão para USD e JPY com taxas reais
+- 📊 **Simulador de Projeções**: Calcule seus ganhos futuros
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Gamificação
+- ⭐ **Sistema de Níveis**: Evolua conforme investe (1 XP = R$ 1 investido)
+- 🏆 **Conquistas**: 20+ conquistas desbloqueáveis
+- 🎨 **Skins Exclusivas**: 20 skins para personalizar suas máquinas
+- 📋 **Missões Diárias**: Complete objetivos e ganhe bônus
 
-## Expanding the ESLint configuration
+### Recursos Avançados
+- 💳 **Gestão de Dívidas**: Controle seus débitos
+- 📈 **Gráficos de Performance**: Compare com benchmarks do mercado
+- 🎯 **Projeção Salarial**: Planeje seu próximo salário
+- 🌓 **Modo Claro/Escuro**: Interface adaptável
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚀 Tecnologias
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Frontend**: React 19 + TypeScript
+- **Build Tool**: Vite 7
+- **Backend**: Supabase (PostgreSQL)
+- **Gráficos**: Recharts
+- **Estilização**: CSS Modules
+- **PWA**: Vite PWA Plugin
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 📦 Instalação
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# Clone o repositório
+git clone https://github.com/BRUN0XP5/supabase-white-blue.git
+
+# Entre na pasta
+cd supabase-white-blue
+
+# Instale as dependências
+npm install
+
+# Configure as variáveis de ambiente
+# Crie um arquivo .env com:
+VITE_SUPABASE_URL=sua_url_aqui
+VITE_SUPABASE_ANON_KEY=sua_chave_aqui
+
+# Rode em desenvolvimento
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🏗️ Build para Produção
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
+
+## 🌐 Deploy
+
+### GitHub Pages
+```bash
+npm run deploy
+```
+
+### Outras Plataformas
+- **Cloudflare Pages**: Conecte via GitHub
+- **Netlify**: Deploy automático configurado
+- **Vercel**: Suporte via `vercel.json`
+
+## 📱 PWA
+
+O projeto é um Progressive Web App completo:
+- ✅ Instalável em dispositivos móveis
+- ✅ Funciona offline
+- ✅ Ícones e splash screens otimizados
+
+## 🎯 Roadmap
+
+- [ ] Sistema de ranking global
+- [ ] Notificações push para rendimentos
+- [ ] Integração com Open Banking
+- [ ] Modo multiplayer cooperativo
+
+## 📄 Licença
+
+MIT License - Sinta-se livre para usar e modificar!
+
+## 👨‍💻 Autor
+
+**BRUN0XP5**
+
+---
+
+⭐ Se gostou do projeto, deixe uma estrela no repositório!

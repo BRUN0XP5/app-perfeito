@@ -1,0 +1,14 @@
+# Cloudflare Pages Configuration
+# This file is optional but helps with build settings
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
