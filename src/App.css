@@ -306,9 +306,9 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0.5rem;
-  margin: 1.5rem 0;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 1rem 0;
+  padding-top: 0.5rem;
+  border-top: none;
 }
 
 
@@ -1355,171 +1355,16 @@ input:focus {
 
 /* Wise Modal Design */
 .wise-modal-container {
-  background: #f2f5f7 !important;
-  color: #2e4469 !important;
   font-family: 'Outfit', sans-serif;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
-.wise-header {
-  background: #2e4469;
-  padding: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 4px solid #00b9ff;
-}
+/* LEGACY STYLES REMOVED */
 
-.wise-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-weight: 900;
-  font-size: 1.2rem;
-  color: #fff;
-}
+/* LEGACY WISE ELEMENTS REMOVED */
 
-.wise-logo-circle {
-  width: 32px;
-  height: 32px;
-  background: #00b9ff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: bold;
-}
-
-.wise-body {
-  padding: 24px;
-}
-
-.wise-input-row {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: border-color 0.2s;
-}
-
-.wise-input-row:focus-within {
-  border-color: #00b9ff;
-}
-
-.wise-input-field {
-  flex: 1;
-  border: none !important;
-  background: transparent !important;
-  font-size: 1.5rem !important;
-  font-weight: 800 !important;
-  color: #2e4469 !important;
-  padding: 0 !important;
-  outline: none !important;
-}
-
-.wise-currency-select {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #f2f5f7;
-  padding: 8px 12px;
-  border-radius: 20px;
-  font-weight: 800;
-  cursor: pointer;
-  color: #2e4469;
-}
-
-.wise-calc-details {
-  padding: 16px 0 16px 40px;
-  position: relative;
-}
-
-.wise-calc-line {
-  position: absolute;
-  left: 19px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: #e2e8f0;
-}
-
-.wise-calc-step {
-  position: relative;
-  margin-bottom: 12px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.wise-calc-step::before {
-  content: '';
-  position: absolute;
-  left: -24px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8px;
-  height: 8px;
-  background: #e2e8f0;
-  border-radius: 50%;
-  z-index: 1;
-}
-
-.wise-calc-step.highlight::before {
-  background: #00b9ff;
-  box-shadow: 0 0 0 4px rgba(0, 185, 255, 0.1);
-}
-
-.wise-calc-step.highlight {
-  color: #00b9ff !important;
-  font-weight: 800 !important;
-}
-
-.wise-provider-toggle {
-  display: flex;
-  background: #e2e8f0;
-  border-radius: 12px;
-  padding: 4px;
-  margin-top: 24px;
-}
-
-.wise-toggle-btn {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  font-weight: 800;
-  cursor: pointer;
-  background: transparent;
-  color: #2e4469;
-  transition: all 0.2s;
-}
-
-.wise-toggle-btn.active {
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.wise-continue-btn {
-  background: #00b9ff;
-  color: #fff;
-  border: none;
-  width: 100%;
-  padding: 18px;
-  border-radius: 12px;
-  font-weight: 800;
-  margin-top: 24px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: transform 0.2s;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
+/* ALL LEGACY WISE CSS REMOVED */
+/* STRAY STYLES CLEANED */
 
 .wise-continue-btn:hover {
   transform: translateY(-2px);
@@ -3448,10 +3293,57 @@ input:focus {
   box-shadow: none !important;
 }
 
-/* Quantum: Subatomic Field */
+/* QUANTUM: SUBATOMIC FIELD */
 .skin-quantum {
   background: #000 !important;
   border: 2px solid #00bfff !important;
   background-image: repeating-linear-gradient(45deg, rgba(0, 191, 255, 0.05) 0, rgba(0, 191, 255, 0.05) 1px, transparent 0, transparent 50%) !important;
   background-size: 10px 10px !important;
+}
+
+/* LIGHT MODE FIXES FOR WISE MODAL */
+.container.light-mode .wise-modal-container {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1) !important;
+}
+
+.container.light-mode .wise-body label {
+  color: #64748b !important;
+}
+
+.container.light-mode .wise-input-row {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.container.light-mode .wise-input-field {
+  color: #1e293b !important;
+}
+
+.container.light-mode .wise-currency-select {
+  background: #f1f5f9 !important;
+  border-left-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+.container.light-mode .wise-calc-details {
+  color: #475569 !important;
+}
+
+.container.light-mode .wise-calc-details div {
+  color: #475569 !important;
+}
+
+.container.light-mode .wise-body span {
+  color: #1e293b !important;
+}
+
+.container.light-mode .wise-body .wise-calc-details span {
+  color: #475569 !important;
+}
+
+.container.light-mode .wise-body .wise-calc-details strong,
+.container.light-mode .wise-body .wise-calc-details [style*="fontWeight: 800"] {
+  color: #1e293b !important;
 }

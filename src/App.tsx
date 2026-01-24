@@ -230,7 +230,7 @@ function App() {
   const [simulationData, setSimulationData] = useState<any[]>([]);
 
   const [showCurrencyModal, setShowCurrencyModal] = useState(false)
-  const [currencyConfig, setCurrencyConfig] = useState<any>({ type: 'WISE', target: 'USD', amount: '' })
+  const [currencyConfig, setCurrencyConfig] = useState<any>({ type: 'WISE', target: 'USD', amount: '', direction: 'BRL_TO_FOREIGN' })
   const [apiRates, setApiRates] = useState({ USD: 5.37, JPY: 0.035 }) // Default fallbacks
   const fetchExchangeRates = async () => {
     try {
@@ -356,6 +356,8 @@ function App() {
 
   // BENCHMARKS STATE
   const [showBenchmarksModal, setShowBenchmarksModal] = useState(false);
+  const [showSalaryProjectionModal, setShowSalaryProjectionModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   const [showDailyCalendar, setShowDailyCalendar] = useState(false);
   const [editSkin, setEditSkin] = useState('');
@@ -1645,12 +1647,24 @@ function App() {
     setNotification('BACKUP EXPORTADO COM SUCESSO');
   }
 
-  const handleCurrencyExchange = async (brlAmount: number, foreignAmount: number, target: 'USD' | 'JPY') => {
-    if (balance < brlAmount) return setNotification('SALDO INSUFICIENTE');
+  const handleCurrencyExchange = async (fromAmount: number, toAmount: number, target: 'USD' | 'JPY', direction: 'BRL_TO_FOREIGN' | 'FOREIGN_TO_BRL' = 'BRL_TO_FOREIGN') => {
+    let newBrlBalance = balance;
+    let newUsdBalance = usdBalance;
+    let newJpyBalance = jpyBalance;
 
-    const newBrlBalance = balance - brlAmount;
-    const newUsdBalance = target === 'USD' ? usdBalance + foreignAmount : usdBalance;
-    const newJpyBalance = target === 'JPY' ? jpyBalance + foreignAmount : jpyBalance;
+    if (direction === 'BRL_TO_FOREIGN') {
+      if (balance < fromAmount) return setNotification('SALDO INSUFICIENTE');
+      newBrlBalance = balance - fromAmount;
+      if (target === 'USD') newUsdBalance = usdBalance + toAmount;
+      else if (target === 'JPY') newJpyBalance = jpyBalance + toAmount;
+    } else {
+      const foreignBalance = target === 'USD' ? usdBalance : jpyBalance;
+      if (foreignBalance < fromAmount) return setNotification('SALDO INSUFICIENTE');
+
+      if (target === 'USD') newUsdBalance = usdBalance - fromAmount;
+      else if (target === 'JPY') newJpyBalance = jpyBalance - fromAmount;
+      newBrlBalance = balance + toAmount;
+    }
 
     const { error } = await supabase.from('user_stats').update({
       balance: newBrlBalance,
@@ -1662,7 +1676,7 @@ function App() {
       setBalance(newBrlBalance);
       setUsdBalance(newUsdBalance);
       setJpyBalance(newJpyBalance);
-      triggerSuccess('CÂMBIO CONCLUÍDO', `Conversão para ${target} realizada via Wise.`, '💱');
+      triggerSuccess('CÂMBIO CONCLUÍDO', `Conversão ${direction === 'BRL_TO_FOREIGN' ? 'para' : 'de'} ${target} realizada via Wise.`, '💱');
       setShowCurrencyModal(false);
     } else {
       setNotification('ERRO AO PROCESSAR CÂMBIO');
@@ -1902,40 +1916,44 @@ function App() {
               <>
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }} onClick={() => setShowMenu(false)} />
                 <div className="hamburger-menu">
-                  <div className="menu-item" onClick={() => { setViewMode(viewMode === 'mobile' ? 'pc' : 'mobile'); setShowMenu(false); }}>
-                    {viewMode === 'mobile' ? '🖥️ MODO PC' : '📱 MODO MOBILE'}
-                  </div>
+                  <div className="menu-category" style={{ fontSize: '0.45rem', opacity: 0.4, padding: '10px 15px 5px', fontWeight: 900, letterSpacing: '1px' }}>PRINCIPAL</div>
                   <div className="menu-item" onClick={() => { setShowPixDeposit(true); setShowMenu(false); }}>💸 DEPOSITAR</div>
-                  <div className="menu-item" onClick={() => { setShowPixConfig(true); setShowMenu(false); }}>⚙️ CONFIGURAÇÕES (Geral)</div>
+                  <div className="menu-item" onClick={() => { setShowCurrencyModal(true); setShowMenu(false); }}>🌎 CÂMBIO WORLD</div>
+                  <div className="menu-item" onClick={() => { setShowSalaryProjectionModal(true); setShowMenu(false); }}>💰 PROJEÇÃO SALARIAL</div>
+                  <div className="menu-item" onClick={() => { setShowDebtsModal(true); setShowMenu(false); }}>💳 DÍVIDAS</div>
+
+                  <div className="menu-category" style={{ fontSize: '0.45rem', opacity: 0.4, padding: '15px 15px 5px', fontWeight: 900, letterSpacing: '1px', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '5px' }}>GAME DESIGN</div>
                   <div className="menu-item" onClick={() => { setShowMissions(true); setShowMenu(false); }} style={{ position: 'relative' }}>
                     📋 MISSÕES
                     {missions.some((m: any) => (xp + balance) >= m.target && !m.claimed) && (
                       <div className="notification-dot"></div>
                     )}
                   </div>
-                  <div className="menu-item" onClick={() => { setShowSkillsModal(true); setShowMenu(false); }}>🧠 HABILIDADES (Loja XP)</div>
-
                   <div className="menu-item" onClick={() => { setShowAchievementsModal(true); setShowMenu(false); }} style={{ position: 'relative' }}>
                     🏆 CONQUISTAS ({processedAchievements.filter(a => a.unlocked).length}/{processedAchievements.length})
                     {processedAchievements.some(a => a.unlocked && !a.notified) && (
                       <div className="notification-dot"></div>
                     )}
                   </div>
-                  <div className="menu-item" onClick={() => { setShowBenchmarksModal(true); setShowMenu(false); }}>📊 COMPARAR PERFORMANCE</div>
+                  <div className="menu-item" onClick={() => { setShowSkillsModal(true); setShowMenu(false); }}>🧠 HABILIDADES (Loja XP)</div>
 
-                  <div className="menu-separator"></div>
-
+                  <div className="menu-category" style={{ fontSize: '0.45rem', opacity: 0.4, padding: '15px 15px 5px', fontWeight: 900, letterSpacing: '1px', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '5px' }}>ANÁLISES</div>
                   <div className="menu-item" onClick={() => { setShowPortfolioChart(true); setShowMenu(false); }}>🥧 COMPOSIÇÃO CARTEIRA</div>
-                  <div className="menu-item" onClick={() => { setShowDebtsModal(true); setShowMenu(false); }}>💳 DÍVIDAS</div>
+                  <div className="menu-item" onClick={() => { setShowBenchmarksModal(true); setShowMenu(false); }}>📊 COMPARAR PERFORMANCE</div>
                   <div className="menu-item" onClick={() => {
-                    // PRE-FILL SIMULATOR DATA
                     setSimInitial(balance + xp + (usdBalance * apiRates.USD) + (jpyBalance * apiRates.JPY));
-                    setSimMonthly(1000); // Default guess or could be logic based
-                    setSimRate(cdiAnual * 100); // Current CDI Annually
+                    setSimMonthly(1000);
+                    setSimRate(cdiAnual * 100);
                     setShowStairwayChart(true);
                     setShowMenu(false);
                   }}>📈 SIMULADOR 1 ANO</div>
-                  <div className="menu-separator"></div>
+
+                  <div className="menu-category" style={{ fontSize: '0.45rem', opacity: 0.4, padding: '15px 15px 5px', fontWeight: 900, letterSpacing: '1px', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '5px' }}>SISTEMA</div>
+                  <div className="menu-item" onClick={() => { setViewMode(viewMode === 'mobile' ? 'pc' : 'mobile'); setShowMenu(false); }}>
+                    {viewMode === 'mobile' ? '🖥️ MODO PC' : '📱 MODO MOBILE'}
+                  </div>
+                  <div className="menu-item" onClick={() => { setShowHelpModal(true); setShowMenu(false); }}>❓ AJUDA & TUTORIAL</div>
+                  <div className="menu-item" onClick={() => { setShowPixConfig(true); setShowMenu(false); }}>⚙️ CONFIGURAÇÕES (Geral)</div>
                   <div className="menu-item danger" onClick={() => { setSession(null); setShowMenu(false); }}>SAIR</div>
                 </div>
               </>
@@ -1949,89 +1967,7 @@ function App() {
               <span style={{ fontSize: '0.6rem', fontWeight: 900, letterSpacing: '2px', color: '#00A3FF' }}>CARREGANDO_DADOS...</span>
             </div>
           )}
-          <div style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <p className="balance-title" style={{ color: '#FFD700', fontSize: '0.65rem', marginBottom: '4px' }}>PATRIMÔNIO_TOTAL (BRUTO)</p>
-              <h1 className="balance-value" style={{ fontSize: '2.2rem', color: '#fff', textShadow: '0 0 20px rgba(255,215,0,0.2)' }}>
-                <AnimatedNumber value={totalPatrimony} format={(v) => formatBRLWithPrecision(v)} />
-              </h1>
-            </div>
-
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                <p className="balance-title" style={{ color: '#00A3FF', fontSize: '0.65rem', marginBottom: '4px' }}>PROJEÇÃO SALARIAL</p>
-                {totalDebts > 0 && <span title="Possui dívidas pendentes" style={{ cursor: 'help' }}>⚠️</span>}
-              </div>
-              <h2 style={{ fontSize: '1.1rem', color: '#fff', margin: '0 0 2px 0', fontWeight: 900 }}>
-                <AnimatedNumber value={salary} format={(v) => formatBRLWithPrecision(v)} />
-              </h2>
-              <div style={{ fontSize: '0.5rem', color: '#00A3FF', fontWeight: 800, marginBottom: '6px', opacity: 0.8 }}>
-                {(() => {
-                  const today = new Date().getDate();
-                  if (today === salaryDay) return '💰 SALÁRIO CAI HOJE!';
-                  const remaining = today < salaryDay ? (salaryDay - today) : (new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - today + salaryDay);
-                  return `📅 DIA ${salaryDay} (${remaining}d restantes)`;
-                })()}
-              </div>
-
-              <div style={{ paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                <p className="balance-title" style={{ color: '#00E676', fontSize: '0.55rem', marginBottom: '2px' }}>PATRIMÔNIO ESTIMADO</p>
-                <h3 style={{ fontSize: '0.9rem', color: '#00E676', margin: 0, fontWeight: 900 }}>
-                  <AnimatedNumber value={totalPatrimony + salary} format={(v) => formatBRLWithPrecision(v)} />
-                </h3>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <p className="balance-title">Capital_Líquido (Disponível)</p>
-            <button
-              onClick={() => setShowCurrencyModal(true)}
-              style={{
-                background: 'rgba(0, 163, 255, 0.1)', border: '1px solid rgba(0, 163, 255, 0.3)',
-                borderRadius: '8px', padding: '4px 8px', color: '#00A3FF', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.55rem', fontWeight: 900
-              }}
-            >
-              <span>🌎 CÂMBIO_WISE</span>
-            </button>
-          </div>
-          <h2 className="balance-value" style={{ fontSize: '1.6rem', opacity: 0.9 }}>
-            <AnimatedNumber value={balance} format={(v) => formatBRLWithPrecision(v)} />
-          </h2>
-
-          <div style={{ marginTop: '0.8rem', padding: '0.6rem 0', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <p className="balance-title" style={{ color: '#00E676', opacity: 0.8 }}>Total_Investido (Em Operação)</p>
-              <h3 style={{ fontSize: '1.4rem', color: '#00E676', margin: 0, fontWeight: 800 }}>
-                {formatBRLWithPrecision(xp)}
-              </h3>
-            </div>
-            {usdBalance > 0 && (
-              <div style={{ textAlign: 'right' }}>
-                <p className="balance-title" style={{ color: '#00A3FF', opacity: 0.8 }}>Carteira_Dólar (USD)</p>
-                <h3 style={{ fontSize: '1.4rem', color: '#00A3FF', margin: 0, fontWeight: 800 }}>
-                  $ {usdBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </h3>
-                <div style={{ fontSize: '0.65rem', color: '#00A3FF', opacity: 0.8, fontWeight: 900 }}>
-                  VALOR REAL: R$ {(usdBalance * apiRates.USD).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-              </div>
-            )}
-            {jpyBalance > 0 && (
-              <div style={{ textAlign: 'right', marginTop: usdBalance > 0 ? '10px' : '0' }}>
-                <p className="balance-title" style={{ color: '#FFD700', opacity: 0.8 }}>Carteira_Iene (JPY)</p>
-                <h3 style={{ fontSize: '1.4rem', color: '#FFD700', margin: 0, fontWeight: 800 }}>
-                  ¥ {jpyBalance.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                </h3>
-                <div style={{ fontSize: '0.65rem', color: '#FFD700', opacity: 0.8, fontWeight: 900 }}>
-                  VALOR REAL: R$ {(jpyBalance * apiRates.JPY).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="xp-container" style={{ margin: '1rem 0', background: 'rgba(0,163,255,0.03)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(0,163,255,0.08)' }}>
+          <div className="xp-container" style={{ marginBottom: '1.5rem', background: 'rgba(0,163,255,0.03)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(0,163,255,0.08)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', alignItems: 'flex-end' }}>
               <div>
                 <span style={{ fontSize: '0.55rem', fontWeight: 900, color: '#00A3FF', letterSpacing: '1px', display: 'block' }}>RANKING_ATUAL</span>
@@ -2072,19 +2008,59 @@ function App() {
             </div>
           </div>
 
-          <div style={{ fontSize: '0.6rem', color: '#FFD700', fontWeight: 800, marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="heartbeat-container">
-              <span className="pulse-icon">❤️</span>
-              <span>
-                CDI: {((cdiAnual || 0) * 100).toFixed(2)}% |
-                MÊS: {(((machines.length > 0 ? machines.reduce((sum, m) => sum + (m.valor * m.cdi_quota), 0) / (totalInvested || 1) : 100) / 100) * (cdiAnual / 252 * 21) * 0.775 * 100).toFixed(2)}%
-              </span>
-              <svg className="heartbeat-svg" viewBox="0 0 100 50">
-                <path className="heartbeat-path" d="M0 25 L20 25 L25 10 L30 40 L35 25 L50 25 L55 5 L60 45 L65 25 L80 25 L85 15 L90 35 L95 25 L100 25" />
-              </svg>
+          <div style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <p className="balance-title" style={{ color: '#FFD700', fontSize: '0.65rem', marginBottom: '4px' }}>PATRIMÔNIO_TOTAL (BRUTO)</p>
+              <h1 className="balance-value" style={{ fontSize: '2.2rem', color: '#fff', textShadow: '0 0 20px rgba(255,215,0,0.2)' }}>
+                <AnimatedNumber value={totalPatrimony} format={(v) => formatBRLWithPrecision(v)} />
+              </h1>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <p className="balance-title">Capital_Líquido (Disponível)</p>
+              <h2 className="balance-value" style={{ fontSize: '1.6rem', opacity: 0.9 }}>
+                <AnimatedNumber value={balance} format={(v) => formatBRLWithPrecision(v)} />
+              </h2>
             </div>
 
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'right' }}>
+              {usdBalance > 0 && (
+                <div>
+                  <p className="balance-title" style={{ color: '#00A3FF', opacity: 0.8 }}>Carteira_Dólar (USD)</p>
+                  <h3 style={{ fontSize: '1.6rem', color: '#00A3FF', margin: 0, fontWeight: 800 }}>
+                    $ {usdBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </h3>
+                  <div style={{ fontSize: '0.65rem', color: '#00A3FF', opacity: 0.8, fontWeight: 900 }}>
+                    R$ {(usdBalance * apiRates.USD).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+              )}
+              {jpyBalance > 0 && (
+                <div>
+                  <p className="balance-title" style={{ color: '#FFD700', opacity: 0.8 }}>Carteira_Iene (JPY)</p>
+                  <h3 style={{ fontSize: '1.6rem', color: '#FFD700', margin: 0, fontWeight: 800 }}>
+                    ¥ {jpyBalance.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </h3>
+                  <div style={{ fontSize: '0.65rem', color: '#FFD700', opacity: 0.8, fontWeight: 900 }}>
+                    R$ {(jpyBalance * apiRates.JPY).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+
+          <div style={{ marginTop: '0.8rem', padding: '0.6rem 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <p className="balance-title" style={{ color: '#00E676', opacity: 0.8 }}>Total_Investido (Em Operação)</p>
+            <h3 style={{ fontSize: '1.4rem', color: '#00E676', margin: 0, fontWeight: 800 }}>
+              {formatBRLWithPrecision(xp)}
+            </h3>
+          </div>
+
+
+
+
           <div className="yield-grid-main">
             <div className="mini-stat"><span className="label">HORA</span><span className="val" style={{ color: '#00E676' }}>R$ {(yields?.hourlyYield || 0).toFixed(2)}</span></div>
             <div className="mini-stat"><span className="label">DIA</span><span className="val" style={{ color: '#00E676' }}>R$ {(yields?.dailyYield || 0).toFixed(2)}</span></div>
@@ -2952,7 +2928,174 @@ function App() {
           )
         }
 
+        {
+          showHelpModal && (
+            <div className="modal-overlay" style={{ zIndex: 5000 }} onClick={() => setShowHelpModal(false)}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '95%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#00A3FF', fontWeight: 900 }}>❓ GUIA COMPLETO DO JOGO</h2>
+                    <p style={{ margin: 0, fontSize: '0.6rem', opacity: 0.5, letterSpacing: '1px' }}>APRENDA A DOMINAR SUAS FINANÇAS</p>
+                  </div>
+                  <button onClick={() => setShowHelpModal(false)} className="icon-btn-small">✕</button>
+                </div>
+
+                <div className="help-section" style={{ maxHeight: '65vh', overflowY: 'auto', paddingRight: '12px' }}>
+
+                  {/* CONCEITOS BÁSICOS */}
+                  <div style={{ marginBottom: '2rem' }}>
+                    <h4 style={{ color: '#FFD700', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #FFD700', paddingLeft: '8px' }}>💎 CONCEITOS BÁSICOS</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>Patrimônio Total (Bruto)</p>
+                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>A soma de tudo que você possui: saldo disponível, investimentos em CDI, Imóveis e moedas estrangeiras convertidas.</p>
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>Capital Líquido</p>
+                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Dinheiro "na mão" para usar em novos investimentos ou conversões.</p>
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>Ranking e XP</p>
+                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Seu nível sobe conforme seu <strong>Total Investido</strong>. R$ 1,00 investido = 1 XP. Suba de nível para ganhar Títulos e Skins exclusivas!</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* BOTÕES PRINCIPAIS */}
+                  <div style={{ marginBottom: '2rem' }}>
+                    <h4 style={{ color: '#00E676', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #00E676', paddingLeft: '8px' }}>🎮 BOTÕES DE AÇÃO</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div>
+                        <p style={{ fontSize: '0.7rem', color: '#00E676', fontWeight: 900 }}>+ INVESTIR CDI</p>
+                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Cria máquinas de rendimento automático. Escolha entre Liquidez Diária (100% CDI) ou Prazos Longos (até 120% CDI).</p>
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '0.7rem', color: '#FFD700', fontWeight: 900 }}>🏛️ IMÓVEIS (FIIs)</p>
+                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Compre cotas de fundos imobiliários reais da B3. Eles pagam dividendos mensais baseados no mercado real.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* MENU HAMBÚRGUER */}
+                  <div style={{ marginBottom: '2rem' }}>
+                    <h4 style={{ color: '#00A3FF', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #00A3FF', paddingLeft: '8px' }}>🍔 MENU HAMBÚRGUER</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <p style={{ fontSize: '0.7rem', opacity: 0.7 }}>Aqui você encontra o "Coração" da gestão avançada:</p>
+                      <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <li><strong>💸 DEPOSITAR:</strong> Adicione saldo via Pix Simulado para começar sua jornada.</li>
+                        <li><strong>🌎 CÂMBIO WORLD:</strong> Converta Reais para Dólar (USD) ou Iene (JPY). Ótimo para proteger seu capital contra a inflação.</li>
+                        <li><strong>💰 PROJEÇÃO SALARIAL:</strong> Confira quanto você vai receber no próximo dia de pagamento e veja seu patrimônio futuro.</li>
+                        <li><strong>💳 DÍVIDAS:</strong> Registre seus gastos. Mantenha as contas limpas para não perder progresso!</li>
+                        <li><strong>📋 MISSÕES:</strong> Objetivos de curto prazo. Complete para ganhar bônus instantâneos de saldo.</li>
+                        <li><strong>🏆 CONQUISTAS:</strong> Marcos da sua carreira. Desbloqueie todas para se tornar um Mestre das Finanças.</li>
+                        <li><strong>🧠 HABILIDADES:</strong> Use seu nível para "comprar" upgrades visuais (Skins, Cores e Auras).</li>
+                        <li><strong>📊 ANÁLISES & GRÁFICOS:</strong> Veja a composição da sua carteira e compare sua performance com o mercado real.</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* DICAS */}
+                  <div style={{ background: 'rgba(0,163,255,0.1)', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(0,163,255,0.2)' }}>
+                    <h4 style={{ fontSize: '0.65rem', marginBottom: '8px', color: '#00A3FF', fontWeight: 900 }}>💡 DICAS DE MESTRE</h4>
+                    <ul style={{ fontSize: '0.65rem', opacity: 0.9, paddingLeft: '15px', lineHeight: '1.5' }}>
+                      <li>O mercado abre e fecha em horários reais. Fique atento para operar FIIs!</li>
+                      <li>Clique em uma Máquina de CDI para fazer novos aportes e aumentar o lucro dela.</li>
+                      <li>Skins lendárias como "QUANTUM" são liberadas apenas em níveis altíssimos. Continue investindo!</li>
+                    </ul>
+                  </div>
+                  {/* SUPORTE E DOAÇÃO */}
+                  <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
+                    <h4 style={{ color: '#E91E63', fontSize: '0.8rem', marginBottom: '12px', borderLeft: '3px solid #E91E63', paddingLeft: '8px' }}>💬 CONTATO & APOIO</h4>
+                    <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                      <button
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', color: '#fff', padding: '12px', borderRadius: '12px', cursor: 'not-allowed', fontSize: '0.7rem', fontWeight: 800, textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', opacity: 0.5 }}
+                      >
+                        <span>🛠️</span> SUPORTE (EM BREVE)
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText('7a9d849a-a3ee-4c9c-bef5-a42d448b954b');
+                          triggerSuccess('PIX COPIADO', 'Chave Pix copiada com sucesso!', '❤️');
+                        }}
+                        style={{ background: 'rgba(233, 30, 99, 0.1)', border: '1px solid rgba(233, 30, 99, 0.2)', color: '#FF4081', padding: '12px', borderRadius: '12px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 900, textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
+                      >
+                        <span>☕</span> APOIAR DESENVOLVIMENTO (DOAR)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '1.5rem' }}>
+                  <button className="primary-btn" style={{ flex: 1 }} onClick={() => setShowHelpModal(false)}>ENTENDI TUDO!</button>
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+
+        {
+          showSalaryProjectionModal && (
+            <div className="modal-overlay" style={{ zIndex: 4000 }} onClick={() => setShowSalaryProjectionModal(false)}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                  <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#00A3FF', fontWeight: 900 }}>📊 PROJEÇÃO SALARIAL</h2>
+                  <button onClick={() => setShowSalaryProjectionModal(false)} className="icon-btn-small">✕</button>
+                </div>
+
+                <div style={{ background: 'rgba(0,163,255,0.05)', padding: '1.5rem', borderRadius: '24px', border: '1px solid rgba(0,163,255,0.1)', marginBottom: '1.5rem' }}>
+                  <p className="balance-title" style={{ color: '#00A3FF', marginBottom: '8px' }}>VALOR DO SALÁRIO</p>
+                  <h2 style={{ fontSize: '1.8rem', color: '#fff', margin: 0, fontWeight: 900 }}>
+                    <AnimatedNumber value={salary} format={(v) => formatBRLWithPrecision(v)} />
+                  </h2>
+                  <div style={{ fontSize: '0.7rem', color: '#00A3FF', fontWeight: 800, marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {(() => {
+                      const today = new Date().getDate();
+                      if (today === salaryDay) return '💰 SALÁRIO CAI HOJE!';
+                      const remaining = today < salaryDay ? (salaryDay - today) : (new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - today + salaryDay);
+                      return <><span>📅</span><span>DIA {salaryDay} ({remaining} dias restantes)</span></>;
+                    })()}
+                  </div>
+                </div>
+
+                <div style={{ padding: '1rem 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '1rem' }}>
+                    <div>
+                      <p className="balance-title" style={{ fontSize: '0.55rem', opacity: 0.6 }}>PATRIMÔNIO ATUAL</p>
+                      <p style={{ fontWeight: 800, fontSize: '0.9rem' }}>{formatBRLWithPrecision(totalPatrimony)}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p className="balance-title" style={{ fontSize: '0.55rem', opacity: 0.6 }}>+ SALÁRIO</p>
+                      <p style={{ fontWeight: 800, fontSize: '0.9rem', color: '#00E676' }}>+ {formatBRLWithPrecision(salary)}</p>
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'rgba(0, 230, 118, 0.1)', padding: '1.2rem', borderRadius: '18px', border: '1px solid rgba(0, 230, 118, 0.2)' }}>
+                    <p className="balance-title" style={{ color: '#00E676', fontSize: '0.6rem', marginBottom: '4px' }}>PATRIMÔNIO ESTIMADO APÓS SALÁRIO</p>
+                    <h3 style={{ fontSize: '1.4rem', color: '#00E676', margin: 0, fontWeight: 950 }}>
+                      <AnimatedNumber value={totalPatrimony + salary} format={(v) => formatBRLWithPrecision(v)} />
+                    </h3>
+                  </div>
+                </div>
+
+                {totalDebts > 0 && (
+                  <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(255, 77, 77, 0.1)', borderRadius: '16px', border: '1px solid rgba(255, 77, 77, 0.2)', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                    <div>
+                      <p style={{ fontSize: '0.7rem', color: '#FF4D4D', fontWeight: 900, margin: 0 }}>DÍVIDAS PENDENTES</p>
+                      <p style={{ fontSize: '0.6rem', opacity: 0.7, margin: '2px 0 0 0' }}>Você possui {formatBRLWithPrecision(totalDebts)} em dívidas registradas.</p>
+                    </div>
+                  </div>
+                )}
+
+                <button className="primary-btn" style={{ marginTop: '2rem' }} onClick={() => setShowSalaryProjectionModal(false)}>FECHAR</button>
+              </div>
+            </div>
+          )
+        }
+
         {/* IMPULSE MODAL */}
+
         {
           showImpulseModal && (
             <div className="modal-overlay" onClick={() => setShowImpulseModal(false)}>
@@ -3010,110 +3153,156 @@ function App() {
 
         {
           showCurrencyModal && (
-            <div className="modal-overlay" onClick={() => setShowCurrencyModal(false)}>
+            <div className="modal-overlay" style={{ zIndex: 4000 }} onClick={() => setShowCurrencyModal(false)}>
               <div
                 className="glass-panel wise-modal-container"
                 onClick={e => e.stopPropagation()}
                 style={{ maxWidth: '420px', width: '95%', padding: '0', borderRadius: '24px', overflow: 'hidden', border: 'none' }}
               >
-                <div className="wise-header">
-                  <div className="wise-brand">
-                    <div className="wise-logo-circle">W</div>
-                    <span>Wise</span>
+                <div className="wise-header" style={{ background: '#00b9ff', padding: '1.2rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="wise-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#fff', fontWeight: 900 }}>
+                    <div className="wise-logo-circle" style={{ background: '#fff', color: '#00b9ff', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>W</div>
+                    <span>World</span>
                   </div>
-                  <button onClick={() => setShowCurrencyModal(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 800 }}>✕</button>
+                  <button onClick={() => setShowCurrencyModal(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 800 }}>✕</button>
                 </div>
 
-                <div className="wise-body">
-                  <div style={{ marginBottom: '8px' }}>
-                    <label style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.6, textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Você envia</label>
-                    <div className="wise-input-row">
-                      <input
-                        className="wise-input-field"
-                        type="number"
-                        placeholder={balance.toFixed(2)}
-                        value={currencyConfig.amount}
-                        onChange={(e) => setCurrencyConfig({ ...currencyConfig, amount: e.target.value })}
-                      />
-                      <div className="wise-currency-select" onClick={() => setCurrencyConfig({ ...currencyConfig, amount: balance.toString() })}>
-                        <span>🇧🇷</span>
-                        <span>BRL</span>
-                      </div>
-                    </div>
-                  </div>
-
+                <div className="wise-body" style={{ padding: '1.5rem' }}>
                   {(() => {
-                    const sendVal = parseFloat(currencyConfig.amount) || balance || 0;
+                    const isToBrl = currencyConfig.direction === 'FOREIGN_TO_BRL';
+                    const targetCurrency = currencyConfig.target;
+                    const maxFrom = isToBrl
+                      ? (targetCurrency === 'USD' ? usdBalance : jpyBalance)
+                      : balance;
+
+                    const sendVal = parseFloat(currencyConfig.amount) || 0;
                     const isWise = currencyConfig.type === 'WISE';
-                    const isJPY = currencyConfig.target === 'JPY';
                     const spread = isWise ? 0 : 0.02;
+                    const marketRate = targetCurrency === 'USD' ? apiRates.USD : apiRates.JPY;
 
-                    // Taxas Wise: IOF 1.1% (0.11/10) e Tarifa 0.6% (0.06/10)
                     const feeRate = isWise ? 0.006 : 0;
-                    const iofRate = isWise ? 0.011 : 0.011; // IOF fixo em 1.1%
+                    const iofRate = 0.011;
 
+                    let finalAmount = 0;
+                    let fee = 0;
+                    let iof = 0;
+                    let convertedBase = 0;
+                    let effectiveRate = marketRate;
 
-                    const fee = sendVal * feeRate;
-                    const iof = sendVal * iofRate;
-                    const convertedBase = sendVal - fee - iof;
-
-                    const marketRate = currencyConfig.target === 'USD' ? apiRates.USD : apiRates.JPY;
-                    const effectiveRate = marketRate * (1 + spread);
-                    const finalAmount = convertedBase / effectiveRate;
-                    const spreadBRL = convertedBase * (1 - 1 / (1 + spread));
-                    const displayRate = currencyConfig.target === 'USD'
-                      ? `1 USD = R$ ${effectiveRate.toFixed(4)}`
-                      : `1 BRL = ${(1 / effectiveRate).toFixed(2)} JPY`;
+                    if (!isToBrl) {
+                      // BRL -> Foreign
+                      fee = sendVal * feeRate;
+                      iof = sendVal * iofRate;
+                      convertedBase = sendVal - fee - iof;
+                      effectiveRate = marketRate * (1 + spread);
+                      finalAmount = Math.max(0, convertedBase / effectiveRate);
+                    } else {
+                      // Foreign -> BRL
+                      effectiveRate = marketRate * (1 - spread);
+                      const grossBrl = sendVal * effectiveRate;
+                      fee = grossBrl * feeRate;
+                      iof = grossBrl * iofRate;
+                      convertedBase = grossBrl;
+                      finalAmount = Math.max(0, grossBrl - fee - iof);
+                    }
 
                     return (
                       <>
-                        <div className="wise-calc-details">
-                          <div className="wise-calc-line"></div>
-
-                          <div className="wise-calc-step">
-                            <span>{fee.toFixed(2)} BRL</span>
-                            <span style={{ opacity: 0.6 }}>{isWise ? 'Tarifa da Wise' : 'Tarifa (Isento)'}</span>
-                          </div>
-
-                          <div className="wise-calc-step">
-                            <span>{iof.toFixed(2)} BRL</span>
-                            <span style={{ opacity: 0.6 }}>Tarifa de IOF ({(iofRate * 100).toFixed(isJPY ? 1 : 1)}%)</span>
-                          </div>
-
-                          {spread > 0 && (
-                            <div className="wise-calc-step">
-                              <span>{spreadBRL.toFixed(2)} BRL</span>
-                              <span style={{ opacity: 0.6 }}>Spread de Serviço (2%)</span>
+                        {/* INPUT "DE" */}
+                        <div style={{ marginBottom: '8px', position: 'relative' }}>
+                          <label style={{ fontSize: '0.65rem', fontWeight: 700, opacity: 0.6, textTransform: 'uppercase', marginBottom: '8px', display: 'block', color: '#fff' }}>Você envia</label>
+                          <div className="wise-input-row" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                            <input
+                              className="wise-input-field"
+                              title="Valor de Envio"
+                              type="number"
+                              placeholder="0,00"
+                              value={currencyConfig.amount}
+                              onChange={(e) => setCurrencyConfig({ ...currencyConfig, amount: e.target.value })}
+                              style={{ flex: 1, background: 'transparent', border: 'none', padding: '15px', color: '#fff', fontSize: '1.2rem', fontWeight: 800, outline: 'none' }}
+                            />
+                            <div className="wise-currency-select"
+                              onClick={() => setCurrencyConfig({ ...currencyConfig, amount: maxFrom.toString() })}
+                              style={{ padding: '0 15px', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', borderLeft: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
+                              <span>{isToBrl ? (targetCurrency === 'USD' ? '🇺🇸' : '🇯🇵') : '🇧🇷'}</span>
+                              <span style={{ fontWeight: 800 }}>{isToBrl ? targetCurrency : 'BRL'}</span>
                             </div>
-                          )}
+                          </div>
+                          <div style={{ fontSize: '0.55rem', opacity: 0.5, marginTop: '4px', textAlign: 'right' }}>
+                            Disponível: {isToBrl ? (targetCurrency === 'USD' ? `$ ${usdBalance.toFixed(2)}` : `¥ ${jpyBalance.toFixed(0)}`) : `R$ ${balance.toFixed(2)}`}
+                          </div>
+                        </div>
 
-                          <div className="wise-calc-step highlight">
-                            <span>{(convertedBase - spreadBRL).toFixed(2)} BRL</span>
+                        {/* SWAP BUTTON */}
+                        <div style={{ display: 'flex', justifyContent: 'center', margin: '-10px 0', position: 'relative', zIndex: 10 }}>
+                          <button
+                            onClick={() => {
+                              setCurrencyConfig({
+                                ...currencyConfig,
+                                direction: isToBrl ? 'BRL_TO_FOREIGN' : 'FOREIGN_TO_BRL',
+                                amount: finalAmount > 0 ? finalAmount.toFixed(2) : ''
+                              });
+                            }}
+                            style={{
+                              background: '#fff', color: '#00b9ff', border: '1px solid #00b9ff',
+                              width: '32px', height: '32px', borderRadius: '50%', display: 'flex',
+                              alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.2)', fontSize: '1rem'
+                            }}
+                          >
+                            ⇅
+                          </button>
+                        </div>
+
+                        {/* INPUT "PARA" (RECEBE) */}
+                        <div style={{ marginBottom: '1.5rem', marginTop: '8px' }}>
+                          <label style={{ fontSize: '0.65rem', fontWeight: 700, opacity: 0.6, textTransform: 'uppercase', marginBottom: '8px', display: 'block', color: '#fff' }}>Você recebe</label>
+                          <div className="wise-input-row" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                            <div style={{ flex: 1, padding: '15px', color: '#00E676', fontSize: '1.2rem', fontWeight: 800 }}>
+                              {finalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="wise-currency-select"
+                              onClick={() => setCurrencyConfig({ ...currencyConfig, target: targetCurrency === 'USD' ? 'JPY' : 'USD' })}
+                              style={{ padding: '0 15px', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', borderLeft: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
+                              <span>{!isToBrl ? (targetCurrency === 'USD' ? '🇺🇸' : '🇯🇵') : '🇧🇷'}</span>
+                              <span style={{ fontWeight: 800 }}>{!isToBrl ? targetCurrency : 'BRL'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="wise-calc-details" style={{ fontSize: '0.7rem', color: '#fff' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', opacity: 0.7 }}>
+                            <span>Tarifa da Wise (0.6%)</span>
+                            <span>{fee.toFixed(2)} BRL</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', opacity: 0.7 }}>
+                            <span>IOF (1.1%)</span>
+                            <span>{iof.toFixed(2)} BRL</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontWeight: 800, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
                             <span>Total que será convertido</span>
+                            <span>{(isToBrl ? convertedBase : (sendVal - fee - iof)).toFixed(2)} BRL</span>
                           </div>
 
-                          <div className="wise-calc-step highlight" style={{ background: 'rgba(0, 230, 118, 0.1)', borderRadius: '12px', padding: '12px', marginTop: '15px' }}>
-                            <span style={{ color: '#00E676', fontSize: '1.2rem', fontWeight: 900 }}>
-                              {isJPY ? '¥' : '$'} {finalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                            <span style={{ color: '#00E676', fontWeight: 900 }}>Você recebe ({currencyConfig.target})</span>
-                          </div>
-
-                          <div className="wise-calc-step highlight" style={{ marginBottom: 0, marginTop: '8px' }}>
-                            <span>{displayRate}</span>
-                            <span>Câmbio Real</span>
+                          <div style={{ background: 'rgba(0, 185, 255, 0.1)', padding: '10px', borderRadius: '12px', textAlign: 'center', fontSize: '0.65rem', marginBottom: '1.5rem' }}>
+                            Câmbio Comercial: 1 {targetCurrency} = R$ {marketRate.toFixed(4)}
+                            {spread > 0 && <span style={{ display: 'block', opacity: 0.6, fontSize: '0.55rem' }}>Inclui spread de 2% (Modo Normal)</span>}
                           </div>
                         </div>
 
                         <button
                           className="wise-continue-btn"
-                          onClick={() => handleCurrencyExchange(sendVal, finalAmount, currencyConfig.target as 'USD' | 'JPY')}
+                          onClick={() => handleCurrencyExchange(sendVal, finalAmount, targetCurrency as 'USD' | 'JPY', currencyConfig.direction)}
                           style={{
-                            background: balance >= sendVal ? '#00b9ff' : '#ccc',
-                            cursor: balance >= sendVal ? 'pointer' : 'not-allowed'
+                            width: '100%', padding: '15px', borderRadius: '12px',
+                            background: maxFrom >= sendVal && sendVal > 0 ? '#00b9ff' : '#333',
+                            color: '#fff', border: 'none', fontWeight: 900, fontSize: '0.9rem',
+                            cursor: maxFrom >= sendVal && sendVal > 0 ? 'pointer' : 'not-allowed',
+                            boxShadow: maxFrom >= sendVal && sendVal > 0 ? '0 4px 15px rgba(0,185,255,0.3)' : 'none'
                           }}
+                          disabled={maxFrom < sendVal || sendVal <= 0}
                         >
-                          {balance >= sendVal ? 'Confirmar Câmbio' : 'Saldo Insuficiente'}
+                          {maxFrom >= sendVal ? 'Confirmar Câmbio' : 'Saldo Insuficiente'}
                         </button>
                       </>
                     );
