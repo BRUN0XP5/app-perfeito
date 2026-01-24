@@ -1,5 +1,3 @@
-import { DEFAULT_SELIC } from './constants';
-
 export const getTaxMultipliers = (createdAtStr?: string, ignoreIof = false, referenceDate: Date = new Date()) => {
     if (!createdAtStr) return { iofFactor: 1, irFactor: 1 - 0.225, irRateLabel: '22.5%', iofApplied: false, daysUntilIofZero: 0 };
     const created = new Date(createdAtStr);

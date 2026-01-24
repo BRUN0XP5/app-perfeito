@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo, useRef, ReactNode } from 'react'
+import { useEffect, useState, useMemo, useRef, type ReactNode } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import './App.css'
 import { SUPABASE_URL, SUPABASE_KEY, DEFAULT_SELIC } from './constants'
-import { AreaChart, Area, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { AreaChart, Area, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import {
   getTaxMultipliers,
   calculateProjection,
@@ -30,7 +30,7 @@ interface Machine {
   nome: string;
   valor: number;
   cdi_quota: number;
-  vencimento: string;
+  vencimento: string | null;
   rendimento_dia: number;
   created_at?: string;
   skin?: string;
@@ -141,7 +141,7 @@ function App() {
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   const [isAchievementSystemReady, setIsAchievementSystemReady] = useState(false);
   const lastClosedNotifyTime = useRef(0)
-  const [selicRate, setSelicRate] = useState(DEFAULT_SELIC)
+  const [selicRate] = useState(DEFAULT_SELIC)
 
   useEffect(() => {
     if (notification) {
@@ -227,7 +227,7 @@ function App() {
   const [simInitial, setSimInitial] = useState(0);
   const [simMonthly, setSimMonthly] = useState(0);
   const [simRate, setSimRate] = useState(0);
-  const [simulationData, setSimulationData] = useState<any[]>([]);
+  ;
 
   const [showCurrencyModal, setShowCurrencyModal] = useState(false)
   const [currencyConfig, setCurrencyConfig] = useState<any>({ type: 'WISE', target: 'USD', amount: '', direction: 'BRL_TO_FOREIGN' })
@@ -358,9 +358,9 @@ function App() {
   const [showBenchmarksModal, setShowBenchmarksModal] = useState(false);
   const [showSalaryProjectionModal, setShowSalaryProjectionModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
-
-  const [showDailyCalendar, setShowDailyCalendar] = useState(false);
   const [editSkin, setEditSkin] = useState('');
+
+
 
   // IMOVEIS (FIIs) STATE
   const [showFiiModal, setShowFiiModal] = useState(false);
@@ -1368,7 +1368,7 @@ function App() {
     }
     const { error } = await supabase.from('maquinas').update(updatedFields).eq('id', editingMachine.id)
     if (!error) {
-      setMachines(machines.map(m => m.id === editingMachine.id ? { ...m, ...updatedFields } : m))
+      setMachines(machines.map(m => m.id === editingMachine.id ? { ...m, ...updatedFields } as Machine : m))
       triggerSuccess('CONFIGURAÇÕES SALVAS', 'As alterações foram sincronizadas na rede.', '🛠️');
       setShowEditModal(false)
     } else {
@@ -1491,12 +1491,7 @@ function App() {
       setCumulativeDeposits(remainder);
 
       if (skinsToAward > 0) {
-        const types = [
-          'carbon', 'vaporwave', 'glitch', 'royal', 'ghost',
-          'cyber', 'forest', 'magma', 'ice', 'neon_pink',
-          'gold_black', 'sunset', 'space', 'emerald', 'hacker',
-          'plasma', 'pixel_art', 'aurora', 'obsidian', 'quantum'
-        ];
+
         const newCounts = { ...skinCounts };
         let awardedList: string[] = [];
 
@@ -1732,30 +1727,7 @@ function App() {
     ].filter(item => item.value > 0);
   }, [balance, xp, fiiPortfolio, usdBalance, jpyBalance, apiRates]);
 
-  // NOVO: Gráfico de Escada (Stairway to Wealth)
-  const stairwayChartData = useMemo(() => {
-    // Filtra histórico para pegar apenas um snapshot por dia para o gráfico ficar limpo
-    const dailySnapshots = historyData.reduce((acc: any[], curr) => {
-      const date = curr.date.split('T')[0];
-      if (!acc.find(item => item.date.startsWith(date))) {
-        acc.push({
-          date: new Date(curr.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-          principal: curr.total_invested_snapshot || 0,
-          patrimony: curr.total_patrimony_snapshot || 0
-        });
-      }
-      return acc;
-    }, []).reverse(); // Reverte para ficar cronológico (Antigo -> Novo)
 
-    // Adiciona o dia atual como último ponto
-    dailySnapshots.push({
-      date: 'HOJE',
-      principal: totalPrincipalInvested,
-      patrimony: balance + xp + (usdBalance * apiRates.USD) + (jpyBalance * apiRates.JPY)
-    });
-
-    return dailySnapshots;
-  }, [historyData, totalPrincipalInvested, balance, xp, usdBalance, jpyBalance, apiRates]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -2155,14 +2127,14 @@ function App() {
                       </div>
                       {m.vencimento && (
                         <div style={{ fontSize: '0.5rem', color: new Date(m.vencimento) <= currentDate ? '#00E676' : '#FFD700', fontWeight: 900 }}>
-                          {new Date(m.vencimento) <= currentDate ? 'DISPONÍVEL' : `LIBERA: ${new Date(m.vencimento).toLocaleDateString('pt-BR')}`}
+                          {(m.vencimento && new Date(m.vencimento) <= currentDate) ? 'DISPONÍVEL' : (m.vencimento ? `LIBERA: ${new Date(m.vencimento).toLocaleDateString('pt-BR')}` : 'SEM PRAZO')}
                         </div>
                       )}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
                     <button className="action-btn aporte" style={{ flex: 2, padding: '10px 8px', fontSize: '0.7rem' }} onClick={() => { setSelectedMachine(m); setShowAporteModal(true); setAporteValue(''); }}>APORTE</button>
-                    {new Date(m.vencimento) <= currentDate ? (
+                    {(m.vencimento && new Date(m.vencimento) <= currentDate) ? (
                       <button className="action-btn vender-solid" style={{ flex: 1, padding: '10px 8px', fontSize: '0.65rem' }} onClick={() => setShowConfirmResgate(m)}>VENDER</button>
                     ) : (
                       <button className="action-btn" disabled style={{ flex: 1, padding: '10px 8px', fontSize: '0.55rem', opacity: 0.5, cursor: 'not-allowed', background: '#333' }}>BLOQUEADO</button>
