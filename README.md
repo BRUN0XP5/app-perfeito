@@ -8,7 +8,7 @@
 O **CDI Tycoon** não é apenas um jogo; é uma estação de comando financeira gamificada. Ele transforma a complexidade dos investimentos em uma experiência visualmente deslumbrante e viciante, conectando dados reais do mercado com mecânicas de progressão de RPG.
 
 ## 🔗 Link do App
-Acesse agora: [https://BRUN0XP5.github.io/cdi-tycoon](https://BRUN0XP5.github.io/cdi-tycoon)
+Acesse agora: [https://app-perfeito.vercel.app/](https://app-perfeito.vercel.app/)
 
 ---
 
