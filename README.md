@@ -1,102 +1,80 @@
-# 💰 CDI Tycoon - Simulador de Investimentos
+# 🚀 CDI Tycoon v0.38 - O Simulador Definitivo
 
-![Version](https://img.shields.io/badge/version-0.37.0-blue)
+![Version](https://img.shields.io/badge/version-0.38.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![React](https://img.shields.io/badge/React-19.2.0-61dafb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
 
-Um simulador gamificado de investimentos em CDI com mecânicas de RPG, desenvolvido com React, TypeScript e Supabase.
+O **CDI Tycoon** não é apenas um jogo; é uma estação de comando financeira gamificada. Ele transforma a complexidade dos investimentos em uma experiência visualmente deslumbrante e viciante, conectando dados reais do mercado com mecânicas de progressão de RPG.
 
-## 🎮 Características
+## 🔗 Link do App
+Acesse agora: [https://BRUN0XP5.github.io/cdi-tycoon](https://BRUN0XP5.github.io/cdi-tycoon)
 
-### Sistema de Investimentos
-- 💹 **Máquinas de CDI**: Investimentos automatizados com rendimento em tempo real
-- 🏛️ **Fundos Imobiliários (FIIs)**: Dados reais da B3 com dividendos mensais
-- 🌎 **Câmbio Internacional**: Conversão para USD e JPY com taxas reais
-- 📊 **Simulador de Projeções**: Calcule seus ganhos futuros
+---
 
-### Gamificação
-- ⭐ **Sistema de Níveis**: Evolua conforme investe (1 XP = R$ 1 investido)
-- 🏆 **Conquistas**: 20+ conquistas desbloqueáveis
-- 🎨 **Skins Exclusivas**: 20 skins para personalizar suas máquinas
-- 📋 **Missões Diárias**: Complete objetivos e ganhe bônus
+## 💎 1. O CORE: Ecossistema de Investimentos
+A base do app é a criação e gestão de **"Ativos Conectados"** (Caixinhas de Investimento).
+- **Gestão de Liquidez**: Escolha entre liquidez diária (**D+0**), travada para **30 dias** ou **365 dias** (FGC Max).
+- **Customização Profissional**: Controle manual da porcentagem do CDI, data de vencimento e limite de capacidade.
+- **Skins Lendárias**: Mais de 20 visuais únicos (Carbon Fiber, Vaporwave, Cyberpunk, etc.) para personalizar cada máquina.
 
-### Recursos Avançados
-- 💳 **Gestão de Dívidas**: Controle seus débitos
-- 📈 **Gráficos de Performance**: Compare com benchmarks do mercado
-- 🎯 **Projeção Salarial**: Planeje seu próximo salário
-- 🌓 **Modo Claro/Escuro**: Interface adaptável
+## 📈 2. Realismo Financeiro & Mercado Ao Vivo
+- **Câmbio Global**: Monitoramento ao vivo do **Dólar (USD)** e **Iene (JPY)** via *AwesomeAPI*. Operações via motor Wise.
+- **Imóveis Tokenizados (FIIs)**: Integração direta com a **B3** (via *MFinance*) para exibir preços e yields reais de fundos (KNIP11, HGLG11, etc.).
+- **Métricas Profissionais**: Projeções de rendimento descontando impostos (IR regressivo) e IOF automaticamente.
+
+## 🏆 3. Gamificação & Progressão
+- **Ranking de Investidor**: Suba de nível conforme seu patrimônio cresce (1 XP = R$ 1,00 investido).
+- **Loja de Habilidades (Skills)**:
+    - *LVL 5 - Visão de Águia*: Gráficos de projeção para 10 anos.
+    - *LVL 10 - Alquimia Financeira*: Calculadora de "Dias de Liberdade".
+    - *LVL 25 - Escudo Fiscal*: Monitor de eficiência tributária.
+- **Marcos de Carreira**: Sistema de conquistas com raridades (Comum, Rara, Épica, Lendária).
+- **📜 NOVO: Histórico de Atividades**: Registro completo de todas as suas operações (Depósitos, Câmbio, Aportes, Dívidas).
+
+## 🛠️ 4. Gestão Avançada & UI/UX
+- **Gestão de Passivos**: Registro de dívidas integradas ao cálculo de patrimônio líquido.
+- **Fluxo de Caixa**: Configuração de salário mensal automatizado.
+- **Visual Premium**: Design Glassmorphism com animações de alta fidelidade e feedback tátil/visual.
+- **Offline Yields**: Ganhe rendimentos mesmo com o app fechado.
+
+---
 
 ## 🚀 Tecnologias
-
 - **Frontend**: React 19 + TypeScript
 - **Build Tool**: Vite 7
-- **Backend**: Supabase (PostgreSQL)
+- **Backend**: Supabase (Cloud Persistence)
 - **Gráficos**: Recharts
-- **Estilização**: CSS Modules
-- **PWA**: Vite PWA Plugin
+- **PWA**: Instalável em Android/iOS como um app nativo.
 
-## 📦 Instalação
+## 📦 Instalação para Desenvolvedores
 
 ```bash
 # Clone o repositório
-git clone https://github.com/BRUN0XP5/supabase-white-blue.git
+git clone https://github.com/BRUN0XP5/app-perfeito.git
 
 # Entre na pasta
-cd supabase-white-blue
+cd app-perfeito
 
 # Instale as dependências
 npm install
-
-# Configure as variáveis de ambiente
-# Crie um arquivo .env com:
-VITE_SUPABASE_URL=sua_url_aqui
-VITE_SUPABASE_ANON_KEY=sua_chave_aqui
 
 # Rode em desenvolvimento
 npm run dev
 ```
 
-## 🏗️ Build para Produção
-
+## 🏗️ Build & Deploy
 ```bash
+# Gerar versão de produção
 npm run build
-```
 
-## 🌐 Deploy
-
-### GitHub Pages
-```bash
+# Publicar no GitHub Pages
 npm run deploy
 ```
 
-### Outras Plataformas
-- **Cloudflare Pages**: Conecte via GitHub
-- **Netlify**: Deploy automático configurado
-- **Vercel**: Suporte via `vercel.json`
-
-## 📱 PWA
-
-O projeto é um Progressive Web App completo:
-- ✅ Instalável em dispositivos móveis
-- ✅ Funciona offline
-- ✅ Ícones e splash screens otimizados
-
-## 🎯 Roadmap
-
-- [ ] Sistema de ranking global
-- [ ] Notificações push para rendimentos
-- [ ] Integração com Open Banking
-- [ ] Modo multiplayer cooperativo
-
-## 📄 Licença
-
-MIT License - Sinta-se livre para usar e modificar!
-
-## 👨‍💻 Autor
-
-**BRUN0XP5**
-
 ---
 
-⭐ Se gostou do projeto, deixe uma estrela no repositório!
+## 👨‍💻 Autor
+**BRUN0XP5**
+
+⭐ Se este projeto te ajudou a visualizar sua liberdade financeira, deixe uma estrela no repositório!
