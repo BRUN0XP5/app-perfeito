@@ -1,3 +1,14 @@
+# 🚀 CDI Tycoon v0.38 - O Simulador Definitivo
+
+![Version](https://img.shields.io/badge/version-0.38.0-blue?style=for-the-badge)
+![License](https://img.shields.io/badge/license-Proprietary-red?style=for-the-badge)
+![React](https://img.shields.io/badge/React-19.2.0-61dafb?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue?style=for-the-badge&logo=typescript)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![PWA](https://img.shields.io/badge/PWA-Ready-orange?style=for-the-badge)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+
 Fala, tubarão do mercado! Se liga que o **CDI Tycoon v0.38** chegou chutando a porta. Se você achava que investir era só olhar planilha chata, prepara o psicológico porque o game virou! 🚀
 
 ---
@@ -6,7 +17,7 @@ Fala, tubarão do mercado! Se liga que o **CDI Tycoon v0.38** chegou chutando a 
 
 Não é app de banco, não é cursinho de "arrasta pra cima"... é a sua **Battle Station Financeira**. A gente pegou a matemática pesada dos investimentos e injetou uma dose cavala de RPG. Aqui, seu dinheiro não só rende: ele te dá XP, desbloqueia skin e te faz subir no ranking dos magnatas.
 
-🔗 **Vem pro gain:** [https://BRUN0XP5.github.io/cdi-tycoon](https://BRUN0XP5.github.io/cdi-tycoon)
+🔗 **Vem pro gain:** [https://app-perfeito.vercel.app/](https://app-perfeito.vercel.app/)
 
 ---
 
@@ -31,10 +42,9 @@ Aqui o bagulho é louco e a API é ao vivo. Nada de números inventados:
 Aqui, cada centavo conta pra sua evolução. **$1 investido = 1 XP.**
 
 * **Skill Tree (Árvore de Habilidades):**
-* **LVL 5 - Visão de Águia:** O gráfico de projeção abre pra **10 anos**. É pra quem tem visão de longo prazo!
-* **LVL 10 - Alquimia Financeira:** Desbloqueia a calculadora de **"Dias de Liberdade"**. Sabe aquele dia que você nunca mais vai precisar trabalhar? O app te diz quando ele chega.
-* **LVL 25 - Escudo Fiscal:** O monitor de eficiência tributária que te ensina a pagar o mínimo de imposto possível dentro da lei.
-
+    * **LVL 5 - Visão de Águia:** O gráfico de projeção abre pra **10 anos**. É pra quem tem visão de longo prazo!
+    * **LVL 10 - Alquimia Financeira:** Desbloqueia a calculadora de **"Dias de Liberdade"**. Sabe aquele dia que você nunca mais vai precisar trabalhar? O app te diz quando ele chega.
+    * **LVL 25 - Escudo Fiscal:** O monitor de eficiência tributária que te ensina a pagar o mínimo de imposto possível dentro da lei.
 
 * **Log de Atividades:** Um feed estilo rede social com tudo o que você fez. "Depositou R$ 500", "Comprou Iene", "Pagou o boleto da dívida". Tudo registrado pra posteridade.
 
@@ -54,11 +64,10 @@ Aqui, cada centavo conta pra sua evolução. **$1 investido = 1 XP.**
 
 ---
 
-**👨‍💻 Autor: BRUN0XP5**
+**👨💻 Autor: BRUN0XP5**
 Dúvida? Sugestão? Quer xingar o spread do câmbio? Brota no GitHub!
 *Se o app te ajudou a sair do vermelho ou a planejar sua aposentadoria, deixa aquela **⭐ no repo** pra fortalecer a firma!*
 
 ---
 
 **E aí, bora buildar esse patrimônio ou vai ficar só olhando o gráfico dos outros?**
-*Quer que eu te ajude a bolar uma descrição pra uma nova Skin Lendária ou criar um sistema de 'Quests Diárias' pro app?*
