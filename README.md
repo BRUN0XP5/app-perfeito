@@ -1,11 +1,11 @@
 # 🚀 CDI Tycoon v0.38 - O Simulador Definitivo
 
 ![Version](https://img.shields.io/badge/version-0.38.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/license-Proprietary-red)
 ![React](https://img.shields.io/badge/React-19.2.0-61dafb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
 
-O **CDI Tycoon** não é apenas um jogo; é uma estação de comando financeira gamificada. Ele transforma a complexidade dos investimentos em uma experiência visualmente deslumbrante e viciante, conectando dados reais do mercado com mecânicas de progressão de RPG.
+O **CDI Tycoon** é um software proprietário. Todos os direitos reservados.
 
 ## 🔗 Link do App
 Acesse agora: [https://app-perfeito.vercel.app/](https://app-perfeito.vercel.app/)
