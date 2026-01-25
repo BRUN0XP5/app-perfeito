@@ -39,6 +39,18 @@ interface Machine {
   max_capacity?: number;
 }
 
+interface Activity {
+  id: string;
+  type: string;
+  label: string;
+  amount?: number;
+  currency?: string;
+  target?: string;
+  details?: string;
+  timestamp: string;
+  icon: string;
+}
+
 const AnimatedNumber = ({ value, format }: { value: number, format: (n: number) => ReactNode }) => {
   const [displayValue, setDisplayValue] = useState(value);
 
@@ -262,14 +274,23 @@ function App() {
   const [coins, setCoins] = useState<{ id: number, x: number, y: number }[]>([])
   const [showMissions, setShowMissions] = useState(false)
   const [newMission, setNewMission] = useState({ label: '', desc: '', target: '' })
-  const [missions, setMissions] = useState([
-    { id: 1, label: 'CONSTRUINDO A BASE', desc: 'Alcançar R$ 5.000,00 de patrimônio total', target: 5000, claimed: false },
-    { id: 2, label: 'RESERVA DE EMERGÊNCIA', desc: 'Alcançar R$ 20.000,00 de patrimônio total', target: 20000, claimed: false },
-    { id: 3, label: 'INVESTIDOR ESTRATEGISTA', desc: 'Alcançar R$ 50.000,00 de patrimônio total', target: 50000, claimed: false },
-    { id: 4, label: 'RUMO AOS SEIS DÍGITOS', desc: 'Alcançar R$ 100.000,00 de patrimônio total', target: 100000, claimed: false },
-    { id: 5, label: 'LIBERDADE GEOGRÁFICA', desc: 'Alcançar R$ 250.000,00 de patrimônio total', target: 250000, claimed: false },
-    { id: 6, label: 'INDEPENDÊNCIA FINANCEIRA', desc: 'Alcançar R$ 500.000,00 de patrimônio total', target: 500000, claimed: false },
-  ])
+  const [missions, setMissions] = useState<any[]>([])
+  const [activities, setActivities] = useState<Activity[]>([])
+
+  const addActivity = (activity: Omit<Activity, 'id' | 'timestamp'>) => {
+    const newActivity: Activity = {
+      ...activity,
+      id: Math.random().toString(36).substring(2, 11),
+      timestamp: new Date().toISOString()
+    };
+    setActivities(prev => {
+      const updated = [newActivity, ...prev].slice(0, 50);
+      if (session) {
+        localStorage.setItem(`activities_${session.id}`, JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
 
   const [celebratingMission, setCelebratingMission] = useState<any>(null)
 
@@ -593,24 +614,13 @@ function App() {
   }
 
   const formatBRLWithPrecision = (value: number) => {
-    const parts = value.toFixed(12).split('.');
+    const parts = value.toFixed(2).split('.');
     const integerPart = parseInt(parts[0]).toLocaleString('pt-BR');
-    const decimals = parts[1];
-    const cents = decimals.substring(0, 2);
-    const microCents = decimals.substring(2);
+    const cents = parts[1];
 
     return (
       <span style={{ fontFamily: 'JetBrains Mono, monospace' }}>
         R$ {integerPart},{cents}
-        <span style={{
-          fontSize: '0.55em',
-          opacity: 0.5,
-          marginLeft: '2px',
-          display: 'inline-block',
-          transform: 'translateY(-1px)'
-        }}>
-          {microCents}
-        </span>
       </span>
     );
   };
@@ -631,14 +641,8 @@ function App() {
     })
     setEquippedItems({ aura: '', nickColor: '', background: '', machineSkin: '' })
     setPersistedAchievements({})
-    setMissions([
-      { id: 1, label: 'CONSTRUINDO A BASE', desc: 'Alcançar R$ 5.000,00 de patrimônio total', target: 5000, claimed: false },
-      { id: 2, label: 'RESERVA DE EMERGÊNCIA', desc: 'Alcançar R$ 20.000,00 de patrimônio total', target: 20000, claimed: false },
-      { id: 3, label: 'INVESTIDOR ESTRATEGISTA', desc: 'Alcançar R$ 50.000,00 de patrimônio total', target: 50000, claimed: false },
-      { id: 4, label: 'RUMO AOS SEIS DÍGITOS', desc: 'Alcançar R$ 100.000,00 de patrimônio total', target: 100000, claimed: false },
-      { id: 5, label: 'LIBERDADE GEOGRÁFICA', desc: 'Alcançar R$ 250.000,00 de patrimônio total', target: 250000, claimed: false },
-      { id: 6, label: 'INDEPENDÊNCIA FINANCEIRA', desc: 'Alcançar R$ 500.000,00 de patrimônio total', target: 500000, claimed: false },
-    ])
+    setMissions([])
+    setActivities([])
     setIsInitialLoadComplete(false)
     setIsAchievementSystemReady(false)
 
@@ -809,6 +813,18 @@ function App() {
       setTimeout(() => {
         setIsAchievementSystemReady(true);
       }, 1000);
+
+      // Carregar Histórico de Atividades do LocalStorage (Persistência por Sessão)
+      if (session) {
+        const savedActivities = localStorage.getItem(`activities_${session.id}`);
+        if (savedActivities) {
+          try {
+            setActivities(JSON.parse(savedActivities));
+          } catch (e) {
+            console.error('Erro ao ler historico:', e);
+          }
+        }
+      }
     }
   }
 
@@ -1293,9 +1309,15 @@ function App() {
       const newBalance = balance - valor
       setBalance(newBalance)
       await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance })
-      setShowAporteModal(false)
       setAporteValue('')
       triggerSuccess('APORTE REALIZADO', `Capital aplicado com sucesso em ${selectedMachine.nome}`, '💵');
+      addActivity({
+        type: 'contribution',
+        label: 'APORTE REALIZADO',
+        amount: valor,
+        icon: '💵',
+        details: `Investimento de R$ ${valor.toFixed(2)} em ${selectedMachine.nome}`
+      });
     }
   }
 
@@ -1308,6 +1330,13 @@ function App() {
       await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance })
       setShowConfirmResgate(null)
       triggerSuccess('RESGATE CONCLUÍDO', 'O capital retornou ao saldo líquido.', '💰');
+      addActivity({
+        type: 'sell_machine',
+        label: 'ATIVO VENDIDO',
+        amount: showConfirmResgate.valor,
+        icon: '💰',
+        details: `Venda de ${showConfirmResgate.nome} por R$ ${showConfirmResgate.valor.toFixed(2)}`
+      });
 
       // Revelação de Conquistas Pendentes
       const pendingToNotify = processedAchievements.filter(ach => {
@@ -1351,6 +1380,13 @@ function App() {
       setBalance(newBalance)
       await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance })
       triggerSuccess('NOVO ATIVO ADQUIRIDO', `${newMachineName.toUpperCase()} já está minerando CDI!`, '🏗️');
+      addActivity({
+        type: 'create_machine',
+        label: 'NOVO ATIVO',
+        amount: valor,
+        icon: '🏗️',
+        details: `Criação de ${newMachineName.toUpperCase()} com R$ ${valor.toFixed(2)}`
+      });
       setShowCreateModal(false)
     } else if (error) {
       setNotification(`ERRO: ${error.message}`)
@@ -1451,6 +1487,13 @@ function App() {
       await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance });
       setConfirmPayDebt(null);
       triggerSuccess('DÍVIDA PAGA', `Débito de ${debt.nome} liquidado com sucesso!`, '🧾');
+      addActivity({
+        type: 'pay_debt',
+        label: 'DÍVIDA PAGA',
+        amount: debt.valor,
+        icon: '🧾',
+        details: `Pagamento de ${debt.nome} (R$ ${debt.valor.toFixed(2)})`
+      });
     } else {
       setNotification(`ERRO AO PAGAR: ${error.message}`);
     }
@@ -1559,6 +1602,14 @@ function App() {
         triggerSuccess('DEPÓSITO CONFIRMADO', `Capital de R$ ${value.toFixed(2)} injetado no sistema.`, '🏦');
       }
 
+      addActivity({
+        type: 'deposit',
+        label: 'DEPÓSITO PIX',
+        amount: value,
+        icon: '🏦',
+        details: `R$ ${value.toFixed(2)} injetados`
+      });
+
       setShowPixDeposit(false)
       setDepositStep(1)
       setDepositValue('')
@@ -1586,6 +1637,13 @@ function App() {
     if (!error) {
       setBalance(0);
       triggerSuccess('SISTEMA RESETADO', `${amountRemoved.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} removidos do saldo.`, '💳');
+      addActivity({
+        type: 'reset_balance',
+        label: 'SALDO ZERADO',
+        amount: amountRemoved,
+        icon: '🗑️',
+        details: `Reset de ${amountRemoved.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+      });
     } else {
       setNotification(`FALHA AO ZERAR: ${error.message}`);
     }
@@ -1607,6 +1665,13 @@ function App() {
     if (!error) {
       setBalance(newBalance);
       triggerSuccess('ECONOMIA INTELIGENTE', `+R$ ${val.toFixed(2)} salvos pela sua disciplina!`, '🧠');
+      addActivity({
+        type: 'impulse',
+        label: 'IMPULSO SALVO',
+        amount: val,
+        icon: '🧠',
+        details: `Disciplina financeira: +R$ ${val.toFixed(2)}`
+      });
       setShowImpulseModal(false);
       setImpulseValue('');
 
@@ -1672,6 +1737,15 @@ function App() {
       setUsdBalance(newUsdBalance);
       setJpyBalance(newJpyBalance);
       triggerSuccess('CÂMBIO CONCLUÍDO', `Conversão ${direction === 'BRL_TO_FOREIGN' ? 'para' : 'de'} ${target} realizada via Wise.`, '💱');
+      addActivity({
+        type: 'exchange',
+        label: 'CÂMBIO REALIZADO',
+        amount: fromAmount,
+        currency: direction === 'BRL_TO_FOREIGN' ? 'BRL' : target,
+        target: direction === 'BRL_TO_FOREIGN' ? target : 'BRL',
+        icon: '💱',
+        details: `${fromAmount.toFixed(2)} ${direction === 'BRL_TO_FOREIGN' ? 'BRL' : target} ➔ ${toAmount.toFixed(2)} ${direction === 'BRL_TO_FOREIGN' ? target : 'BRL'}`
+      });
       setShowCurrencyModal(false);
     } else {
       setNotification('ERRO AO PROCESSAR CÂMBIO');
@@ -1701,6 +1775,13 @@ function App() {
     await supabase.from('user_stats').update({ balance: newBalance }).eq('user_id', session.id);
 
     triggerSuccess('TOKEN IMOBILIÁRIO', `${quantity} cotas de ${ticker} registradas com sucesso.`, '🏛️');
+    addActivity({
+      type: 'buy_fii',
+      label: 'COMPRA FII',
+      amount: cost,
+      icon: '🏛️',
+      details: `${quantity} cotas de ${ticker} (R$ ${cost.toFixed(2)})`
+    });
   };
 
   useEffect(() => {
@@ -2142,6 +2223,46 @@ function App() {
           </div>
         </div>
 
+        {/* HISTÓRICO DE ATIVIDADES RECENTES */}
+        <div className="glass-panel" style={{ marginTop: '1rem', padding: '1.2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ fontSize: '0.7rem', color: '#00A3FF', margin: 0 }}>HISTÓRICO_DE_ATIVIDADES</h3>
+            <span style={{ fontSize: '0.5rem', opacity: 0.4, fontWeight: 800 }}>ÚLTIMAS 50 OPERAÇÕES</span>
+          </div>
+
+          <div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'scroll', paddingRight: '4px' }}>
+            {activities.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px 10px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                <p style={{ fontSize: '0.65rem', opacity: 0.5, margin: 0, fontWeight: 700 }}>NENHUMA ATIVIDADE REGISTRADA AINDA.</p>
+              </div>
+            ) : (
+              activities.map((act) => (
+                <div key={act.id} style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  padding: '10px 12px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  animation: 'fadeIn 0.3s ease-out'
+                }}>
+                  <div style={{ fontSize: '1.2rem', width: '30px', textAlign: 'center' }}>{act.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#fff', letterSpacing: '0.5px' }}>{act.label}</span>
+                      <span style={{ fontSize: '0.5rem', opacity: 0.4, fontWeight: 800 }}>
+                        {new Date(act.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.6rem', opacity: 0.6, marginTop: '2px', fontWeight: 700 }}>{act.details}</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
         {notification && <div className="notification-toast"><div className="toast-content">{notification}</div></div>}
 
         {
@@ -2162,7 +2283,8 @@ function App() {
         {
           showAporteModal && (
             <div className="modal-overlay" onClick={() => setShowAporteModal(false)}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden', borderRadius: '24px', border: 'none' }}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden', borderRadius: '24px', border: 'none', position: 'relative' }}>
+                <button onClick={() => setShowAporteModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <div style={{ background: 'linear-gradient(135deg, #00A3FF 0%, #0066FF 100%)', padding: '1.5rem', textAlign: 'center' }}>
                   <h3 style={{ margin: 0, fontSize: '0.9rem', letterSpacing: '2px', fontWeight: 900, color: '#fff' }}>APORTE_ESTRATÉGICO</h3>
                   <p style={{ margin: '5px 0 0 0', fontSize: '0.65rem', opacity: 0.8, color: '#fff', fontWeight: 700 }}>{selectedMachine?.nome.toUpperCase()}</p>
@@ -2360,8 +2482,9 @@ function App() {
               <div
                 className="glass-panel modal-content"
                 onClick={e => e.stopPropagation()}
-                style={{ maxWidth: '420px', width: '95%', padding: '0', overflow: 'hidden', border: 'none', borderRadius: '24px' }}
+                style={{ maxWidth: '420px', width: '95%', padding: '0', overflow: 'hidden', border: 'none', borderRadius: '24px', position: 'relative' }}
               >
+                <button onClick={() => setShowCreateModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <div style={{ background: '#1A1A1A', padding: '1.5rem', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                   <h3 style={{ margin: 0, fontSize: '1rem', letterSpacing: '1px', color: '#fff' }}>NOVA CAIXINHA</h3>
                   <p style={{ margin: '5px 0 0 0', fontSize: '0.65rem', opacity: 0.6 }}>Escolha uma estratégia para seu dinheiro</p>
@@ -2472,7 +2595,8 @@ function App() {
         {
           showEditModal && (
             <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
+                <button onClick={() => setShowEditModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <h3>EDITAR ATIVO</h3>
                 <input id="edit-mach-name" title="Nome do Ativo" placeholder="Nome do Ativo" value={editName} onChange={e => setEditName(e.target.value)} style={{ marginBottom: '10px' }} />
                 <input id="edit-mach-val" title="Valor do Ativo" placeholder="Valor R$" type="number" value={editValue} onChange={e => setEditValue(e.target.value)} style={{ marginBottom: '10px' }} />
@@ -2544,7 +2668,8 @@ function App() {
         {
           showPixConfig && (
             <div className="modal-overlay" onClick={() => setShowPixConfig(false)}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', position: 'relative' }}>
+                <button onClick={() => setShowPixConfig(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <h3 style={{ marginBottom: '1.5rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>⚙️ CONFIGURAÇÕES</h3>
 
                 {/* 1. APARÊNCIA */}
@@ -2641,7 +2766,8 @@ function App() {
         {
           showPixDeposit && (
             <div className="modal-overlay" onClick={() => { setShowPixDeposit(false); setDepositStep(1); }}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
+                <button onClick={() => { setShowPixDeposit(false); setDepositStep(1); }} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <div className="pix-steps">
                   <div className={`pix-step ${depositStep === 1 ? 'active' : ''}`}>1. VALOR</div>
                   <div className={`pix-step ${depositStep === 2 ? 'active' : ''}`}>2. PAGAMENTO</div>
@@ -2783,7 +2909,8 @@ function App() {
         {
           showMissions && (
             <div className="modal-overlay" onClick={() => setShowMissions(false)}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '90%' }}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '90%', position: 'relative' }}>
+                <button onClick={() => setShowMissions(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <h3 style={{ fontSize: '1.2rem', color: '#00A3FF', marginBottom: '1.2rem', letterSpacing: '2px' }}>📋 MISSÕES_DO_INVESTIDOR</h3>
                 <p style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '1.5rem', lineHeight: '1.5' }}>
                   Simulação de vida real: Cumpra as metas patrimoniais para evoluir seu perfil de investidor.
@@ -3288,7 +3415,8 @@ function App() {
           celebratingMission && (
             <div className="celebration-overlay" onClick={() => setCelebratingMission(null)}>
               <div className="celeb-bg-flash"></div>
-              <div className="celeb-card" onClick={e => e.stopPropagation()}>
+              <div className="celeb-card" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
+                <button onClick={() => setCelebratingMission(null)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <div className="confetti-container">
                   {Array.from({ length: 40 }).map((_, i) => (
                     <div key={i} className="confetti-piece" style={{
@@ -3328,7 +3456,8 @@ function App() {
                 ))}
               </div>
 
-              <div className="level-up-card" onClick={e => e.stopPropagation()}>
+              <div className="level-up-card" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
+                <button onClick={() => setShowLevelUpModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 {/* RANK TRANSITION ANIMATION */}
                 <div className="rank-transition-container">
                   <div className="rank-old">{getInvestorTitle(levelUpData.old)}</div>
@@ -3355,7 +3484,8 @@ function App() {
         {
           showImpulseModal && (
             <div className="modal-overlay" onClick={() => setShowImpulseModal(false)}>
-              <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px' }}>
+              <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px', position: 'relative' }}>
+                <button onClick={() => setShowImpulseModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
                   <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🍔🚫</div>
                   <h2 className="title" style={{ fontSize: '1.4rem', marginBottom: '0.5rem', textAlign: 'center' }}>ECONOMIA DE IMPULSO</h2>
@@ -3408,7 +3538,8 @@ function App() {
         {
           showSkillsModal && (
             <div className="modal-overlay" onClick={() => setShowSkillsModal(false)}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px', position: 'relative' }}>
+                <button onClick={() => setShowSkillsModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <h2 style={{ color: '#C0C0C0', textShadow: '0 0 10px rgba(192,192,192,0.5)', textAlign: 'center', marginBottom: '1.5rem' }}>LOJA DE HABILIDADES</h2>
                 <p style={{ textAlign: 'center', fontSize: '0.8rem', opacity: 0.7, marginBottom: '2rem' }}>
                   Seu Nível é seu Poder. Desbloqueie ferramentas avançadas evoluindo seu perfil.
@@ -3559,7 +3690,8 @@ function App() {
         {
           showAchievementsModal && (
             <div className="modal-overlay" onClick={() => setShowAchievementsModal(false)}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', overflow: 'auto' }}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', overflow: 'auto', position: 'relative' }}>
+                <button onClick={() => setShowAchievementsModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <h2 style={{ color: '#FFD700', textAlign: 'center', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
                   🏆 CONQUISTAS
                   <span style={{ fontSize: '0.8rem', background: 'rgba(255,215,0,0.2)', padding: '4px 8px', borderRadius: '6px' }}>
@@ -3715,7 +3847,8 @@ function App() {
         {
           showBenchmarksModal && (
             <div className="modal-overlay" onClick={() => setShowBenchmarksModal(false)}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '550px', maxHeight: '85vh', overflow: 'auto' }}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '550px', maxHeight: '85vh', overflow: 'auto', position: 'relative' }}>
+                <button onClick={() => setShowBenchmarksModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <h2 style={{ color: '#00A3FF', textAlign: 'center', marginBottom: '0.5rem' }}>
                   📊 COMPARAÇÃO DE PERFORMANCE
                 </h2>
@@ -4109,7 +4242,27 @@ function App() {
 
         {notification && <div className="notification-toast"><div className="toast-content">{notification}</div></div>}
 
-        {/* CSS INJECTION FOR EQUIPPED ITEMS */}
+        {/* CSS INJECTION FOR EQUIPPED ITEMS & CUSTOM UI */}
+        <style>{`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.01);
+            border-radius: 10px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 163, 255, 0.3);
+            border-radius: 10px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 163, 255, 0.5);
+          }
+          .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 163, 255, 0.3) transparent;
+          }
+        `}</style>
         <div className={equippedItems.background ? `container-bg-override ${equippedItems.background}` : ''} style={{ display: 'none' }}></div>
 
       </div >
