@@ -47,33 +47,6 @@ A base do app é a criação e gestão de **"Ativos Conectados"** (Caixinhas de 
 - **Gráficos**: Recharts
 - **PWA**: Instalável em Android/iOS como um app nativo.
 
-## 📦 Instalação para Desenvolvedores
-
-```bash
-# Clone o repositório
-git clone https://github.com/BRUN0XP5/app-perfeito.git
-
-# Entre na pasta
-cd app-perfeito
-
-# Instale as dependências
-npm install
-
-# Rode em desenvolvimento
-npm run dev
-```
-
-## 🏗️ Build & Deploy
-```bash
-# Gerar versão de produção
-npm run build
-
-# Publicar no GitHub Pages
-npm run deploy
-```
-
----
-
 ## 👨‍💻 Autor
 **BRUN0XP5**
 
