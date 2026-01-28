@@ -56,7 +56,7 @@
 
 ---
 
-## 🔗 Comece a investir agora: [(app-perfeito.vercel.app)]
+## 🔗 Comece a investir agora: https://app-perfeito.vercel.app
 
 ---
 
