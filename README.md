@@ -1,68 +1,65 @@
-# 🚀 CDI Tycoon v0.40 - A Evolução do Magnata
+# 🚀 CDI Tycoon v0.40.0 beta - O Simulador Definitivo de Magnata
 
-![Version](https://img.shields.io/badge/version-0.40.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.40.0--beta-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-Proprietary-red?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19.2.0-61dafb?style=for-the-badge&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue?style=for-the-badge&logo=typescript)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-Ready-orange?style=for-the-badge)
 
-Fala, tubarão do mercado! O **CDI Tycoon v0.40** chegou com tudo! Se você achava que investir era só acumular números, prepare-se para ostentar seu patrimônio com estilo e estratégia. 🚀
+**CDI Tycoon** não é apenas um simulador financeiro; é a sua jornada de Bronze a Magnata Lendário. Misturando matemática real de investimentos com mecânicas de RPG e Tycoon, aqui seu patrimônio gera XP, desbloqueia tecnologias e define seu status no mercado.
 
 ---
 
-## 🕹️ O que há de novo na v0.40?
+## 🆕 O que chegou na v0.40.0 Beta?
 
-### ✨ 1. Sistema de Skins & Customização (Visual)
-Agora seu status no mercado reflete no visual do app. Ganhe recompensas exclusivas:
-*   **Nome Colorido:** Nomes Dourados, Neon, Diamante... mostre quem manda.
-*   **Auras de Poder:** Efeitos visuais ao redor dos seus cards principais.
-*   **Fundos Exclusivos (Backgrounds):** Transforme o app com temas *Cyberpunk*, *Minimalista* ou *Luxo*.
-*   **Como ganhar?** Acumule depósitos via PIX (Gacha System) ou desbloqueie via conquistas.
+### ✨ Sistema de Estilo & Skins
+*   **Aparência Única:** Ganhe skins raras através de aportes ou conquistas.
+*   **Customização de Perfil:** Escolha auras de poder, cores de nome (Dourado, Neon, Diamante) e fundos de tela exclusivos.
 
-### 🔒 2. Progressão por Níveis (Level Gates)
-O jogo agora tem uma curva de aprendizado real. Funcionalidades avançadas exigem experiência:
-*   **Nível 1:** Acesso total a investimentos e conquistas.
-*   **Nível 2:** Desbloqueia **Câmbio Internacional (USD/JPY)** e **Alocação de Ativos**.
-*   **Nível 3:** Desbloqueia a poderosa **Calculadora de Juros Compostos**.
-*   *Quer usar tudo? Evolua seu perfil investindo!*
+### 🔒 Progressão de Carreira (Level Gates)
+*   **Nível 2:** Desbloqueia o **Mercado de Câmbio (USD/JPY)** e a **Análise de Alocação**.
+*   **Nível 3:** Desbloqueia a **Calculadora de Juros Compostos** avançada.
 
-### 💾 3. Backup Turbinado (.TXT)
-Seus dados são sagrados. O novo sistema de exportação gera um arquivo `.txt` completo e legível contendo:
-*   Perfil e Nível
-*   Todos os saldos e patrimônio
-*   Lista detalhada de máquinas e configurações
-*   Dívidas ativas
-*   Conquistas e Skins desbloqueadas
+### � Gestão de Dívidas 2.0
+*   **Categorias Personalizadas:** Crie suas próprias categorias com nomes e emojis (ex: 🍔 Lanche, 🚀 Foguete).
+*   **Saúde Financeira:** Visualize o cálculo em tempo real: `(Patrimônio + Salário) - Dívidas`.
+*   **Confirmação de Segurança:** Botão de exclusão com confirmação para evitar erros.
 
-### 🛠️ 4. Correções e Melhorias (Zero Bugs)
-*   **Scroll Horizontal:** Eliminado de todos os pop-ups (Skills, Conquistas, etc). Interface limpa!
-*   **Reset Diário:** Sistema reescrito do zero para respeitar seu fuso horário local. Suas conquistas diárias não resetam mais "do nada".
-*   **Benchmark:** Removido para deixar o app mais leve e focado.
+### � Backup e Sincronização
+*   **Exportação .TXT:** Backup completo, legível e formatado de todo o seu progresso.
+*   **Reset Diário Local:** Sistema reescrito para respeitar o fuso horário do seu dispositivo, corrigindo o reset inesperado de conquistas.
 
 ---
 
-## 🔗 Vem pro gain: [https://app-perfeito.vercel.app/)
+## 🔥 Funcionalidades Completas (Tudo o que o App faz)
+
+### � Investimentos em Tempo Real
+*   **Mineração de CDI:** Ativos rendem a cada 10 segundos baseados em taxas reais.
+*   **Diversidade de Papéis:** CDB, IPCA+, LCI e LCA (com isenção de IR).
+*   **Regras Reais:** Cálculo de **IOF (30 dias)** e **IR Regressivo** automático.
+*   **Liquidez Estratégica:** Escolha entre D+0, D+30 ou D+365 (FGC Max) para multiplicar seus ganhos.
+
+### 🌍 Ecossistema Global (Wise Engine)
+*   **Cotações Reais:** Preços de Dólar e Iene via AwesomeAPI.
+*   **Conversão Inteligente:** Sistema de câmbio simulando taxas da Wise (Spread e IOF).
+*   **Rendimento em Moeda Forte:** Saldo em USD rende dividendos offline (Wise Rende+).
+
+### 🕹️ Gamificação & RPG
+*   **XP por Real:** Cada R$ 1,00 investido equivale a 1 XP.
+*   **Árvore de Habilidades:** Desbloqueie gráficos de 10 anos, monitores de eficiência e calculadoras financeiras conforme sobe de nível.
+*   **Missões & Conquistas:** Mais de 20 conquistas com recompensas visuais e bônus.
+
+### �️ Tecnologia & UX
+*   **Offline Gold:** O juro composto continua trabalhando mesmo quando você fecha o app.
+*   **Cloud Sync:** Seus dados são salvos instantaneamente via **Supabase**.
+*   **PWA:** Instale no seu celular ou desktop como um app nativo. No iPhone, use "Adicionar à Tela de Início" pelo Safari; no Android/Chrome, clique em "Instalar".
 
 ---
 
-### 💎 Funcionalidades Clássicas
-
-*   **Gestão de Liquidez:** D+0, 30 dias ou 365 dias (FGC Max). Você decide.
-*   **Câmbio Real:** Cotações ao vivo de Dólar e Iene via API.
-*   **FIIs na Veia:** Acompanhe rendimentos reais do mercado imobiliário.
-*   **Gamificação:** $1 investido = 1 XP. Suba de nível e ganhe vantagens.
-*   **Glassmorphism:** Interface premium, translúcida e moderna.
-
----
-
-### 🚀 Stack de Elite (Dev Stuff)
-*   **React 19 + Vite 7:** Performance extrema.
-*   **Supabase:** Banco de dados em tempo real na nuvem.
-*   **PWA:** Instale como aplicativo nativo no celular ou PC.
+## 🔗 Comece a investir agora: [https://BRUN0XP5.github.io/cdi-tycoon](https://BRUN0XP5.github.io/cdi-tycoon)
 
 ---
 
 **👨‍💻 Autor: BRUN0XP5**
-*Se curtiu a atualização, deixa aquela estrela (⭐) no repositório!*
+*Transformando o mercado financeiro em um playground estratégico.*
+*Se o app te ajudou a evoluir, deixe uma ⭐ no repositório!*

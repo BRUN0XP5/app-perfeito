@@ -399,9 +399,10 @@ function App() {
 
   // DIVIDAS (DEBTS) STATE
   const [showDebtsModal, setShowDebtsModal] = useState(false);
+  const [confirmDeleteDebt, setConfirmDeleteDebt] = useState<number | null>(null);
   const [debts, setDebts] = useState<any[]>([]);
   const totalDebts = useMemo(() => debts.reduce((sum, d) => sum + d.valor, 0), [debts]);
-  const [newDebt, setNewDebt] = useState({ nome: '', valor: '', categoria: 'cartao' });
+  const [newDebt, setNewDebt] = useState({ nome: '', valor: '', categoria: 'cartao', customIcon: '💸', customLabel: '' });
   const [confirmPayDebt, setConfirmPayDebt] = useState<any>(null);
 
 
@@ -1324,6 +1325,17 @@ function App() {
     }
   }
 
+  const deleteDebt = async (debtId: any) => {
+    const { error } = await supabase.from('dividas').delete().eq('id', debtId);
+    if (!error) {
+      setDebts(debts.filter(d => d.id !== debtId));
+      setNotification('🗑️ DÍVIDA REMOVIDA DA LISTA');
+      setConfirmDeleteDebt(null);
+    } else {
+      setNotification('ERRO AO REMOVER DÍVIDA');
+    }
+  }
+
   const handleResgate = async () => {
     const { error } = await supabase.from('maquinas').delete().eq('id', showConfirmResgate.id)
     if (!error) {
@@ -1456,11 +1468,17 @@ function App() {
     const valor = parseFloat(newDebt.valor);
     if (!newDebt.nome || isNaN(valor) || valor <= 0) return setNotification('PREENCHA OS DADOS CORRETAMENTE');
 
+    let finalCategory = newDebt.categoria;
+    if (newDebt.categoria === 'custom') {
+      if (!newDebt.customLabel) return setNotification('INFORME O NOME DA CATEGORIA');
+      finalCategory = `CUSTOM:${newDebt.customIcon || '💸'}:${newDebt.customLabel.toUpperCase()}`;
+    }
+
     const debtData = {
       user_id: session.id,
       nome: newDebt.nome.toUpperCase(),
       valor,
-      categoria: newDebt.categoria,
+      categoria: finalCategory,
       paga: false,
       created_at: new Date().toISOString()
     };
@@ -1468,7 +1486,7 @@ function App() {
     const { data, error } = await supabase.from('dividas').insert([debtData]).select().single();
     if (!error && data) {
       setDebts([data, ...debts]);
-      setNewDebt({ nome: '', valor: '', categoria: 'cartao' });
+      setNewDebt({ nome: '', valor: '', categoria: 'cartao', customIcon: '💸', customLabel: '' });
 
       // AUTO-UPDATE SALARY: Deduct debt value from monthly capacity
       const updatedSalary = salary - valor;
@@ -1994,6 +2012,7 @@ function App() {
                       <div className="notification-dot"></div>
                     )}
                   </div>
+                  <div className="menu-item" onClick={() => { setShowDebtsModal(true); setShowMenu(false); }}>📉 DÍVIDAS & DÉBITOS</div>
 
                   <div className="menu-item" onClick={() => {
                     if (currentLevel < 2) {
@@ -3185,7 +3204,7 @@ function App() {
                       </button>
                     </div>
                     <div style={{ marginTop: '1rem', fontSize: '0.55rem', opacity: 0.3, textAlign: 'center', fontWeight: 800 }}>
-                      SYSTEM VERSION v1.2.0-PRO
+                      SYSTEM VERSION v0.40.0 beta
                     </div>
                   </div>
                 </div>
@@ -4046,7 +4065,7 @@ function App() {
         {/* DEBTS MODAL */}
         {showDebtsModal && (
           <div className="modal-overlay" onClick={() => setShowDebtsModal(false)}>
-            <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px', maxHeight: '85vh', overflow: 'auto' }}>
+            <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px', maxHeight: '85vh', overflow: 'auto', overflowX: 'hidden' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h2 style={{ color: '#FF4D4D', margin: 0 }}>📉 DÍVIDAS & DÉBITOS</h2>
                 <button className="action-btn" onClick={() => setShowDebtsModal(false)} style={{ padding: '4px 8px' }}>X</button>
@@ -4107,8 +4126,26 @@ function App() {
                     >
                       <option value="cartao">💳 CARTÃO</option>
                       <option value="emprestimo">🏦 EMPRÉSTIMO</option>
+                      <option value="custom">✨ PERSONALIZADA</option>
                     </select>
                   </div>
+
+                  {newDebt.categoria === 'custom' && (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        placeholder="📦 ÍCONE"
+                        value={newDebt.customIcon}
+                        onChange={e => setNewDebt({ ...newDebt, customIcon: e.target.value })}
+                        style={{ width: '60px', background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', borderRadius: '6px', fontSize: '0.7rem', textAlign: 'center' }}
+                      />
+                      <input
+                        placeholder="NOME DA CATEGORIA (Ex: GASTOS)"
+                        value={newDebt.customLabel}
+                        onChange={e => setNewDebt({ ...newDebt, customLabel: e.target.value })}
+                        style={{ flex: 1, background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', borderRadius: '6px', fontSize: '0.7rem' }}
+                      />
+                    </div>
+                  )}
                   <button className="action-btn" onClick={createDebt} style={{ background: '#FF4D4D', color: '#fff', border: 'none', padding: '10px', fontWeight: 900 }}>ADICIONAR DÍVIDA</button>
                 </div>
               </div>
@@ -4119,6 +4156,25 @@ function App() {
                   <span>DÍVIDAS ATIVAS</span>
                   <span>TOTAL: R$ {debts.reduce((s, d) => s + d.valor, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                 </div>
+
+                {/* CALCULO DE SAÚDE FINANCEIRA */}
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px', marginBottom: '10px', fontSize: '0.7rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ color: '#aaa' }}>PATRIMÔNIO BRUTO:</span>
+                    <span style={{ color: '#fff' }}>R$ {formatBRLWithPrecision(totalPatrimony)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ color: '#aaa' }}>+ SALÁRIO ESTIMADO:</span>
+                    <span style={{ color: '#00E676' }}>R$ {(salary || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '4px', paddingTop: '4px', display: 'flex', justifyContent: 'space-between', fontWeight: 900 }}>
+                    <span style={{ color: '#aaa' }}>DISPONÍVEL REAL:</span>
+                    <span style={{ color: (totalPatrimony + (salary || 0) - debts.reduce((s, d) => s + d.valor, 0)) >= 0 ? '#00E676' : '#FF4D4D' }}>
+                      R$ {(totalPatrimony + (salary || 0) - debts.reduce((s, d) => s + d.valor, 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+
                 {debts.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '20px', opacity: 0.5, border: '1px dashed #333', borderRadius: '12px' }}>
                     NENHUMA DÍVIDA PENDENTE. BOM TRABALHO!
@@ -4127,50 +4183,75 @@ function App() {
                   debts.map(d => (
                     <div key={d.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontSize: '0.55rem', opacity: 0.6, textTransform: 'uppercase' }}>{d.categoria === 'cartao' ? '💳 CARTÃO' : '🏦 EMPRÉSTIMO'}</div>
+                        <div style={{ fontSize: '0.55rem', opacity: 0.6, textTransform: 'uppercase' }}>
+                          {(() => {
+                            if (d.categoria === 'cartao') return '💳 CARTÃO';
+                            if (d.categoria === 'emprestimo') return '🏦 EMPRÉSTIMO';
+                            if (d.categoria?.startsWith('CUSTOM:')) {
+                              const parts = d.categoria.split(':');
+                              return `${parts[1] || '✨'} ${parts[2] || 'OUTRO'}`;
+                            }
+                            return `❓ ${d.categoria || 'DÍVIDA'}`;
+                          })()}
+                        </div>
                         <div style={{ fontWeight: 900, fontSize: '0.85rem', color: '#fff' }}>{d.nome}</div>
                         <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#FF4D4D' }}>R$ {d.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                       </div>
-                      <button
-                        onClick={() => setConfirmPayDebt(d)}
-                        className="action-btn"
-                        style={{ padding: '6px 12px', fontSize: '0.65rem', background: 'rgba(0, 230, 118, 0.1)', border: '1px solid #00E676', color: '#00E676' }}
-                      >
-                        PAGAR
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <button
+                          onClick={() => setConfirmPayDebt(d)}
+                          className="action-btn"
+                          style={{ padding: '6px 12px', fontSize: '0.65rem', background: 'rgba(0, 230, 118, 0.1)', border: '1px solid #00E676', color: '#00E676' }}
+                        >
+                          PAGAR
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteDebt(d.id)}
+                          className="action-btn"
+                          style={{ padding: '6px 10px', fontSize: '0.65rem', background: confirmDeleteDebt === d.id ? '#FF4D4D' : 'rgba(255, 77, 77, 0.1)', border: '1px solid #FF4D4D', color: confirmDeleteDebt === d.id ? '#fff' : '#FF4D4D', marginLeft: '8px' }}
+                        >
+                          {confirmDeleteDebt === d.id ? '?' : '🗑️'}
+                        </button>
+                        {confirmDeleteDebt === d.id && (
+                          <button onClick={() => deleteDebt(d.id)} className="action-btn" style={{ marginLeft: '4px', background: '#FF4D4D', color: '#fff', fontSize: '0.65rem', padding: '6px' }}>CONFIRMAR</button>
+                        )}
+                      </div>
                     </div>
                   ))
                 )}
               </div>
             </div>
-          </div>
-        )}
+          </div >
+        )
+        }
 
         {/* CONFIRM PAY DEBT MODAL */}
-        {confirmPayDebt && (
-          <div className="modal-overlay" style={{ zIndex: 3000 }}>
-            <div className="glass-panel modal-content" style={{ maxWidth: '350px', textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💸</div>
-              <h3>CONFIRMAR PAGAMENTO</h3>
-              <p style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-                Deseja pagar a dívida <strong>{confirmPayDebt.nome}</strong> no valor de <strong>R$ {confirmPayDebt.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>?
-              </p>
-              <div style={{ background: 'rgba(0,230,118,0.1)', padding: '10px', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.75rem' }}>
-                O valor será deduzido do seu CAPITAL LÍQUIDO.
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button className="action-btn" onClick={() => setConfirmPayDebt(null)} style={{ flex: 1 }}>CANCELAR</button>
-                <button
-                  className="action-btn"
-                  onClick={() => payDebt(confirmPayDebt)}
-                  style={{ flex: 1, background: '#00E676', color: '#000', border: 'none', fontWeight: 900 }}
-                >
-                  CONFIRMAR
-                </button>
+        {
+          confirmPayDebt && (
+            <div className="modal-overlay" style={{ zIndex: 3000 }}>
+              <div className="glass-panel modal-content" style={{ maxWidth: '350px', textAlign: 'center' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💸</div>
+                <h3>CONFIRMAR PAGAMENTO</h3>
+                <p style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+                  Deseja pagar a dívida <strong>{confirmPayDebt.nome}</strong> no valor de <strong>R$ {confirmPayDebt.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>?
+                </p>
+                <div style={{ background: 'rgba(0,230,118,0.1)', padding: '10px', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.75rem' }}>
+                  O valor será deduzido do seu CAPITAL LÍQUIDO.
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="action-btn" onClick={() => setConfirmPayDebt(null)} style={{ flex: 1 }}>CANCELAR</button>
+                  <button
+                    className="action-btn"
+                    onClick={() => payDebt(confirmPayDebt)}
+                    style={{ flex: 1, background: '#00E676', color: '#000', border: 'none', fontWeight: 900 }}
+                  >
+                    CONFIRMAR
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         {
           actionPopup && (
