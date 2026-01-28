@@ -56,7 +56,7 @@
 
 ---
 
-## 🔗 Comece a investir agora: [https://BRUN0XP5.github.io/cdi-tycoon](https://BRUN0XP5.github.io/cdi-tycoon)
+## 🔗 Comece a investir agora: [https://BRUN0XP5.github.io/cdi-tycoon (https://BRUN0XP5.github.io/cdi-tycoon)]
 
 ---
 
