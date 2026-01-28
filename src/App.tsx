@@ -34,6 +34,7 @@ interface Machine {
   max_capacity?: number;
   investment_type?: 'CDB' | 'IPCA' | 'LCI' | 'LCA';
   yield_mode?: 'PRE' | 'POS';
+  paused?: boolean;
 }
 
 interface Activity {
