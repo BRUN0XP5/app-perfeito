@@ -5,7 +5,7 @@ export interface Achievement {
     name: string;
     description: string;
     icon: string;
-    category: 'patrimony' | 'machines' | 'time' | 'special' | 'mastery';
+    category: 'patrimony' | 'machines' | 'time' | 'special' | 'mastery' | 'daily';
     requirement: {
         type: 'patrimony' | 'machines_count' | 'days_active' | 'total_yield' | 'level' | 'single_machine_value' | 'custom';
         value: number;
@@ -337,18 +337,140 @@ export const ACHIEVEMENTS: Achievement[] = [
         rarity: 'epic',
         unlocked: false
     },
+    // CONQUISTAS DIÁRIAS (RESETAM À MEIA-NOITE)
     {
-        id: 'ultra_cdi',
-        name: 'Outlier de Mercado',
-        description: 'Ativo com performance excepcional (120%+ CDI).',
-        icon: '⚡',
-        category: 'special',
+        id: 'daily_saver',
+        name: 'Hábito de Poupador',
+        description: 'Mantenha a constância: deposite R$ 0,50 hoje.',
+        icon: '💰',
+        category: 'daily',
+        requirement: {
+            type: 'custom',
+            value: 0.50,
+            customCheck: (data) => (data.lastDepositValue || 0) >= 0.50
+        },
+        reward: {},
+        rarity: 'common',
+        unlocked: false
+    },
+    {
+        id: 'daily_active_portfolio',
+        name: 'Parque Industrial',
+        description: 'Mantenha 4 ou mais máquinas produzindo simultaneamente.',
+        icon: '🏭',
+        category: 'daily',
+        requirement: { type: 'machines_count', value: 4 },
+        reward: {},
+        rarity: 'common',
+        unlocked: false
+    },
+    {
+        id: 'early_bird_daily',
+        name: 'O Despertar do Gestor',
+        description: 'Acesse e gerencie seus ativos antes das 09h.',
+        icon: '☕',
+        category: 'daily',
         requirement: {
             type: 'custom',
             value: 0,
+            customCheck: () => new Date().getHours() < 9
+        },
+        reward: {},
+        rarity: 'rare',
+        unlocked: false
+    },
+    {
+        id: 'night_owl_daily',
+        name: 'Vigilante do Mercado',
+        description: 'Gerencie sua carteira após as 23h.',
+        icon: '🦉',
+        category: 'daily',
+        requirement: {
+            type: 'custom',
+            value: 0,
+            customCheck: () => new Date().getHours() >= 23
+        },
+        reward: {},
+        rarity: 'rare',
+        unlocked: false
+    },
+    {
+        id: 'global_investor_daily',
+        name: 'Cidadão do Mundo',
+        description: 'Tenha pelo menos $ 5,00 (USD) investidos.',
+        icon: '🗽',
+        category: 'daily',
+        requirement: {
+            type: 'custom',
+            value: 5,
+            customCheck: (data) => (data.usdBalance || 0) >= 5
+        },
+        reward: {},
+        rarity: 'rare',
+        unlocked: false
+    },
+    {
+        id: 'multi_currency_daily',
+        name: 'Trindade Cambial',
+        description: 'Possua saldo em BRL, USD e JPY simultaneamente.',
+        icon: '🏦',
+        category: 'daily',
+        requirement: {
+            type: 'custom',
+            value: 0,
+            customCheck: (data) => data.patrimony > 0 && data.usdBalance > 0 && data.jpyBalance > 0
+        },
+        reward: {},
+        rarity: 'epic',
+        unlocked: false
+    },
+    {
+        id: 'yield_milestone_daily',
+        name: 'Lucro de Ouro',
+        description: 'Ganhe R$ 5,00 em rendimentos hoje (Histórico)',
+        icon: '✨',
+        category: 'daily',
+        requirement: {
+            type: 'custom',
+            value: 5,
+            customCheck: (data) => (data.totalYieldToday || 0) >= 5
+        },
+        reward: {},
+        rarity: 'epic',
+        unlocked: false
+    },
+    {
+        id: 'high_cdi_daily',
+        name: 'Caçador de Prêmios',
+        description: 'Tenha uma máquina rendendo 120% CDI ou mais.',
+        icon: '🏹',
+        category: 'daily',
+        requirement: {
+            type: 'custom',
+            value: 120,
             customCheck: (data) => data.machines?.some((m: any) => m.cdi_quota >= 120)
         },
-        reward: { title: 'CAÇADOR DE TAXAS' },
+        reward: {},
+        rarity: 'rare',
+        unlocked: false
+    },
+    {
+        id: 'diversification_king_daily',
+        name: 'Rei da Diversificação',
+        description: 'Tenha investimentos em 3 categorias (CDI, FII, Câmbio).',
+        icon: '👑',
+        category: 'daily',
+        requirement: {
+            type: 'custom',
+            value: 2,
+            customCheck: (data) => {
+                let cats = 0;
+                if (data.machines?.length > 0) cats++;
+                if (data.usdBalance > 0 || data.jpyBalance > 0) cats++;
+                return cats >= 2;
+            }
+        },
+        reward: {},
         rarity: 'legendary',
         unlocked: false
     }
@@ -363,6 +485,10 @@ export const checkAchievements = (
         totalYield: number;
         level: number;
         machines: any[];
+        lastDepositValue: number;
+        totalYieldToday: number;
+        usdBalance: number;
+        jpyBalance: number;
     }
 ): { newlyUnlocked: Achievement[], updated: Achievement[] } => {
     const newlyUnlocked: Achievement[] = [];

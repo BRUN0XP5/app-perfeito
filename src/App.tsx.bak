@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useMemo, useRef, type ReactNode } from 'react'
+import { useEffect, useState, useMemo, useRef, type ReactNode } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import './App.css'
 import { SUPABASE_URL, SUPABASE_KEY, DEFAULT_SELIC, DEFAULT_IPCA } from './constants'
@@ -126,7 +126,7 @@ function App() {
   const [newMachineName, setNewMachineName] = useState('')
   const [newMachineValue, setNewMachineValue] = useState('')
 
-  const [selectedLiquidity] = useState<'daily' | 'locked_30' | 'locked_365'>('daily');
+  const [selectedLiquidity, setSelectedLiquidity] = useState<'daily' | 'locked_30' | 'locked_365'>('daily');
 
   // MANUAL CONTROLS
   const [newMachineCDI, setNewMachineCDI] = useState('100');
@@ -137,29 +137,30 @@ function App() {
 
   // Compound Interest Simulator Detailed State
   const [simYears, setSimYears] = useState(1);
+  const [simInflation, setSimInflation] = useState(0); // For realism
   const [showPortfolioChart, setShowPortfolioChart] = useState(false);
 
   // PRESETS POPULATE MANUAL FIELDS
-  // const applyPreset = (type: 'daily' | 'locked_30' | 'locked_365') => {
-  //   setSelectedLiquidity(type);
-  //   const now = new Date();
+  const applyPreset = (type: 'daily' | 'locked_30' | 'locked_365') => {
+    setSelectedLiquidity(type);
+    const now = new Date();
 
-  //   if (type === 'daily') {
-  //     setNewMachineCDI('100');
-  //     setNewMachineDate(''); // No lock
-  //     setNewMachineLimit(''); // No limit
-  //   } else if (type === 'locked_30') {
-  //     setNewMachineCDI('105');
-  //     const d = new Date(); d.setDate(now.getDate() + 30);
-  //     setNewMachineDate(d.toISOString().split('T')[0]);
-  //     setNewMachineLimit('5000');
-  //   } else if (type === 'locked_365') {
-  //     setNewMachineCDI('120');
-  //     const d = new Date(); d.setDate(now.getDate() + 365);
-  //     setNewMachineDate(d.toISOString().split('T')[0]);
-  //     setNewMachineLimit('10000');
-  //   }
-  // };
+    if (type === 'daily') {
+      setNewMachineCDI('100');
+      setNewMachineDate(''); // No lock
+      setNewMachineLimit(''); // No limit
+    } else if (type === 'locked_30') {
+      setNewMachineCDI('105');
+      const d = new Date(); d.setDate(now.getDate() + 30);
+      setNewMachineDate(d.toISOString().split('T')[0]);
+      setNewMachineLimit('5000');
+    } else if (type === 'locked_365') {
+      setNewMachineCDI('120');
+      const d = new Date(); d.setDate(now.getDate() + 365);
+      setNewMachineDate(d.toISOString().split('T')[0]);
+      setNewMachineLimit('10000');
+    }
+  }
 
 
 
@@ -215,7 +216,7 @@ function App() {
     let target = new Date(currentDate);
     target.setHours(0, 0, 0, 0);
 
-    // Se não é dia útil, procuramos o próximo dia útil (Segunda-feira) Ã s 00:00
+    // Se não é dia útil, procuramos o próximo dia útil (Segunda-feira) às 00:00
     if (!isBusinessDay) {
       // Começamos procurando a partir de amanhã
       target.setDate(target.getDate() + 1);
@@ -308,9 +309,9 @@ function App() {
 
   const LEVEL_UP_PHRASES = [
     "O passado foi queimado. O futuro é brilhante.",
-    "Sua mentalidade evoluiu. Seu patrimÃ´nio agradece.",
+    "Sua mentalidade evoluiu. Seu patrimônio agradece.",
     "Um novo patamar de riqueza desbloqueado.",
-    "A disciplina é a ponte entre metas e realizaçÃµes.",
+    "A disciplina é a ponte entre metas e realizações.",
     "Cada centavo investido é um soldado trabalhando por você.",
     "O topo é apenas o começo da próxima montanha.",
     "Seus ativos estão trabalhando enquanto você dorme.",
@@ -497,103 +498,99 @@ function App() {
   }, [persistedAchievements, session, isInitialLoadComplete]);
 
   // Auto-save Streak no Supabase
-  // NEW ROBUST DAILY SYSTEM
-  const [resetCheckDone, setResetCheckDone] = useState(false);
+  useEffect(() => {
+    if (!session || !isInitialLoadComplete) return;
+    const saveStreak = async () => {
+      await supabase.from('user_stats').update({
+        daily_streak: dailyStreak,
+        last_streak_date: lastStreakDate
+      }).eq('user_id', session.id);
+    };
+    saveStreak();
+  }, [dailyStreak, lastStreakDate, session, isInitialLoadComplete]);
+
+  // DAILY RESET LOGIC
+  const [resetPerformedToday, setResetPerformedToday] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!session || !isInitialLoadComplete || resetCheckDone) return;
+    if (!session || !isInitialLoadComplete) return;
 
-    const handleDailySystem = async () => {
-      try {
-        // 1. Get Local Date String (YYYY-MM-DD)
-        const now = new Date();
-        const offset = now.getTimezoneOffset() * 60000;
-        const localDate = new Date(now.getTime() - offset);
-        const todayKey = localDate.toISOString().split('T')[0];
+    const checkDailyReset = async () => {
+      const todayString = new Date().toISOString().split('T')[0];
+      if (resetPerformedToday === todayString) return; // Skip if already done this session
 
-        // 2. Fetch User Stats
-        const { data: stats, error } = await supabase
-          .from('user_stats')
-          .select('last_daily_reset, daily_streak, last_streak_date')
-          .eq('user_id', session.id)
-          .single();
+      const { data: stats } = await supabase
+        .from('user_stats')
+        .select('last_daily_reset, daily_streak, last_streak_date')
+        .eq('user_id', session.id)
+        .single();
 
-        if (error) throw error;
+      if (stats?.last_daily_reset !== todayString) {
+        console.log('🔄 REALIZANDO RESET DIÁRIO...');
 
-        // 3. Logic: Is it a new day?
-        const lastReset = stats?.last_daily_reset;
+        // 1. Verificar se a streak quebrou
+        const lastDate = stats.last_streak_date;
+        let finalStreak = stats.daily_streak || 0;
 
-        if (lastReset !== todayKey) {
-          console.log(`🌅 NOVO DIA DETECTADO: ${todayKey} (Último: ${lastReset})`);
+        if (lastDate) {
+          const last = new Date(lastDate);
+          const today = new Date(todayString);
+          const diffDays = Math.floor((today.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
 
-          let newStreak = stats?.daily_streak || 0;
-          let streakBroken = false;
-
-          // Check streak continuity
-          if (stats?.last_streak_date) {
-            const lastStreakDate = new Date(stats.last_streak_date);
-            // Calculate overlapping "days" not just 24h hours
-            const diffTime = Math.abs(localDate.getTime() - lastStreakDate.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays > 1) {
-              newStreak = 0;
-              streakBroken = true;
-            }
+          if (diffDays > 1) {
+            // Perdeu a sequência (mais de 1 dia de intervalo)
+            finalStreak = 0;
+            setDailyStreak(0);
+            setLastStreakDate('');
+            setNotification('💔 POXA... VOCÊ PERDEU SUA STREAK DIÁRIA!');
           }
-
-          // Reset Daily Achievements locally
-          const dailyIds = ACHIEVEMENTS.filter(a => a.category === 'daily').map(a => a.id);
-          setPersistedAchievements(prev => {
-            const next = { ...prev };
-            dailyIds.forEach(id => {
-              if (next[id]) next[id] = { ...next[id], unlocked: false, notified: false };
-            });
-            return next;
-          });
-
-          // Reset Daily Achievements in DB
-          await supabase.from('user_achievements')
-            .update({ unlocked: false, notified: false })
-            .eq('user_id', session.id)
-            .in('achievement_id', dailyIds);
-
-          // Update Stats
-          await supabase.from('user_stats').update({
-            last_daily_reset: todayKey,
-            daily_streak: newStreak,
-            last_deposit_value: 0
-          }).eq('user_id', session.id);
-
-          setDailyStreak(newStreak);
-          if (streakBroken) setNotification('💔 QUE PENA! SUA STREAK FOI ZERADA.');
-          else if (newStreak > 0) setNotification('☀️ BOM DIA! METAS DIÁRIAS RENOVADAS.');
-
-        } else {
-          console.log('✅ Dia já processado. Mantendo estado atual.');
         }
 
-        setResetCheckDone(true);
+        // 2. Identificar Conquistas Diárias
+        const dailyIds = ACHIEVEMENTS.filter(a => a.category === 'daily').map(a => a.id);
 
-      } catch (err) {
-        console.error('Erro no sistema diário:', err);
+        // 3. Resetar Estado Local
+        setPersistedAchievements(prev => {
+          const newPersisted = { ...prev };
+          dailyIds.forEach(id => {
+            if (newPersisted[id]) {
+              newPersisted[id] = { ...newPersisted[id], unlocked: false, notified: false };
+            }
+          });
+          return newPersisted;
+        });
+        setLastDepositValue(0);
+
+        // 4. Atualizar Banco de Dados (Conquistas)
+        await supabase
+          .from('user_achievements')
+          .update({ unlocked: false, notified: false })
+          .eq('user_id', session.id)
+          .in('achievement_id', dailyIds);
+
+        // 5. Atualizar Data do Último Reset e Zerar trackings diários
+        await supabase
+          .from('user_stats')
+          .update({
+            last_daily_reset: todayString,
+            last_deposit_value: 0,
+            daily_streak: finalStreak
+          })
+          .eq('user_id', session.id);
+
+        setResetPerformedToday(todayString);
+        if (finalStreak > 0) {
+          setNotification('☀️ NOVO DIA: CONQUISTAS DIÁRIAS RESETADAS!');
+        }
+      } else {
+        setResetPerformedToday(todayString);
       }
     };
 
-    handleDailySystem();
-  }, [session, isInitialLoadComplete, resetCheckDone]);
-
-  // Auto-save Streak when changed (Debounced effect handled by simple logic)
-  useEffect(() => {
-    if (!session || !isInitialLoadComplete) return;
-    if (dailyStreak > 0) {
-      const todayKey = new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-      supabase.from('user_stats').update({
-        daily_streak: dailyStreak,
-        last_streak_date: todayKey
-      }).eq('user_id', session.id).then(() => console.log('🔥 Streak salva:', dailyStreak));
-    }
-  }, [dailyStreak, session, isInitialLoadComplete]);
+    checkDailyReset();
+    const interval = setInterval(checkDailyReset, 1000 * 60 * 5);
+    return () => clearInterval(interval);
+  }, [session, isInitialLoadComplete, resetPerformedToday]);
 
 
 
@@ -1382,12 +1379,12 @@ function App() {
       const newBalance = balance - valor
       setBalance(newBalance)
       await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance })
-      triggerSuccess('NOVO ATIVO ADQUIRIDO', `${newMachineName.toUpperCase()} já está minerando CDI!`, '💰');
+      triggerSuccess('NOVO ATIVO ADQUIRIDO', `${newMachineName.toUpperCase()} já está minerando CDI!`, '🏗️');
       addActivity({
         type: 'create_machine',
         label: 'NOVO ATIVO',
         amount: valor,
-        icon: '💰',
+        icon: '🏗️',
         details: `Criação de ${newMachineName.toUpperCase()} com R$ ${valor.toFixed(2)}`
       });
       setShowCreateModal(false)
@@ -1408,7 +1405,7 @@ function App() {
     const { error } = await supabase.from('maquinas').update(updatedFields).eq('id', editingMachine.id)
     if (!error) {
       setMachines(machines.map(m => m.id === editingMachine.id ? { ...m, ...updatedFields } as Machine : m))
-      triggerSuccess('CONFIGURAÇÕES SALVAS', 'As alterações foram sincronizadas na rede.', '⚙️');
+      triggerSuccess('CONFIGURAÇÕES SALVAS', 'As alterações foram sincronizadas na rede.', '🛠️');
       setShowEditModal(false)
     } else {
       setNotification(`ERRO: ${error.message}`)
@@ -1489,12 +1486,12 @@ function App() {
       setDebts(debts.filter(d => d.id !== debt.id));
       await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance });
       setConfirmPayDebt(null);
-      triggerSuccess('DÍVIDA PAGA', `Débito de ${debt.nome} liquidado com sucesso!`, '✅');
+      triggerSuccess('DÍVIDA PAGA', `Débito de ${debt.nome} liquidado com sucesso!`, '🧾');
       addActivity({
         type: 'pay_debt',
         label: 'DÍVIDA PAGA',
         amount: debt.valor,
-        icon: '✅',
+        icon: '🧾',
         details: `Pagamento de ${debt.nome} (R$ ${debt.valor.toFixed(2)})`
       });
     } else {
@@ -1606,14 +1603,14 @@ function App() {
           user_id: session.id,
           cumulative_deposits: remainder
         });
-        triggerSuccess('DEPÓSITO CONFIRMADO', `Capital de R$ ${value.toFixed(2)} injetado no sistema.`, '💵');
+        triggerSuccess('DEPÓSITO CONFIRMADO', `Capital de R$ ${value.toFixed(2)} injetado no sistema.`, '🏦');
       }
 
       addActivity({
         type: 'deposit',
         label: 'DEPÓSITO PIX',
         amount: value,
-        icon: '💵',
+        icon: '🏦',
         details: `R$ ${value.toFixed(2)} injetados`
       });
 
@@ -1643,7 +1640,7 @@ function App() {
 
     if (!error) {
       setBalance(0);
-      triggerSuccess('SISTEMA RESETADO', `${amountRemoved.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} removidos do saldo.`, '💸');
+      triggerSuccess('SISTEMA RESETADO', `${amountRemoved.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} removidos do saldo.`, '💳');
       addActivity({
         type: 'reset_balance',
         label: 'SALDO ZERADO',
@@ -1698,54 +1695,20 @@ function App() {
 
   const handleExportBackup = () => {
     const backupData = {
-      meta: {
-        version: "0.40",
-        timestamp: new Date().toISOString(),
-        exported_by: session.username
-      },
-      profile: {
-        username: session.username,
-        level: currentLevel,
-        xp: xp,
-        title: getInvestorTitle(balance + totalInvested),
-        streak: {
-          count: dailyStreak,
-          last_date: lastStreakDate
-        }
-      },
-      wealth: {
-        brl_liquid: balance,
-        brl_invested: totalInvested,
-        usd_balance: usdBalance,
-        jpy_balance: jpyBalance,
-        total_patrimony_brl: totalPatrimony
-      },
-      portfolio: {
-        machines: machines.map(m => ({
-          ...m,
-          status: m.paused ? 'PAUSED' : 'ACTIVE',
-          yield_per_day: m.rendimento_dia
-        })),
-        machines_count: machines.length
-      },
-      debts: debts,
-      achievements: {
-        unlocked_ids: persistedAchievements ? Object.keys(persistedAchievements).filter(k => persistedAchievements[k].unlocked) : [],
-        total_unlocked: processedAchievements.filter(a => a.unlocked).length
-      },
-      cosmetics: {
-        equipped: equippedItems,
-        // unlocked_skins: ... (se tiver essa info facil)
-      }
-    };
-
-    const blob = new Blob([JSON.stringify(backupData, null, 4)], { type: 'text/plain;charset=utf-8' });
+      timestamp: new Date().toISOString(),
+      username: session.username,
+      machines,
+      history: historyData,
+      usdBalance,
+      jpyBalance
+    }
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `CDI_TYCOON_BACKUP_${session.username}_${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `backup_${session.username}_${new Date().getTime()}.json`;
     a.click();
-    setNotification('📂 BACKUP COMPLETO EXPORTADO (.TXT)');
+    setNotification('BACKUP EXPORTADO COM SUCESSO');
   }
 
   const handleCurrencyExchange = async (fromAmount: number, toAmount: number, target: 'USD' | 'JPY', direction: 'BRL_TO_FOREIGN' | 'FOREIGN_TO_BRL' = 'BRL_TO_FOREIGN') => {
@@ -1785,7 +1748,7 @@ function App() {
         currency: direction === 'BRL_TO_FOREIGN' ? 'BRL' : target,
         target: direction === 'BRL_TO_FOREIGN' ? target : 'BRL',
         icon: '💱',
-        details: `${fromAmount.toFixed(2)} ${direction === 'BRL_TO_FOREIGN' ? 'BRL' : target} ⇄ ${toAmount.toFixed(2)} ${direction === 'BRL_TO_FOREIGN' ? target : 'BRL'}`
+        details: `${fromAmount.toFixed(2)} ${direction === 'BRL_TO_FOREIGN' ? 'BRL' : target} ➔ ${toAmount.toFixed(2)} ${direction === 'BRL_TO_FOREIGN' ? target : 'BRL'}`
       });
       setShowCurrencyModal(false);
     } else {
@@ -1793,20 +1756,20 @@ function App() {
     }
   }
 
-  // const chartData = useMemo(() => {
-  //   const usdVal = usdBalance * apiRates.USD;
-  //   const jpyVal = jpyBalance * apiRates.JPY;
-  //   const total = balance + xp + usdVal + jpyVal;
+  const chartData = useMemo(() => {
+    const usdVal = usdBalance * apiRates.USD;
+    const jpyVal = jpyBalance * apiRates.JPY;
+    const total = balance + xp + usdVal + jpyVal;
 
-  //   if (total === 0) return [];
+    if (total === 0) return [];
 
-  //   return [
-  //     { name: 'SALDO BRL', value: balance, color: '#00A3FF' },
-  //     { name: 'CDI (MÁQS)', value: xp, color: '#00E676' },
-  //     { name: 'DÓLAR (USD)', value: usdVal, color: '#FF4D4D' },
-  //     { name: 'IENE (JPY)', value: jpyVal, color: '#C0C0C0' }
-  //   ].filter(item => item.value > 0);
-  // }, [balance, xp, usdBalance, jpyBalance, apiRates]);
+    return [
+      { name: 'SALDO BRL', value: balance, color: '#00A3FF' },
+      { name: 'CDI (MÁQS)', value: xp, color: '#00E676' },
+      { name: 'DÓLAR (USD)', value: usdVal, color: '#FF4D4D' },
+      { name: 'IENE (JPY)', value: jpyVal, color: '#C0C0C0' }
+    ].filter(item => item.value > 0);
+  }, [balance, xp, usdBalance, jpyBalance, apiRates]);
 
 
 
@@ -1969,52 +1932,23 @@ function App() {
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }} onClick={() => setShowMenu(false)} />
                 <div className="hamburger-menu">
                   <div className="menu-item" onClick={() => { setShowPixDeposit(true); setShowMenu(false); }}>💵 NOVO APORTE</div>
-                  <div className="menu-item" onClick={() => {
-                    if (currentLevel < 2) {
-                      setNotification("🔒 REQUER NÍVEL 2!");
-                      setShowMenu(false);
-                      return;
-                    }
-                    setShowCurrencyModal(true);
-                    setShowMenu(false);
-                  }}>🌐 CÂMBIO INTERNACIONAL {currentLevel < 2 && '🔒'}</div>
-                  <div className="menu-item" onClick={() => {
-                    // Level 1 is default, but ensuring logic consistency
-                    if (currentLevel < 1) {
-                      setNotification("🔒 REQUER NÍVEL 1!");
-                      setShowMenu(false);
-                      return;
-                    }
-                    setShowAchievementsModal(true);
-                    setShowMenu(false);
-                  }} style={{ position: 'relative' }}>
+                  <div className="menu-item" onClick={() => { setShowCurrencyModal(true); setShowMenu(false); }}>🌎 CÂMBIO INTERNACIONAL</div>
+                  <div className="menu-item" onClick={() => { setShowAchievementsModal(true); setShowMenu(false); }} style={{ position: 'relative' }}>
                     🏆 CONQUISTAS ({processedAchievements.filter(a => a.unlocked).length}/{processedAchievements.length})
                     {processedAchievements.some(a => a.unlocked && !a.notified) && (
                       <div className="notification-dot"></div>
                     )}
                   </div>
+                  <div className="menu-item" onClick={() => { setShowSkillsModal(true); setShowMenu(false); }}>🧠 SKILLS & UPGRADES</div>
 
+                  <div className="menu-item" onClick={() => { setShowPortfolioChart(true); setShowMenu(false); }}>🥧 ALOCAÇÃO DE ATIVOS</div>
                   <div className="menu-item" onClick={() => {
-                    if (currentLevel < 2) {
-                      setNotification("🔒 REQUER NÍVEL 2!");
-                      setShowMenu(false);
-                      return;
-                    }
-                    setShowPortfolioChart(true);
-                    setShowMenu(false);
-                  }}>📊 ALOCAÇÃO DE ATIVOS {currentLevel < 2 && '🔒'}</div>
-                  <div className="menu-item" onClick={() => {
-                    if (currentLevel < 3) {
-                      setNotification("🔒 REQUER NÍVEL 3!");
-                      setShowMenu(false);
-                      return;
-                    }
                     setSimInitial(xp);
                     setSimMonthly(1000);
                     setSimRate(cdiAnual * 100);
                     setShowStairwayChart(true);
                     setShowMenu(false);
-                  }}>🧮 CALCULADORA DE JUROS {currentLevel < 3 && '🔒'}</div>
+                  }}>🧮 CALCULADORA DE JUROS</div>
 
                   <div className="menu-item" onClick={() => { setViewMode(viewMode === 'mobile' ? 'pc' : 'mobile'); setShowMenu(false); }}>
                     {viewMode === 'mobile' ? '💻 LAYOUT DESKTOP' : '📱 LAYOUT MOBILE'}
@@ -2036,7 +1970,7 @@ function App() {
           )}
           <div className="xp-container" style={{ marginBottom: '1.5rem', background: 'rgba(0,163,255,0.03)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(0,163,255,0.08)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', alignItems: 'flex-end' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div>
                 <span style={{ fontSize: '0.55rem', fontWeight: 900, color: '#00A3FF', letterSpacing: '1px' }}>RANKING_ATUAL</span>
                 <span style={{ fontSize: '0.8rem', fontWeight: 900, color: '#fff' }}>NÍVEL {currentLevel}</span>
               </div>
@@ -2194,7 +2128,7 @@ function App() {
                             }}
                             title="Editar Ativo"
                           >
-                            ✍️
+                            ✏️
                           </span>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
@@ -2301,7 +2235,7 @@ function App() {
           showAporteModal && (
             <div className="modal-overlay" onClick={() => setShowAporteModal(false)}>
               <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden', borderRadius: '24px', border: 'none', position: 'relative' }}>
-                <button onClick={() => setShowAporteModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
+                <button onClick={() => setShowAporteModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <div style={{ background: 'linear-gradient(135deg, #00A3FF 0%, #0066FF 100%)', padding: '1.5rem', textAlign: 'center' }}>
                   <h3 style={{ margin: 0, fontSize: '0.9rem', letterSpacing: '2px', fontWeight: 900, color: '#fff' }}>APORTE_ESTRATÉGICO</h3>
                   <p style={{ margin: '5px 0 0 0', fontSize: '0.65rem', opacity: 0.8, color: '#fff', fontWeight: 700 }}>{selectedMachine?.nome.toUpperCase()}</p>
@@ -2413,7 +2347,7 @@ function App() {
                       <span style={{ fontSize: '0.55rem', opacity: 0.5, fontWeight: 900 }}>SIMULAÇÃO DE LONGO PRAZO AUTOMATIZADA</span>
                     </div>
                   </div>
-                  <button onClick={() => setShowStairwayChart(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 900 }}>✖</button>
+                  <button onClick={() => setShowStairwayChart(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 900 }}>✕</button>
                 </div>
 
                 {/* PAINEL DE CONTROLES */}
@@ -2456,7 +2390,7 @@ function App() {
                   let totalInvestedValue = simInitial || 0;
                   let totalInterestEarned = 0;
 
-                  const timeline: Array<{ month: number, balance: number, totalInvested: number, interest: number }> = [];
+                  const timeline = [];
                   timeline.push({ month: 0, balance: currentBalance, totalInvested: totalInvestedValue, interest: 0 });
 
                   for (let m = 1; m <= months; m++) {
@@ -2542,7 +2476,7 @@ function App() {
                                     background: isYear ? 'rgba(0, 230, 118, 0.08)' : 'transparent'
                                   }}>
                                     <td style={{ padding: '10px 20px', fontSize: '0.7rem', fontWeight: isYear ? 900 : 500, color: isYear ? '#00E676' : '#fff' }}>
-                                      {isYear ? `🏠 ANO ${row.month / 12}` : `Mês ${row.month}`}
+                                      {isYear ? `🏁 ANO ${row.month / 12}` : `Mês ${row.month}`}
                                     </td>
                                     <td style={{ padding: '10px 20px', textAlign: 'right', fontSize: '0.7rem', color: '#00E676', whiteSpace: 'nowrap' }}>
                                       {formatBRLWithPrecision(monthInt)}
@@ -2578,7 +2512,7 @@ function App() {
                 onClick={e => e.stopPropagation()}
                 style={{ maxWidth: '420px', width: '95%', padding: '0', overflow: 'hidden', border: 'none', borderRadius: '24px', position: 'relative' }}
               >
-                <button onClick={() => setShowCreateModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
+                <button onClick={() => setShowCreateModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <div style={{ background: '#1A1A1A', padding: '1.5rem', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                   <h3 style={{ margin: 0, fontSize: '1rem', letterSpacing: '1px', color: '#fff' }}>NOVA CAIXINHA</h3>
                   <p style={{ margin: '5px 0 0 0', fontSize: '0.65rem', opacity: 0.6 }}>Escolha uma estratégia para seu dinheiro</p>
@@ -2702,7 +2636,7 @@ function App() {
           showEditModal && (
             <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
               <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
-                <button onClick={() => setShowEditModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
+                <button onClick={() => setShowEditModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <h3>EDITAR ATIVO</h3>
                 <input id="edit-mach-name" title="Nome do Ativo" placeholder="Nome do Ativo" value={editName} onChange={e => setEditName(e.target.value)} style={{ marginBottom: '10px' }} />
                 <input id="edit-mach-val" title="Valor do Ativo" placeholder="Valor R$" type="number" value={editValue} onChange={e => setEditValue(e.target.value)} style={{ marginBottom: '10px' }} />
@@ -2772,7 +2706,8 @@ function App() {
         }
 
         {
-          showPixConfig && (
+          {
+            showPixConfig && (
             <div className="modal-overlay" onClick={() => setShowPixConfig(false)} style={{ backdropFilter: 'blur(12px)', background: 'rgba(0,0,0,0.85)' }}>
               <div
                 className="glass-panel modal-content"
@@ -2808,7 +2743,7 @@ function App() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '1rem',
                       transition: 'all 0.2s'
-                    }}>✖</button>
+                    }}>✕</button>
                 </div>
 
                 <div style={{ padding: '28px' }}>
@@ -2944,7 +2879,7 @@ function App() {
           showPixDeposit && (
             <div className="modal-overlay" onClick={() => { setShowPixDeposit(false); setDepositStep(1); }}>
               <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
-                <button onClick={() => { setShowPixDeposit(false); setDepositStep(1); }} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
+                <button onClick={() => { setShowPixDeposit(false); setDepositStep(1); }} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <div className="pix-steps">
                   <div className={`pix-step ${depositStep === 1 ? 'active' : ''}`}>1. VALOR</div>
                   <div className={`pix-step ${depositStep === 2 ? 'active' : ''}`}>2. PAGAMENTO</div>
@@ -3020,9 +2955,9 @@ function App() {
                     cursor: 'pointer'
                   }}
                 >
-                  ✖
+                  ✕
                 </button>
-                <h3 style={{ color: '#00A3FF', marginBottom: '1.2rem' }}>📈 HISTÓRICO_TERMINAL</h3>
+                <h3 style={{ color: '#00A3FF', marginBottom: '1.2rem' }}>📊 HISTÓRICO_TERMINAL</h3>
 
                 {/* Sumário do Dia Atual */}
                 <div style={{
@@ -3092,78 +3027,67 @@ function App() {
                     <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#00A3FF', fontWeight: 900 }}>❓ GUIA COMPLETO DO JOGO</h2>
                     <p style={{ margin: 0, fontSize: '0.6rem', opacity: 0.5, letterSpacing: '1px' }}>APRENDA A DOMINAR SUAS FINANÇAS</p>
                   </div>
-                  <button onClick={() => setShowHelpModal(false)} className="icon-btn-small">✖</button>
+                  <button onClick={() => setShowHelpModal(false)} className="icon-btn-small">✕</button>
                 </div>
 
                 <div className="help-section" style={{ maxHeight: '65vh', overflowY: 'auto', paddingRight: '12px' }}>
 
                   {/* CONCEITOS BÁSICOS */}
                   <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#FFD700', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #FFD700', paddingLeft: '8px' }}>💡 CONCEITOS BÁSICOS</h4>
+                    <h4 style={{ color: '#FFD700', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #FFD700', paddingLeft: '8px' }}>💎 CONCEITOS BÁSICOS</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       <div>
                         <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>Patrimônio Total (Bruto)</p>
-                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>A soma de todos os seus ativos convertidos para Real (BRL). Inclui saldo líquido, valor investido em máquinas, carteiras de Dólar (USD) e Iene (JPY).</p>
+                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>A soma de tudo que você possui: saldo disponível, investimentos em CDI, Imóveis e moedas estrangeiras convertidas.</p>
                       </div>
                       <div>
                         <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>Capital Líquido</p>
-                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Seu saldo disponível para novos investimentos, compras na Wise ou pagamento de dívidas. Rendimentos são adicionados aqui apenas após a "Venda" de um ativo.</p>
+                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Dinheiro "na mão" para usar em novos investimentos ou conversões.</p>
                       </div>
                       <div>
                         <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>Ranking e XP</p>
-                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Seu nível reflete seu **Patrimônio Total**. Cada R$ 1,00 em patrimônio equivale a 1 XP. Subir de nível desbloqueia novas salas, skins raras e títulos honorários.</p>
+                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Seu nível sobe conforme seu <strong>Total Investido</strong>. R$ 1,00 investido = 1 XP. Suba de nível para ganhar Títulos e Skins exclusivas!</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* MECÂNICAS DE RENDIMENTO */}
+                  {/* BOTÕES PRINCIPAIS */}
                   <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#00E676', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #00E676', paddingLeft: '8px' }}>⚙️ MECÂNICAS DE RENDIMENTO</h4>
+                    <h4 style={{ color: '#00E676', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #00E676', paddingLeft: '8px' }}>🎮 BOTÕES DE AÇÃO</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>O simulador utiliza a **Regra dos 252 dias úteis**. O mercado financeiro opera de Segunda a Sexta:</p>
-                      <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <li><strong>💲 Rendimento Automático:</strong> Seus ativos geram lucro a cada 10 segundos enquanto o mercado estiver aberto.</li>
-                        <li><strong>📊 Tipos de Ativos:</strong> CDB e IPCA+ possuem incidência de IR. LCI e LCA são **Isentos de Imposto de Renda**.</li>
-                        <li><strong>💤 Lucro Offline:</strong> Caso fique fora do sistema, seus rendimentos são calculados e creditados automaticamente no seu próximo login (limitado a dias úteis).</li>
-                      </ul>
+                      <div>
+                        <p style={{ fontSize: '0.7rem', color: '#00E676', fontWeight: 900 }}>+ INVESTIR CDI</p>
+                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Cria máquinas de rendimento automático. Escolha entre Liquidez Diária (100% CDI) ou Prazos Longos (até 120% CDI).</p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* SISTEMA DE TRIBUTAÇÃO */}
+                  {/* MENU HAMBÚRGUER */}
                   <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#FF4D4D', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #FF4D4D', paddingLeft: '8px' }}>📉 IMPOSTOS (IR & IOF)</h4>
+                    <h4 style={{ color: '#00A3FF', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #00A3FF', paddingLeft: '8px' }}>🍔 MENU HAMBÚRGUER</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Para ativos não isentos, aplicamos a tabela regressiva real:</p>
-                      <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <li><strong>🔴 IOF:</strong> Cobrado apenas se resgatar antes de 30 dias. Começa em 96% e zera no 30º dia.</li>
-                        <li><strong>🟡 Imposto de Renda:</strong> Começa em 22.5% e cai para 15% após 2 anos (720 dias). O IR incide apenas sobre o **lucro**.</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* MENU E FUNCIONALIDADES */}
-                  <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#00A3FF', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #00A3FF', paddingLeft: '8px' }}>🍔 FUNCIONALIDADES DO MENU</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <p style={{ fontSize: '0.7rem', opacity: 0.7 }}>Aqui você encontra o "Coração" da gestão avançada:</p>
                       <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <li><strong>🌍 Câmbio Internacional:</strong> Use a carteira integrada para converter BRL em moedas fortes. A Wise cobra 0.6% de tarifa + IOF.</li>
-                        <li><strong>🧠 Skills & Upgrades:</strong> Gaste seu status para desbloquear ferramentas de análise como o Gráfico de 10 Anos e o Monitor de Eficiência.</li>
-                        <li><strong>🏆 Conquistas:</strong> Complete missões para ganhar troféus e skins de máquinas exclusivas.</li>
-                        <li><strong>🧮 Calculadora:</strong> Simule aportes mensais e veja a mágica dos juros compostos no longo prazo.</li>
+                        <li><strong>💸 DEPOSITAR:</strong> Adicione saldo via Pix Simulado para começar sua jornada.</li>
+                        <li><strong>🌎 CÂMBIO WORLD:</strong> Converta Reais para Dólar (USD) ou Iene (JPY). Ótimo para proteger seu capital contra a inflação.</li>
+                        <li><strong>💰 PROJEÇÃO SALARIAL:</strong> Confira quanto você vai receber no próximo dia de pagamento e veja seu patrimônio futuro.</li>
+                        <li><strong>💳 DÍVIDAS:</strong> Registre seus gastos. Mantenha as contas limpas para não perder progresso!</li>
+                        <li><strong>📋 MISSÕES:</strong> Objetivos de curto prazo. Complete para ganhar bônus instantâneos de saldo.</li>
+                        <li><strong>🏆 CONQUISTAS:</strong> Marcos da sua carreira. Desbloqueie todas para se tornar um Mestre das Finanças.</li>
+                        <li><strong>🧠 HABILIDADES:</strong> Use seu nível para "comprar" upgrades visuais (Skins, Cores e Auras).</li>
+                        <li><strong>📊 ANÁLISES & GRÁFICOS:</strong> Veja a composição da sua carteira e compare sua performance com o mercado real.</li>
                       </ul>
                     </div>
                   </div>
 
-                  {/* SKINS E CUSTOMIZAÇÃO */}
-                  <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#AB47BC', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #AB47BC', paddingLeft: '8px' }}>✨ SKINS E CUSTOMIZAÇÃO</h4>
-                    <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>
-                      Existem duas formas principais de ganhar visuais novos:<br />
-                      1. <strong>Depositos PIX:</strong> A cada R$ 1.000,00 depositados (acumulativo), você ganha uma Skin aleatória (Common a Legendary).<br />
-                      2. <strong>Progresso:</strong> Certas conquistas e níveis liberam cores de nome, auras e fundos exclusivos.
-                    </p>
+                  {/* DICAS */}
+                  <div style={{ background: 'rgba(0,163,255,0.1)', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(0,163,255,0.2)' }}>
+                    <h4 style={{ fontSize: '0.65rem', marginBottom: '8px', color: '#00A3FF', fontWeight: 900 }}>💡 DICAS DE MESTRE</h4>
+                    <ul style={{ fontSize: '0.65rem', opacity: 0.9, paddingLeft: '15px', lineHeight: '1.5' }}>
+                      <li>Clique em uma Máquina de CDI para fazer novos aportes e aumentar o lucro dela.</li>
+                      <li>Skins lendárias como "QUANTUM" são liberadas apenas em níveis altíssimos. Continue investindo!</li>
+                    </ul>
                   </div>
-
                   {/* SUPORTE E DOAÇÃO */}
                   <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
                     <h4 style={{ color: '#E91E63', fontSize: '0.8rem', marginBottom: '12px', borderLeft: '3px solid #E91E63', paddingLeft: '8px' }}>💬 CONTATO & APOIO</h4>
@@ -3171,7 +3095,7 @@ function App() {
                       <button
                         style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', color: '#fff', padding: '12px', borderRadius: '12px', cursor: 'not-allowed', fontSize: '0.7rem', fontWeight: 800, textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', opacity: 0.5 }}
                       >
-                        <span>🛠️</span> SUPORTE TÉCNICO (DISCORD)
+                        <span>🛠️</span> SUPORTE (EM BREVE)
                       </button>
                       <button
                         onClick={() => {
@@ -3180,11 +3104,11 @@ function App() {
                         }}
                         style={{ background: 'rgba(233, 30, 99, 0.1)', border: '1px solid rgba(233, 30, 99, 0.2)', color: '#FF4081', padding: '12px', borderRadius: '12px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 900, textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
                       >
-                        <span>☕</span> APOIAR CRIADOR (PIX)
+                        <span>☕</span> APOIAR DESENVOLVIMENTO (DOAR)
                       </button>
                     </div>
                     <div style={{ marginTop: '1rem', fontSize: '0.55rem', opacity: 0.3, textAlign: 'center', fontWeight: 800 }}>
-                      SYSTEM VERSION v1.2.0-PRO
+                      VERSION v0.37.0
                     </div>
                   </div>
                 </div>
@@ -3203,8 +3127,8 @@ function App() {
             <div className="modal-overlay" style={{ zIndex: 4000 }} onClick={() => setShowSalaryProjectionModal(false)}>
               <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                  <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#00A3FF', fontWeight: 900 }}>📈 PROJEÇÃO SALARIAL</h2>
-                  <button onClick={() => setShowSalaryProjectionModal(false)} className="icon-btn-small">✖</button>
+                  <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#00A3FF', fontWeight: 900 }}>📊 PROJEÇÃO SALARIAL</h2>
+                  <button onClick={() => setShowSalaryProjectionModal(false)} className="icon-btn-small">✕</button>
                 </div>
 
                 <div style={{ background: 'rgba(0,163,255,0.05)', padding: '1.5rem', borderRadius: '24px', border: '1px solid rgba(0,163,255,0.1)', marginBottom: '1.5rem' }}>
@@ -3217,7 +3141,7 @@ function App() {
                       const today = new Date().getDate();
                       if (today === salaryDay) return '💰 SALÁRIO CAI HOJE!';
                       const remaining = today < salaryDay ? (salaryDay - today) : (new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - today + salaryDay);
-                      return <><span>🗓️</span><span>DIA {salaryDay} ({remaining} dias restantes)</span></>;
+                      return <><span>📅</span><span>DIA {salaryDay} ({remaining} dias restantes)</span></>;
                     })()}
                   </div>
                 </div>
@@ -3328,7 +3252,7 @@ function App() {
                     <div className="wise-logo-circle" style={{ background: '#fff', color: '#00b9ff', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>W</div>
                     <span>World</span>
                   </div>
-                  <button onClick={() => setShowCurrencyModal(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 800 }}>✖</button>
+                  <button onClick={() => setShowCurrencyModal(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 800 }}>✕</button>
                 </div>
 
                 <div className="wise-body" style={{ padding: '1.5rem' }}>
@@ -3414,7 +3338,7 @@ function App() {
                               boxShadow: '0 2px 8px rgba(0,0,0,0.2)', fontSize: '1rem'
                             }}
                           >
-                            ⇄
+                            ⇅
                           </button>
                         </div>
 
@@ -3495,7 +3419,7 @@ function App() {
               </div>
 
               <div className="level-up-card" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
-                <button onClick={() => setShowLevelUpModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
+                <button onClick={() => setShowLevelUpModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 {/* RANK TRANSITION ANIMATION */}
                 <div className="rank-transition-container">
                   <div className="rank-old">{getInvestorTitle(levelUpData.old)}</div>
@@ -3523,7 +3447,7 @@ function App() {
           showImpulseModal && (
             <div className="modal-overlay" onClick={() => setShowImpulseModal(false)}>
               <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px', position: 'relative' }}>
-                <button onClick={() => setShowImpulseModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
+                <button onClick={() => setShowImpulseModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
                   <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🍔🚫</div>
                   <h2 className="title" style={{ fontSize: '1.4rem', marginBottom: '0.5rem', textAlign: 'center' }}>ECONOMIA DE IMPULSO</h2>
@@ -3576,8 +3500,8 @@ function App() {
         {
           showSkillsModal && (
             <div className="modal-overlay" onClick={() => setShowSkillsModal(false)}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px', position: 'relative', overflowX: 'hidden' }}>
-                <button onClick={() => setShowSkillsModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px', position: 'relative' }}>
+                <button onClick={() => setShowSkillsModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <h2 style={{ color: '#C0C0C0', textShadow: '0 0 10px rgba(192,192,192,0.5)', textAlign: 'center', marginBottom: '1.5rem' }}>LOJA DE HABILIDADES</h2>
                 <p style={{ textAlign: 'center', fontSize: '0.8rem', opacity: 0.7, marginBottom: '2rem' }}>
                   Seu Nível é seu Poder. Desbloqueie ferramentas avançadas evoluindo seu perfil.
@@ -3638,7 +3562,7 @@ function App() {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <h3 style={{ margin: 0, fontSize: '1rem', color: currentLevel >= 10 ? '#FFD700' : '#aaa' }}>
-                      ⚖️ ALQUIMIA FINANCEIRA
+                      ⚗️ ALQUIMIA FINANCEIRA
                       {currentLevel < 10 && <span style={{ fontSize: '0.6rem', marginLeft: '8px', background: '#333', padding: '2px 6px', borderRadius: '4px' }}>REQ: LVL 10</span>}
                     </h3>
                     {currentLevel >= 10 && <span style={{ fontSize: '1.2rem' }}>🔓</span>}
@@ -3728,8 +3652,8 @@ function App() {
         {
           showAchievementsModal && (
             <div className="modal-overlay" onClick={() => setShowAchievementsModal(false)}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', overflow: 'auto', position: 'relative', overflowX: 'hidden' }}>
-                <button onClick={() => setShowAchievementsModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', overflow: 'auto', position: 'relative' }}>
+                <button onClick={() => setShowAchievementsModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
                 <h2 style={{ color: '#FFD700', textAlign: 'center', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
                   🏆 CONQUISTAS
                   <span style={{ fontSize: '0.8rem', background: 'rgba(255,215,0,0.2)', padding: '4px 8px', borderRadius: '6px' }}>
@@ -3826,7 +3750,7 @@ function App() {
 
                             {ach.notified && (
                               <div style={{ marginTop: '10px', color: '#00E676', fontSize: '0.65rem', fontWeight: 800 }}>
-                                ✅ RECOMPENSA REIVINDICADA
+                                ✓ RECOMPENSA REIVINDICADA
                               </div>
                             )}
                           </div>
@@ -3920,7 +3844,7 @@ function App() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '1rem',
                       transition: 'all 0.2s'
-                    }}>✖</button>
+                    }}>✕</button>
                 </div>
 
                 <div style={{ position: 'relative', height: '300px', marginTop: '10px' }}>
@@ -3958,7 +3882,7 @@ function App() {
                         }
                       </Pie>
                       <Tooltip
-                        formatter={(value: number | undefined) => value ? `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}
+                        formatter={(value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                         contentStyle={{
                           backgroundColor: 'rgba(20, 20, 20, 0.95)',
                           borderColor: 'rgba(255,255,255,0.1)',
@@ -3976,10 +3900,10 @@ function App() {
                   {/* CENTER LABEL */}
                   <div style={{
                     position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                    textAlign: 'center', pointerEvents: 'none', zIndex: 5, width: '100%'
+                    textAlign: 'center', pointerEvents: 'none', zIndex: 5
                   }}>
-                    <div style={{ fontSize: '0.6rem', color: '#aaa', letterSpacing: '1.5px', marginBottom: '2px', fontWeight: 800, textTransform: 'uppercase' }}>PATRIMÔNIO</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fff', textShadow: '0 0 20px rgba(255,255,255,0.2)', lineHeight: '1' }}>
+                    <div style={{ fontSize: '0.6rem', color: '#aaa', letterSpacing: '1.5px', marginBottom: '6px', fontWeight: 800, textTransform: 'uppercase' }}>PATRIMÔNIO</div>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#fff', textShadow: '0 0 20px rgba(255,255,255,0.2)' }}>
                       {totalPatrimony >= 1000000
                         ? <>{(totalPatrimony / 1000000).toFixed(2)}<span style={{ fontSize: '0.9rem', color: '#00F5D4', marginLeft: '2px' }}>M</span></>
                         : <>{(totalPatrimony / 1000).toFixed(1)}<span style={{ fontSize: '0.9rem', color: '#00F5D4', marginLeft: '2px' }}>k</span></>
@@ -4036,6 +3960,139 @@ function App() {
           )
         }
 
+        {/* BENCHMARKS MODAL */}
+        {
+          showBenchmarksModal && (
+            <div className="modal-overlay" onClick={() => setShowBenchmarksModal(false)}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '550px', maxHeight: '85vh', overflow: 'auto', position: 'relative' }}>
+                <button onClick={() => setShowBenchmarksModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
+                <h2 style={{ color: '#00A3FF', textAlign: 'center', marginBottom: '0.5rem' }}>
+                  📊 COMPARAÇÃO DE PERFORMANCE
+                </h2>
+                <p style={{ textAlign: 'center', fontSize: '0.75rem', opacity: 0.6, marginBottom: '2rem' }}>
+                  Veja como seu portfólio se compara com os principais benchmarks do mercado
+                </p>
+
+                {(() => {
+                  const avgCDIQuota = machines.length > 0
+                    ? machines.reduce((sum, m) => sum + (m.valor * m.cdi_quota), 0) / totalInvested
+                    : 100;
+
+                  const avgIRFactor = 0.775; // Média simplificada
+                  const comparisons = calculateBenchmarkComparison(totalInvested, avgCDIQuota, cdiAnual, 'month', avgIRFactor);
+                  const stats = getBenchmarkStats(totalInvested, avgCDIQuota, cdiAnual);
+
+                  return (
+                    <>
+                      {/* Monthly Comparison */}
+                      <div style={{ marginBottom: '2rem' }}>
+                        <h3 style={{ fontSize: '0.9rem', color: '#FFD700', marginBottom: '1rem' }}>RENDIMENTO MENSAL LÍQUIDO</h3>
+                        {comparisons.map(comp => {
+                          const benchmark = BENCHMARKS.find(b => b.name === comp.benchmark)!;
+                          return (
+                            <div key={comp.benchmark} style={{
+                              background: comp.beating ? 'rgba(0,230,118,0.1)' : 'rgba(255,77,77,0.1)',
+                              border: `1px solid ${comp.beating ? '#00E676' : '#FF4D4D'}`,
+                              borderRadius: '12px',
+                              padding: '15px',
+                              marginBottom: '12px'
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontSize: '1.5rem' }}>{benchmark.icon}</span>
+                                  <div>
+                                    <div style={{ fontWeight: 900, fontSize: '0.9rem' }}>{benchmark.name}</div>
+                                    <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>{benchmark.description}</div>
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                  <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>Taxa Anual</div>
+                                  <div style={{ fontSize: '0.85rem', fontWeight: 900, color: benchmark.color }}>
+                                    {(benchmark.annualRate * 100).toFixed(2)}%
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '12px' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                  <div style={{ fontSize: '0.6rem', opacity: 0.6 }}>SEU RENDIMENTO</div>
+                                  <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#00E676' }}>
+                                    R$ {comp.yourYield.toFixed(2)}
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                  <div style={{ fontSize: '0.6rem', opacity: 0.6 }}>{benchmark.name.toUpperCase()}</div>
+                                  <div style={{ fontSize: '0.85rem', fontWeight: 900, color: benchmark.color }}>
+                                    R$ {comp.benchmarkYield.toFixed(2)}
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                  <div style={{ fontSize: '0.6rem', opacity: 0.6 }}>DIFERENÇA</div>
+                                  <div style={{ fontSize: '0.85rem', fontWeight: 900, color: comp.beating ? '#00E676' : '#FF4D4D' }}>
+                                    {comp.beating ? '+' : ''}{comp.percentageDiff.toFixed(1)}%
+                                  </div>
+                                </div>
+                              </div>
+
+                              {comp.beating && (
+                                <div style={{ marginTop: '10px', fontSize: '0.7rem', color: '#00E676', textAlign: 'center', fontWeight: 800 }}>
+                                  ✓ Você está ganhando R$ {Math.abs(comp.difference).toFixed(2)} a mais por mês!
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Long-term Stats */}
+                      <div style={{ background: 'rgba(0,163,255,0.1)', border: '1px solid rgba(0,163,255,0.3)', borderRadius: '12px', padding: '20px' }}>
+                        <h3 style={{ fontSize: '0.9rem', color: '#00A3FF', marginBottom: '1.5rem', textAlign: 'center' }}>
+                          PROJEÇÃO DE LONGO PRAZO
+                        </h3>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.65rem', opacity: 0.6, marginBottom: '5px' }}>DOBRAR SEU DINHEIRO</div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#00E676' }}>
+                              {stats.doublingTimeUser.toFixed(1)} anos
+                            </div>
+                            <div style={{ fontSize: '0.6rem', opacity: 0.5, marginTop: '3px' }}>
+                              (Poupança: {stats.doublingTimePoupanca.toFixed(1)} anos)
+                            </div>
+                          </div>
+
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.65rem', opacity: 0.6, marginBottom: '5px' }}>RETORNO REAL</div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: stats.beatingInflation ? '#00E676' : '#FF4D4D' }}>
+                              {(stats.realReturn * 100).toFixed(2)}%
+                            </div>
+                            <div style={{ fontSize: '0.6rem', opacity: 0.5, marginTop: '3px' }}>
+                              {stats.beatingInflation ? '✓ Acima da inflação' : '✗ Abaixo da inflação'}
+                            </div>
+                          </div>
+
+                          <div style={{ gridColumn: '1/-1', textAlign: 'center', marginTop: '10px' }}>
+                            <div style={{ fontSize: '0.65rem', opacity: 0.6, marginBottom: '5px' }}>EM 10 ANOS VOCÊ TERÁ</div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFD700' }}>
+                              {stats.futureValue10Years.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#00E676', marginTop: '5px', fontWeight: 800 }}>
+                              {stats.advantage10Years.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} a mais que a Poupança!
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+
+                <button className="primary-btn" onClick={() => setShowBenchmarksModal(false)} style={{ width: '100%', marginTop: '1.5rem' }}>
+                  FECHAR
+                </button>
+              </div>
+            </div>
+          )
+        }
 
 
 

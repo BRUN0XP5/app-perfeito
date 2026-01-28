@@ -1,4 +1,6 @@
-export const getTaxMultipliers = (createdAtStr?: string, ignoreIof = false, referenceDate: Date = new Date()) => {
+import { DEFAULT_IPCA } from './constants';
+
+export const getTaxMultipliers = (createdAtStr?: string, ignoreIof = false, referenceDate: Date = new Date(), investmentType?: string) => {
     if (!createdAtStr) return { iofFactor: 1, irFactor: 1 - 0.225, irRateLabel: '22.5%', iofApplied: false, daysUntilIofZero: 0 };
     const created = new Date(createdAtStr);
     const now = referenceDate;
@@ -17,21 +19,40 @@ export const getTaxMultipliers = (createdAtStr?: string, ignoreIof = false, refe
         daysUntilIofZero = 30 - diffDays;
     }
 
-    // IR Regressivo
+    // IR Regressivo (Isento para LCI e LCA)
     let irRate = 0.225;
     let irRateLabel = '22.5%';
-    if (diffDays > 720) { irRate = 0.15; irRateLabel = '15%'; }
-    else if (diffDays > 360) { irRate = 0.175; irRateLabel = '17.5%'; }
-    else if (diffDays > 180) { irRate = 0.20; irRateLabel = '20%'; }
+
+    if (investmentType === 'LCI' || investmentType === 'LCA') {
+        irRate = 0;
+        irRateLabel = 'ISENTO';
+    } else {
+        if (diffDays > 720) { irRate = 0.15; irRateLabel = '15%'; }
+        else if (diffDays > 360) { irRate = 0.175; irRateLabel = '17.5%'; }
+        else if (diffDays > 180) { irRate = 0.20; irRateLabel = '20%'; }
+    }
 
     return { iofFactor, irFactor: 1 - irRate, irRateLabel, iofApplied, daysUntilIofZero };
 };
 
-export const calculateProjection = (valorAtual: number, aporte: string, cdi_quota: number, cdiAnual: number, createdAt?: string, referenceDate: Date = new Date()) => {
+export const calculateProjection = (valorAtual: number, aporte: string, cdi_quota: number, cdiAnual: number, createdAt?: string, referenceDate: Date = new Date(), investmentType?: string, yieldMode: 'PRE' | 'POS' = 'POS') => {
     const v = valorAtual + (parseFloat(aporte) || 0)
     // Para projeções, sempre ignoramos o IOF pois ele é temporário (30 dias)
-    const { irFactor } = getTaxMultipliers(createdAt, true, referenceDate);
-    const grossAnnual = v * (cdi_quota / 100) * cdiAnual
+    const { irFactor } = getTaxMultipliers(createdAt, true, referenceDate, investmentType);
+
+    let rate = 0;
+    if (yieldMode === 'PRE') {
+        rate = (cdi_quota / 100);
+    } else {
+        rate = (cdi_quota / 100) * cdiAnual;
+    }
+
+    // Se for IPCA+, adicionamos a inflação anual à taxa (geralmente taxa fixa + IPCA)
+    if (investmentType === 'IPCA') {
+        rate += DEFAULT_IPCA;
+    }
+
+    const grossAnnual = v * rate;
     const netAnnual = grossAnnual * irFactor
 
     // Projeções baseadas em dias úteis (252 ao ano)

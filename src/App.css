@@ -188,7 +188,7 @@
   overflow: hidden;
   width: 100%;
   transition: all 0.5s ease;
-  animation: panelGlow 4s infinite alternate;
+  animation: none;
 }
 
 @keyframes panelGlow {
@@ -210,7 +210,7 @@
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
   transform: skewX(-25deg);
-  animation: shimmer 8s infinite;
+  animation: none;
 }
 
 @keyframes shimmer {
@@ -236,7 +236,7 @@
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
   transform: skewX(-25deg);
-  animation: shimmer 6s infinite;
+  animation: none;
 }
 
 @keyframes shimmer {
@@ -436,16 +436,16 @@
 .fan-blades {
   width: 32px;
   height: 32px;
-  background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 0 L60 40 L50 20 L40 40 Z M100 50 L60 60 L80 50 L60 40 Z M50 100 L40 60 L50 80 L60 60 Z M0 50 L40 40 L20 50 L40 60 Z" fill="%23666" /></svg>') no-repeat center;
+  background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="10" fill="%23666"/><path d="M50 50 L50 10 C65 10 70 25 50 50 Z" fill="%23666"/><path d="M50 50 L90 50 C90 65 75 70 50 50 Z" fill="%23666"/><path d="M50 50 L50 90 C35 90 30 75 50 50 Z" fill="%23666"/><path d="M50 50 L10 50 C10 35 25 30 50 50 Z" fill="%23666"/></svg>') no-repeat center;
   background-size: contain;
   position: relative;
   z-index: 5;
 }
 
 .active-working .fan-blades {
-  background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 0 L60 40 L50 20 L40 40 Z M100 50 L60 60 L80 50 L60 40 Z M50 100 L40 60 L50 80 L60 60 Z M0 50 L40 40 L20 50 L40 60 Z" fill="%2300A3FF" /></svg>') no-repeat center;
+  background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="10" fill="%2300A3FF"/><path d="M50 50 L50 10 C65 10 70 25 50 50 Z" fill="%2300A3FF"/><path d="M50 50 L90 50 C90 65 75 70 50 50 Z" fill="%2300A3FF"/><path d="M50 50 L50 90 C35 90 30 75 50 50 Z" fill="%2300A3FF"/><path d="M50 50 L10 50 C10 35 25 30 50 50 Z" fill="%2300A3FF"/></svg>') no-repeat center;
   background-size: contain;
-  animation: rotateFan 0.5s linear infinite;
+  animation: rotateFan 0.8s linear infinite;
 }
 
 .status-leds {
@@ -611,6 +611,7 @@ input:focus {
   animation: modalSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform: translateY(20px);
   opacity: 0;
+  overflow-x: hidden;
 }
 
 @keyframes modalSlideIn {

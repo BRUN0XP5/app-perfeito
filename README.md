@@ -1,12 +1,68 @@
-# 🚀 CDI Tycoon v0.38 - O Simulador Definitivo
+# 🚀 CDI Tycoon v0.40 - A Evolução do Magnata
 
-![Version](https://img.shields.io/badge/version-0.38.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.40.0-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-Proprietary-red?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19.2.0-61dafb?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue?style=for-the-badge&logo=typescript)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-Ready-orange?style=for-the-badge)
-![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 
-🦈 E aí, futuro magnata! Tá pronto pro Gain?Se liga: o CDI Tycoon v0.38 acabou de sair do forno e a gente não tá pra brincadeira. Esquece aqueles apps de banco cinzas e sem graça. Aqui a gente transformou a sua vida financeira num RPG de Alta Fidelidade.O CDI Tycoon é o seu "Centro de Comando". Ele não toca no seu dinheiro real (nada de saques ou transferências por aqui), mas ele simula com perfeição matemática tudo o que acontece no mercado. É o lugar pra você testar suas estratégias, ver seu patrimônio crescer no gráfico e sentir o gostinho de ser um tubarão antes mesmo de aportar na corretora.🔗 Cola no link: https://BRUN0XP5.github.io/cdi-tycoon💎 1. Suas Máquinas de Rendimento (O Coração do Game)No app, você não abre "contas", você constrói Ativos.O que são as Máquinas? São simuladores de CDB, Tesouro Direto e Caixinhas. Você configura quanto quer "depositar" (simulando seu dinheiro real) e o app começa a rodar os juros.Liquidez D+0 vs Travada: Você escolhe. Se colocar em D+0, o dinheiro tá sempre "na mão" no simulador. Se travar por 365 dias (FGC Max), o app te dá um bônus de rendimento, mas você não consegue "resgatar" no game até o prazo acabar. É pra treinar sua paciência!Configuração Livre: Quer ver o que acontece se um CDB pagar 110% do CDI? Você ajusta manualmente e o motor do app recalcula tudo na hora.📈 2. Realismo Total (API ao Vivo)O jogo é de mentira, mas os números são de verdade. A gente usa APIs profissionais pra você não viver numa bolha:Câmbio Real-Time: O Dólar (USD) e o Iene (JPY) sobem e descem conforme o mundo gira. A gente puxa os dados da AwesomeAPI.FIIs (Imóveis): Quer saber quanto o HGLG11 tá pagando de dividendo hoje? O app busca via MFinance. Você monta sua carteira de fundos imobiliários e vê o "aluguel" caindo todo mês no seu saldo do app.Imposto de Renda (IR): Aqui não tem surpresa. O app já desconta automaticamente o IR seguindo a tabela regressiva (quanto mais tempo o dinheiro fica, menos imposto paga). O lucro que aparece pra você já é o valor limpo.🏆 3. Nível, XP e as Skins (+20 Estilos)Aqui, cada real que você planeja e registra te dá 1 XP.Regra do Nível: A cada R$ 1.000,00 de Patrimônio Bruto, você sobe 1 Nível.Skins: A cada nível novo, você ganha uma Skin (visual) nova pras suas máquinas. Tem desde o visual Vaporwave (anos 80) até o Carbon Fiber (luxo puro). São mais de 20 pra colecionar.Skill Tree (Habilidades):LVL 5: Libera o gráfico de 10 anos. Dá pra ver como você vai estar rico lá na frente.LVL 10: Libera a Alquimia Financeira. O app te diz exatamente o dia em que você não vai mais precisar trabalhar (sua Independência Financeira).🛠️ 4. Segurança e UtilidadesPIN de 6 Dígitos: Pra ninguém mexer no seu império. Você ativa nas configurações e o app pede a senha toda vez que abrir.Auto-PIX: Essa função é pra te ajudar no mundo real. Você cadastra a chave PIX da sua corretora real. O app gera o QR Code pra você copiar, abrir o app do seu banco e mandar a grana de verdade pra lá. É o empurrãozinho que faltava pro seu aporte!Modo Ghost: Clica no "olhinho" e todos os valores somem. Ótimo pra mostrar o visual do app pros amigos sem mostrar quanto você tem na conta.🚀 Por que usar o CDI Tycoon?Porque investir sozinho é chato e perigoso. No Tycoon, você erra, testa e aprende sem risco, vendo seu nível subir e seu patrimônio brilhar na tela. É o treino pesado pra você ficar monstro na vida real.Autor: BRUN0XP5Dúvidas? Erros? Ideias de skins? Brota no GitHub e vamos buildar esse império juntos!
+Fala, tubarão do mercado! O **CDI Tycoon v0.40** chegou com tudo! Se você achava que investir era só acumular números, prepare-se para ostentar seu patrimônio com estilo e estratégia. 🚀
+
+---
+
+## 🕹️ O que há de novo na v0.40?
+
+### ✨ 1. Sistema de Skins & Customização (Visual)
+Agora seu status no mercado reflete no visual do app. Ganhe recompensas exclusivas:
+*   **Nome Colorido:** Nomes Dourados, Neon, Diamante... mostre quem manda.
+*   **Auras de Poder:** Efeitos visuais ao redor dos seus cards principais.
+*   **Fundos Exclusivos (Backgrounds):** Transforme o app com temas *Cyberpunk*, *Minimalista* ou *Luxo*.
+*   **Como ganhar?** Acumule depósitos via PIX (Gacha System) ou desbloqueie via conquistas.
+
+### 🔒 2. Progressão por Níveis (Level Gates)
+O jogo agora tem uma curva de aprendizado real. Funcionalidades avançadas exigem experiência:
+*   **Nível 1:** Acesso total a investimentos e conquistas.
+*   **Nível 2:** Desbloqueia **Câmbio Internacional (USD/JPY)** e **Alocação de Ativos**.
+*   **Nível 3:** Desbloqueia a poderosa **Calculadora de Juros Compostos**.
+*   *Quer usar tudo? Evolua seu perfil investindo!*
+
+### 💾 3. Backup Turbinado (.TXT)
+Seus dados são sagrados. O novo sistema de exportação gera um arquivo `.txt` completo e legível contendo:
+*   Perfil e Nível
+*   Todos os saldos e patrimônio
+*   Lista detalhada de máquinas e configurações
+*   Dívidas ativas
+*   Conquistas e Skins desbloqueadas
+
+### 🛠️ 4. Correções e Melhorias (Zero Bugs)
+*   **Scroll Horizontal:** Eliminado de todos os pop-ups (Skills, Conquistas, etc). Interface limpa!
+*   **Reset Diário:** Sistema reescrito do zero para respeitar seu fuso horário local. Suas conquistas diárias não resetam mais "do nada".
+*   **Benchmark:** Removido para deixar o app mais leve e focado.
+
+---
+
+## 🔗 Vem pro gain: [https://BRUN0XP5.github.io/cdi-tycoon](https://BRUN0XP5.github.io/cdi-tycoon)
+
+---
+
+### 💎 Funcionalidades Clássicas
+
+*   **Gestão de Liquidez:** D+0, 30 dias ou 365 dias (FGC Max). Você decide.
+*   **Câmbio Real:** Cotações ao vivo de Dólar e Iene via API.
+*   **FIIs na Veia:** Acompanhe rendimentos reais do mercado imobiliário.
+*   **Gamificação:** $1 investido = 1 XP. Suba de nível e ganhe vantagens.
+*   **Glassmorphism:** Interface premium, translúcida e moderna.
+
+---
+
+### 🚀 Stack de Elite (Dev Stuff)
+*   **React 19 + Vite 7:** Performance extrema.
+*   **Supabase:** Banco de dados em tempo real na nuvem.
+*   **PWA:** Instale como aplicativo nativo no celular ou PC.
+
+---
+
+**👨‍💻 Autor: BRUN0XP5**
+*Se curtiu a atualização, deixa aquela estrela (⭐) no repositório!*
