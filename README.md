@@ -6,7 +6,7 @@
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-Ready-orange?style=for-the-badge)
 
-**CDI Tycoon** não é apenas um simulador financeiro; é a sua jornada de Bronze a Magnata Lendário. Misturando matemática real de investimentos com mecânicas de RPG e Tycoon, aqui seu patrimônio gera XP, desbloqueia tecnologias e define seu status no mercado.
+** 🎮 CDI Tycoon** não é apenas um simulador financeiro; é a sua jornada de Bronze a Magnata Lendário. Misturando matemática real de investimentos com mecânicas de RPG e Tycoon, aqui seu patrimônio gera XP, desbloqueia tecnologias e define seu status no mercado.
 
 ---
 
@@ -20,12 +20,12 @@
 *   **Nível 2:** Desbloqueia o **Mercado de Câmbio (USD/JPY)** e a **Análise de Alocação**.
 *   **Nível 3:** Desbloqueia a **Calculadora de Juros Compostos** avançada.
 
-### � Gestão de Dívidas 2.0
+### 💳 Gestão de Dívidas 2.0
 *   **Categorias Personalizadas:** Crie suas próprias categorias com nomes e emojis (ex: 🍔 Lanche, 🚀 Foguete).
 *   **Saúde Financeira:** Visualize o cálculo em tempo real: `(Patrimônio + Salário) - Dívidas`.
 *   **Confirmação de Segurança:** Botão de exclusão com confirmação para evitar erros.
 
-### � Backup e Sincronização
+### 📂 Backup e Sincronização
 *   **Exportação .TXT:** Backup completo, legível e formatado de todo o seu progresso.
 *   **Reset Diário Local:** Sistema reescrito para respeitar o fuso horário do seu dispositivo, corrigindo o reset inesperado de conquistas.
 
@@ -33,7 +33,7 @@
 
 ## 🔥 Funcionalidades Completas (Tudo o que o App faz)
 
-### � Investimentos em Tempo Real
+### 📊 Investimentos em Tempo Real
 *   **Mineração de CDI:** Ativos rendem a cada 10 segundos baseados em taxas reais.
 *   **Diversidade de Papéis:** CDB, IPCA+, LCI e LCA (com isenção de IR).
 *   **Regras Reais:** Cálculo de **IOF (30 dias)** e **IR Regressivo** automático.
@@ -49,14 +49,14 @@
 *   **Árvore de Habilidades:** Desbloqueie gráficos de 10 anos, monitores de eficiência e calculadoras financeiras conforme sobe de nível.
 *   **Missões & Conquistas:** Mais de 20 conquistas com recompensas visuais e bônus.
 
-### �️ Tecnologia & UX
+### 💻 Tecnologia & UX
 *   **Offline Gold:** O juro composto continua trabalhando mesmo quando você fecha o app.
 *   **Cloud Sync:** Seus dados são salvos instantaneamente via **Supabase**.
 *   **PWA:** Instale no seu celular ou desktop como um app nativo. No iPhone, use "Adicionar à Tela de Início" pelo Safari; no Android/Chrome, clique em "Instalar".
 
 ---
 
-## 🔗 Comece a investir agora: [https://BRUN0XP5.github.io/cdi-tycoon (https://BRUN0XP5.github.io/cdi-tycoon)]
+## 🔗 Comece a investir agora: [app-perfeito.vercel.app]
 
 ---
 
