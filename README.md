@@ -43,7 +43,7 @@ Seus dados são sagrados. O novo sistema de exportação gera um arquivo `.txt` 
 
 ---
 
-## 🔗 Vem pro gain: [https://BRUN0XP5.github.io/cdi-tycoon](https://BRUN0XP5.github.io/cdi-tycoon)
+## 🔗 Vem pro gain: [https://app-perfeito.vercel.app/)
 
 ---
 
