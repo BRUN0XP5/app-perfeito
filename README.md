@@ -59,7 +59,30 @@
 ## 🔗 Comece a investir agora: https://app-perfeito.vercel.app
 
 ---
+🚀 Por que usar o CDI Tycoon?
+Se você ainda tá na dúvida se vale a pena gastar seu XP aqui, se liga na visão:
 
-**👨‍💻 Autor: BRUN0XP5**
-*Transformando o mercado financeiro em um playground estratégico.*
+🎮 1. O Jogo é a Melhor Escola
+Aprender sobre IOF, IR Regressivo e CDI lendo livro é um tédio. No CDI Tycoon, você aprende errando (e acertando) no jogo. É muito melhor perder "dinheiro de mentira" no simulador enquanto aprende a estratégia certa, do que perder dinheiro de verdade na corretora por falta de treino.
+
+🧠 2. Treino de Mentalidade (Mindset)
+O maior inimigo do investidor é a ansiedade. No app, você vê o poder dos juros compostos agindo em tempo real. Você começa a entender que resgatar dinheiro pra comprar bobeira hoje mata o seu eu rico de amanhã. É um treino de paciência digno de um mestre.
+
+🛡️ 3. Simulador de Crise e 
+Oportunidade
+O dólar subiu? O CDI caiu? No app, você testa essas variações sem risco. Você entende como o câmbio afeta seu patrimônio e aprende a diversificar pra não ficar refém de uma moeda só.
+
+🏆 4. Gamificação que Dá Lucro
+A gente transformou o tédio das planilhas em um RPG. Ganhar skins, subir de nível e desbloquear ferramentas novas faz com que você queira estudar finanças todo dia. Quando você perceber, o hábito de investir já tá no seu sangue.
+
+💻 5. De Dev para Dev (Open Source)
+O app é feito por quem entende de código. É liso, é rápido e agora é Open Source. Você pode ver como as contas são feitas, sugerir melhorias e entender a lógica por trás de cada rendimento.
+
+💡 Em resumo:
+O CDI Tycoon é onde você treina para ser o mestre do seu próprio destino financeiro. É a ponte entre o "não sei o que fazer com meu dinheiro" e o "estou construindo meu império".
+
+🧑‍💻 Autor: BRUN0XP5
+"Codificando a riqueza, o resto é só lag."
+
+
 *Se o app te ajudou a evoluir, deixe uma ⭐ no repositório!*
