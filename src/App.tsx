@@ -242,12 +242,14 @@ function App() {
   const [aporteValue, setAporteValue] = useState('')
   const [showAporteModal, setShowAporteModal] = useState(false)
   const [showConfirmResgate, setShowConfirmResgate] = useState<any>(null)
+  const [resgateValue, setResgateValue] = useState('')
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingMachine, setEditingMachine] = useState<any>(null)
   const [editName, setEditName] = useState('')
   const [editCDI, setEditCDI] = useState('')
   const [editValue, setEditValue] = useState('')
   const [editDate, setEditDate] = useState('')
+  const [editLimit, setEditLimit] = useState('')
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [historyData, setHistoryData] = useState<any[]>([])
 
@@ -405,6 +407,10 @@ function App() {
   const [newDebt, setNewDebt] = useState({ nome: '', valor: '', categoria: 'cartao', customIcon: '💸', customLabel: '' });
   const [confirmPayDebt, setConfirmPayDebt] = useState<any>(null);
 
+  // TERMS & PRIVACY STATE
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+
 
   // Achievement Checker - monitors transitions to show popups
   useEffect(() => {
@@ -498,92 +504,8 @@ function App() {
     saveAchievements();
   }, [persistedAchievements, session, isInitialLoadComplete]);
 
-  // Auto-save Streak no Supabase
-  // NEW ROBUST DAILY SYSTEM
+  // Streak reset logic handled inside loadPlayerData for atomicity
   const [resetCheckDone, setResetCheckDone] = useState(false);
-
-  useEffect(() => {
-    if (!session || !isInitialLoadComplete || resetCheckDone) return;
-
-    const handleDailySystem = async () => {
-      try {
-        // 1. Get Local Date String (YYYY-MM-DD)
-        const now = new Date();
-        const offset = now.getTimezoneOffset() * 60000;
-        const localDate = new Date(now.getTime() - offset);
-        const todayKey = localDate.toISOString().split('T')[0];
-
-        // 2. Fetch User Stats
-        const { data: stats, error } = await supabase
-          .from('user_stats')
-          .select('last_daily_reset, daily_streak, last_streak_date')
-          .eq('user_id', session.id)
-          .single();
-
-        if (error) throw error;
-
-        // 3. Logic: Is it a new day?
-        const lastReset = stats?.last_daily_reset;
-
-        if (lastReset !== todayKey) {
-          console.log(`🌅 NOVO DIA DETECTADO: ${todayKey} (Último: ${lastReset})`);
-
-          let newStreak = stats?.daily_streak || 0;
-          let streakBroken = false;
-
-          // Check streak continuity
-          if (stats?.last_streak_date) {
-            const lastStreakDate = new Date(stats.last_streak_date);
-            // Calculate overlapping "days" not just 24h hours
-            const diffTime = Math.abs(localDate.getTime() - lastStreakDate.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays > 1) {
-              newStreak = 0;
-              streakBroken = true;
-            }
-          }
-
-          // Reset Daily Achievements locally
-          const dailyIds = ACHIEVEMENTS.filter(a => a.category === 'daily').map(a => a.id);
-          setPersistedAchievements(prev => {
-            const next = { ...prev };
-            dailyIds.forEach(id => {
-              if (next[id]) next[id] = { ...next[id], unlocked: false, notified: false };
-            });
-            return next;
-          });
-
-          // Reset Daily Achievements in DB
-          await supabase.from('user_achievements')
-            .update({ unlocked: false, notified: false })
-            .eq('user_id', session.id)
-            .in('achievement_id', dailyIds);
-
-          // Update Stats
-          await supabase.from('user_stats').update({
-            last_daily_reset: todayKey,
-            daily_streak: newStreak,
-            last_deposit_value: 0
-          }).eq('user_id', session.id);
-
-          setDailyStreak(newStreak);
-          if (streakBroken) setNotification('💔 QUE PENA! SUA STREAK FOI ZERADA.');
-          else if (newStreak > 0) setNotification('☀️ BOM DIA! METAS DIÁRIAS RENOVADAS.');
-
-        } else {
-          console.log('✅ Dia já processado. Mantendo estado atual.');
-        }
-
-        setResetCheckDone(true);
-
-      } catch (err) {
-        console.error('Erro no sistema diário:', err);
-      }
-    };
-
-    handleDailySystem();
-  }, [session, isInitialLoadComplete, resetCheckDone]);
 
   // Auto-save Streak when changed (Debounced effect handled by simple logic)
   useEffect(() => {
@@ -680,7 +602,8 @@ function App() {
     setSkinCounts({
       carbon: 0, vaporwave: 0, glitch: 0, royal: 0, ghost: 0,
       cyber: 0, forest: 0, magma: 0, ice: 0, neon_pink: 0,
-      gold_black: 0, sunset: 0, space: 0, emerald: 0, hacker: 0
+      gold_black: 0, sunset: 0, space: 0, emerald: 0, hacker: 0,
+      plasma: 0, pixel_art: 0, aurora: 0, obsidian: 0, quantum: 0
     })
     setEquippedItems({ aura: '', nickColor: '', background: '', machineSkin: '' })
     setPersistedAchievements({})
@@ -738,6 +661,48 @@ function App() {
         setLastDepositValue(stats.last_deposit_value || 0);
         setDailyStreak(stats.daily_streak || 0);
         setLastStreakDate(stats.last_streak_date || '');
+
+        // SISTEMA DE RESET DIÁRIO ROBUSTO (Integrado)
+        const now = new Date();
+        const offset = now.getTimezoneOffset() * 60000;
+        const localDate = new Date(now.getTime() - offset);
+        const todayKey = localDate.toISOString().split('T')[0];
+        const lastReset = stats?.last_daily_reset;
+
+        if (lastReset !== todayKey) {
+          console.log(`🌅 NOVO DIA: ${todayKey} (Anterior: ${lastReset})`);
+
+          let newStreak = stats?.daily_streak || 0;
+          let streakBroken = false;
+
+          if (stats?.last_streak_date) {
+            const lastStreakDate = new Date(stats.last_streak_date);
+            const diffTime = Math.abs(localDate.getTime() - lastStreakDate.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays > 1) {
+              newStreak = 0;
+              streakBroken = true;
+            }
+          }
+
+          // Reset Daily Achievements in DB (Zera unlocked, notified e unlocked_at)
+          const dailyIds = ACHIEVEMENTS.filter(a => a.category === 'daily').map(a => a.id);
+          await supabase.from('user_achievements')
+            .update({ unlocked: false, notified: false, unlocked_at: null })
+            .eq('user_id', session.id)
+            .in('achievement_id', dailyIds);
+
+          // Update Stats
+          await supabase.from('user_stats').update({
+            last_daily_reset: todayKey,
+            daily_streak: newStreak,
+            last_deposit_value: 0
+          }).eq('user_id', session.id);
+
+          setDailyStreak(newStreak);
+          if (streakBroken) setNotification('💔 QUE PENA! SUA STREAK FOI ZERADA.');
+          else if (newStreak > 0) setNotification('☀️ BOM DIA! METAS DIÁRIAS RENOVADAS.');
+        }
       }
 
 
@@ -1112,18 +1077,23 @@ function App() {
   const historyStats = useMemo(() => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
 
     let totalToday = 0;
-    let total24h = 0;
+    let totalYesterday = 0;
 
     historyData.forEach(h => {
       const hDate = new Date(h.date);
-      if (hDate >= startOfToday) totalToday += h.total;
-      if (hDate >= twentyFourHoursAgo) total24h += h.total;
+      // Comparação de tempo exata para evitar sobreposição
+      if (hDate.getTime() === startOfToday.getTime()) {
+        totalToday += h.total;
+      } else if (hDate.getTime() === startOfYesterday.getTime()) {
+        totalYesterday += h.total;
+      }
     });
 
-    return { totalToday, total24h };
+    return { totalToday, total24h: totalYesterday };
   }, [historyData, currentDate]);
 
   const groupedHistory = useMemo(() => {
@@ -1337,36 +1307,80 @@ function App() {
   }
 
   const handleResgate = async () => {
-    const { error } = await supabase.from('maquinas').delete().eq('id', showConfirmResgate.id)
-    if (!error) {
-      const newBalance = balance + showConfirmResgate.valor
-      setBalance(newBalance)
-      setMachines(machines.filter(m => m.id !== showConfirmResgate.id))
-      await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance })
-      setShowConfirmResgate(null)
-      triggerSuccess('RESGATE CONCLUÍDO', 'O capital retornou ao saldo líquido.', '💰');
-      addActivity({
-        type: 'sell_machine',
-        label: 'ATIVO VENDIDO',
-        amount: showConfirmResgate.valor,
-        icon: '💰',
-        details: `Venda de ${showConfirmResgate.nome} por R$ ${showConfirmResgate.valor.toFixed(2)}`
-      });
+    if (!showConfirmResgate) return;
 
-      // Revelação de Conquistas Pendentes
-      const pendingToNotify = processedAchievements.filter(ach => {
-        const p = persistedAchievements[ach.id];
-        return ach.unlocked && (!p || !p.notified);
-      });
+    const amount = parseFloat(resgateValue) || showConfirmResgate.valor;
 
-      if (pendingToNotify.length > 0) {
-        setTimeout(() => {
-          const newPersisted = { ...persistedAchievements };
-          pendingToNotify.forEach(ach => {
-            newPersisted[ach.id] = { ...newPersisted[ach.id], notified: true };
-          });
-          setPersistedAchievements(newPersisted);
-        }, 1500);
+    if (amount > showConfirmResgate.valor + 0.0001) {
+      return setNotification('VALOR MAIOR QUE O DISPONÍVEL');
+    }
+
+    if (amount <= 0) {
+      return setNotification('VALOR INVÁLIDO');
+    }
+
+    const isTotal = Math.abs(amount - showConfirmResgate.valor) < 0.01;
+    const remainder = showConfirmResgate.valor - amount;
+
+    // Se não for total, precisa sobrar pelo menos 1 Real
+    if (!isTotal && remainder < 1.0) {
+      return setNotification('DEVE SOBRAR PELO MENOS R$ 1,00 NO ATIVO');
+    }
+
+    if (isTotal) {
+      const { error } = await supabase.from('maquinas').delete().eq('id', showConfirmResgate.id)
+      if (!error) {
+        const newBalance = balance + amount
+        setBalance(newBalance)
+        setMachines(machines.filter(m => m.id !== showConfirmResgate.id))
+        await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance })
+        setShowConfirmResgate(null)
+        setResgateValue('')
+        triggerSuccess('RESGATE CONCLUÍDO', 'O capital retornou ao saldo líquido.', '💰');
+        addActivity({
+          type: 'sell_machine',
+          label: 'ATIVO VENDIDO',
+          amount: amount,
+          icon: '💰',
+          details: `Venda de ${showConfirmResgate.nome} por R$ ${amount.toFixed(2)}`
+        });
+
+        // Revelação de Conquistas Pendentes
+        const pendingToNotify = processedAchievements.filter(ach => {
+          const p = persistedAchievements[ach.id];
+          return ach.unlocked && (!p || !p.notified);
+        });
+
+        if (pendingToNotify.length > 0) {
+          setTimeout(() => {
+            const newPersisted = { ...persistedAchievements };
+            pendingToNotify.forEach(ach => {
+              newPersisted[ach.id] = { ...newPersisted[ach.id], notified: true };
+            });
+            setPersistedAchievements(newPersisted);
+          }, 1500);
+        }
+      }
+    } else {
+      // Resgate Parcial
+      const { error } = await supabase.from('maquinas').update({ valor: remainder }).eq('id', showConfirmResgate.id)
+      if (!error) {
+        const newBalance = balance + amount
+        setBalance(newBalance)
+        setMachines(machines.map(m => m.id === showConfirmResgate.id ? { ...m, valor: remainder } : m))
+        await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance })
+        setShowConfirmResgate(null)
+        setResgateValue('')
+        triggerSuccess('RESGATE PARCIAL', 'Capital parcial resgatado com sucesso.', '💸');
+        addActivity({
+          type: 'partial_resgate',
+          label: 'RESGATE PARCIAL',
+          amount: amount,
+          icon: '💸',
+          details: `Resgate de R$ ${amount.toFixed(2)} de ${showConfirmResgate.nome}`
+        });
+      } else {
+        setNotification(`ERRO NO RESGATE: ${error.message}`);
       }
     }
   }
@@ -1416,11 +1430,12 @@ function App() {
       valor: parseFloat(editValue),
       cdi_quota: parseFloat(editCDI),
       vencimento: editDate || null,
-      skin: editSkin ? String(editSkin) : 'none'
+      skin: editSkin ? String(editSkin) : 'none',
+      max_capacity: editLimit ? parseFloat(editLimit) : null
     }
     const { error } = await supabase.from('maquinas').update(updatedFields).eq('id', editingMachine.id)
     if (!error) {
-      setMachines(machines.map(m => m.id === editingMachine.id ? { ...m, ...updatedFields } as Machine : m))
+      setMachines(machines.map(m => m.id === editingMachine.id ? { ...m, ...updatedFields } as any : m))
       triggerSuccess('CONFIGURAÇÕES SALVAS', 'As alterações foram sincronizadas na rede.', '⚙️');
       setShowEditModal(false)
     } else {
@@ -1428,6 +1443,28 @@ function App() {
     }
   }
 
+
+  const handleDeleteSkin = async (skinKey: string) => {
+    if (!skinCounts[skinKey] || skinCounts[skinKey] <= 0) return;
+
+    const confirmDelete = window.confirm(`Você tem certeza que deseja deletar 1 unidade da skin ${skinKey.toUpperCase()}? Esta ação é permanente.`);
+    if (!confirmDelete) return;
+
+    const newCount = skinCounts[skinKey] - 1;
+    const dbColumn = `skin_${skinKey}`;
+
+    const { error } = await supabase
+      .from('user_stats')
+      .update({ [dbColumn]: newCount })
+      .eq('user_id', session.id);
+
+    if (!error) {
+      setSkinCounts({ ...skinCounts, [skinKey]: newCount });
+      triggerSuccess('SKIN DELETADA', `Uma unidade de ${skinKey.toUpperCase()} foi removida.`, '🗑️');
+    } else {
+      setNotification(`ERRO AO DELETAR: ${error.message}`);
+    }
+  }
 
   const savePixKey = async () => {
     if (!session) return;
@@ -1536,6 +1573,7 @@ function App() {
   }
 
   const confirmPixPayment = async () => {
+    if (!isInitialLoadComplete) return setNotification('AGUARDE: CARREGANDO DADOS DO PERFIL...');
     const value = parseFloat(depositValue)
     const newBalance = balance + value
     const newPrincipal = totalPrincipalInvested + value
@@ -1848,23 +1886,26 @@ function App() {
     if (!session) {
       return (
         <div className="login-screen">
-          <div className="glass-panel login-card">
-            <h1 className="title">CDI_TYCOON</h1>
-            <form onSubmit={handleAuth}>
-              <div className="input-group">
-                <label htmlFor="login-user">NOME_PLAYER</label>
-                <input id="login-user" title="Nome do Jogador" placeholder="Seu apelido" type="text" value={username} onChange={e => setUsername(e.target.value)} required />
-              </div>
-              <div className="input-group" style={{ marginTop: '1rem' }}>
-                <label htmlFor="login-pass">SENHA</label>
-                <input id="login-pass" title="Senha de Acesso" placeholder="Sua senha" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
-              </div>
-              {error && <div style={{ color: '#FF4D4D', fontSize: '0.7rem', marginTop: '1rem' }}>{error}</div>}
-              <button type="submit" className="primary-btn" style={{ marginTop: '2rem' }}>ENTRAR</button>
-            </form>
-            <button className="text-link" style={{ background: 'none', border: 'none', color: '#fff', marginTop: '1rem', width: '100%', cursor: 'pointer', opacity: 0.6 }} onClick={() => setIsRegistering(!isRegistering)}>
-              {isRegistering ? 'VOLTAR' : 'CRIAR PERSONAGEM'}
-            </button>
+          <div className="glass-panel login-card" style={{ padding: 0, overflow: 'hidden' }}>
+
+            <div style={{ padding: '2rem' }}>
+              <h1 className="title" style={{ marginTop: 0 }}>CDI_TYCOON</h1>
+              <form onSubmit={handleAuth}>
+                <div className="input-group">
+                  <label htmlFor="login-user">NOME_PLAYER</label>
+                  <input id="login-user" title="Nome do Jogador" placeholder="Seu apelido" type="text" value={username} onChange={e => setUsername(e.target.value)} required />
+                </div>
+                <div className="input-group" style={{ marginTop: '1rem' }}>
+                  <label htmlFor="login-pass">SENHA</label>
+                  <input id="login-pass" title="Senha de Acesso" placeholder="Sua senha" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+                </div>
+                {error && <div style={{ color: '#FF4D4D', fontSize: '0.7rem', marginTop: '1rem' }}>{error}</div>}
+                <button type="submit" className="primary-btn" style={{ marginTop: '2rem' }}>ENTRAR</button>
+              </form>
+              <button className="text-link" style={{ background: 'none', border: 'none', color: '#fff', marginTop: '1rem', width: '100%', cursor: 'pointer', opacity: 0.6 }} onClick={() => setIsRegistering(!isRegistering)}>
+                {isRegistering ? 'VOLTAR' : 'CRIAR PERSONAGEM'}
+              </button>
+            </div>
           </div>
         </div>
       )
@@ -2210,6 +2251,7 @@ function App() {
                               setEditCDI(m.cdi_quota.toString());
                               setEditDate(m.vencimento || '');
                               setEditSkin(m.skin || '');
+                              setEditLimit(m.max_capacity?.toString() || '');
                               setShowEditModal(true);
                             }}
                             title="Editar Ativo"
@@ -2237,11 +2279,27 @@ function App() {
                       <p style={{ margin: '2px 0', fontSize: '1rem', color: isBusinessDay ? '#00E676' : '#FF4D4D', fontWeight: 900, fontFamily: 'JetBrains Mono', textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>
                         {(m.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                      </div>
                       {m.vencimento && (
-                        <div style={{ fontSize: '0.5rem', color: new Date(m.vencimento) <= currentDate ? '#00E676' : '#FFD700', fontWeight: 900 }}>
+                        <div style={{ fontSize: '0.5rem', color: new Date(m.vencimento) <= currentDate ? '#00E676' : '#FFD700', fontWeight: 900, marginTop: '4px' }}>
                           {(m.vencimento && new Date(m.vencimento) <= currentDate) ? 'DISPONÍVEL' : (m.vencimento ? `LIBERA: ${new Date(m.vencimento).toLocaleDateString('pt-BR')}` : 'SEM PRAZO')}
+                        </div>
+                      )}
+                      {m.max_capacity && m.max_capacity > 0 && (
+                        <div style={{ marginTop: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.45rem', fontWeight: 900, marginBottom: '3px' }}>
+                            <span style={{ color: '#00A3FF', letterSpacing: '0.5px' }}>PROGRESSO DA META</span>
+                            <span style={{ color: (m.valor / m.max_capacity) >= 1 ? '#00E676' : '#aaa' }}>{Math.min(100, (m.valor / m.max_capacity) * 100).toFixed(0)}%</span>
+                          </div>
+                          <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.02)' }}>
+                            <div style={{
+                              height: '100%',
+                              width: `${Math.min(100, (m.valor / m.max_capacity) * 100)}%`,
+                              background: (m.valor / m.max_capacity) >= 1 ? 'linear-gradient(90deg, #00E676, #00ff80)' : 'linear-gradient(90deg, #00A3FF, #00E676)',
+                              boxShadow: (m.valor / m.max_capacity) >= 1 ? '0 0 10px rgba(0, 230, 118, 0.4)' : 'none',
+                              transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                            }}></div>
+                          </div>
+                          <div style={{ fontSize: '0.4rem', opacity: 0.4, textAlign: 'right', marginTop: '2px', fontWeight: 700 }}>META: R$ {m.max_capacity.toLocaleString('pt-BR')}</div>
                         </div>
                       )}
                     </div>
@@ -2249,7 +2307,7 @@ function App() {
                   <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
                     <button className="action-btn aporte" style={{ flex: 2, padding: '10px 8px', fontSize: '0.7rem' }} onClick={() => { setSelectedMachine(m); setShowAporteModal(true); setAporteValue(''); }}>APORTE</button>
                     {(m.vencimento && new Date(m.vencimento) <= currentDate) ? (
-                      <button className="action-btn vender-solid" style={{ flex: 1, padding: '10px 8px', fontSize: '0.65rem' }} onClick={() => setShowConfirmResgate(m)}>VENDER</button>
+                      <button className="action-btn vender-solid" style={{ flex: 1, padding: '10px 8px', fontSize: '0.65rem' }} onClick={() => { setShowConfirmResgate(m); setResgateValue(''); }}>RESGATAR</button>
                     ) : (
                       <button className="action-btn" disabled style={{ flex: 1, padding: '10px 8px', fontSize: '0.55rem', opacity: 0.5, cursor: 'not-allowed', background: '#333' }}>BLOQUEADO</button>
                     )}
@@ -2304,13 +2362,75 @@ function App() {
 
         {
           showConfirmResgate && (
-            <div className="modal-overlay">
-              <div className="glass-panel modal-content">
-                <h3>VENDER ATIVO?</h3>
-                <p style={{ fontSize: '0.7rem', opacity: 0.7 }}>{(showConfirmResgate?.nome || 'ATIVO').toUpperCase()} - {(showConfirmResgate?.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                <div style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
-                  <button className="action-btn" style={{ flex: 1 }} onClick={() => setShowConfirmResgate(null)}>CANCELAR</button>
-                  <button className="primary-btn" style={{ flex: 1, background: '#FF4D4D' }} onClick={handleResgate}>VENDER</button>
+            <div className="modal-overlay" onClick={() => setShowConfirmResgate(null)}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden', borderRadius: '24px', border: 'none', position: 'relative' }}>
+                <button onClick={() => setShowConfirmResgate(null)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
+                <div style={{ background: 'linear-gradient(135deg, #FF4D4D 0%, #D32F2F 100%)', padding: '1.5rem', textAlign: 'center' }}>
+                  <h3 style={{ margin: 0, fontSize: '0.9rem', letterSpacing: '2px', fontWeight: 900, color: '#fff' }}>RESGATE_DE_CAPITAL</h3>
+                  <p style={{ margin: '5px 0 0 0', fontSize: '0.65rem', opacity: 0.8, color: '#fff', fontWeight: 700 }}>{showConfirmResgate?.nome.toUpperCase()}</p>
+                </div>
+
+                <div style={{ padding: '1.5rem' }}>
+                  <div className="input-group">
+                    <label htmlFor="resgate-input" style={{ fontSize: '0.55rem', color: '#FF4D4D', fontWeight: 900, marginBottom: '8px', display: 'block', letterSpacing: '1px' }}>VALOR PARA RESGATE (R$)</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        id="resgate-input"
+                        title="Valor do Resgate"
+                        autoFocus
+                        type="number"
+                        placeholder={showConfirmResgate.valor.toFixed(2)}
+                        value={resgateValue}
+                        onChange={e => setResgateValue(e.target.value)}
+                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255, 77, 77, 0.2)', color: '#fff', padding: '15px', borderRadius: '14px', width: '100%', fontSize: '1.3rem', fontWeight: 800, outline: 'none' }}
+                      />
+                      <button
+                        onClick={() => setResgateValue(showConfirmResgate.valor.toString())}
+                        style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255, 77, 77, 0.2)', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.55rem', fontWeight: 900, cursor: 'pointer' }}
+                      >
+                        TUDO
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '1.2rem', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', fontSize: '0.6rem', opacity: 0.6, textAlign: 'center' }}>
+                    Saldo disponível para resgate: <span style={{ color: '#fff', fontWeight: 800 }}>{formatBRLWithPrecision(showConfirmResgate.valor)}</span>
+                  </div>
+
+                  {resgateValue && !isNaN(parseFloat(resgateValue)) && (
+                    <div style={{ marginTop: '1.5rem', padding: '12px', background: 'rgba(255, 77, 77, 0.05)', borderRadius: '16px', border: '1px solid rgba(255, 77, 77, 0.1)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '0.55rem', fontWeight: 800, opacity: 0.6 }}>REMANESCENTE NO ATIVO:</span>
+                        <span style={{ fontSize: '0.55rem', fontWeight: 900, color: (showConfirmResgate.valor - parseFloat(resgateValue)) >= 1 ? '#00E676' : '#FF4D4D' }}>
+                          {formatBRLWithPrecision(Math.max(0, showConfirmResgate.valor - parseFloat(resgateValue)))}
+                        </span>
+                      </div>
+                      {(showConfirmResgate.valor - parseFloat(resgateValue)) < 1 && Math.abs(showConfirmResgate.valor - parseFloat(resgateValue)) > 0.001 && (
+                        <div style={{ fontSize: '0.5rem', color: '#FF4D4D', fontWeight: 800, marginTop: '4px' }}>⚠️ MÍNIMO DE R$ 1,00 PARA MANTER O ATIVO ATIVO.</div>
+                      )}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '1.5rem' }}>
+                    <button className="action-btn" style={{ flex: 1, padding: '15px', borderRadius: '14px', fontSize: '0.7rem', fontWeight: 800 }} onClick={() => setShowConfirmResgate(null)}>CANCELAR</button>
+                    <button
+                      className="primary-btn"
+                      style={{
+                        flex: 1.5,
+                        background: '#FF4D4D',
+                        color: '#fff',
+                        padding: '15px',
+                        borderRadius: '14px',
+                        fontSize: '0.7rem',
+                        fontWeight: 900,
+                        cursor: 'pointer',
+                        boxShadow: '0 10px 20px rgba(255, 77, 77, 0.2)'
+                      }}
+                      onClick={handleResgate}
+                    >
+                      CONFIRMAR RESGATE
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2352,6 +2472,7 @@ function App() {
                           return (
                             <>
                               <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#fff' }}>R$ {current.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.5 }}>/dia</span></div>
+                              <div style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 700, marginTop: '2px' }}>R$ {current.week.toFixed(2)}/semana</div>
                               <div style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 700, marginTop: '2px' }}>R$ {current.month.toFixed(2)}/mês</div>
                             </>
                           );
@@ -2366,6 +2487,7 @@ function App() {
                           return (
                             <>
                               <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#00E676' }}>R$ {next.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.7 }}>/dia</span></div>
+                              <div style={{ fontSize: '0.65rem', color: '#00E676', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>R$ {next.week.toFixed(2)}/semana</div>
                               <div style={{ fontSize: '0.65rem', color: '#00E676', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>R$ {next.month.toFixed(2)}/mês</div>
                             </>
                           );
@@ -2678,7 +2800,7 @@ function App() {
                         style={{ width: '100%', padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 700 }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.5rem', color: '#aaa', fontWeight: 800, marginBottom: '4px', display: 'block' }}>LIMITE (R$)</label>
+                      <label style={{ fontSize: '0.5rem', color: '#aaa', fontWeight: 800, marginBottom: '4px', display: 'block' }}>META (R$)</label>
                       <input type="number" placeholder="∞" value={newMachineLimit} onChange={e => setNewMachineLimit(e.target.value)}
                         style={{ width: '100%', padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 700 }} />
                     </div>
@@ -2735,6 +2857,10 @@ function App() {
                     <label htmlFor="edit-mach-date" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>VENCIMENTO</label>
                     <input id="edit-mach-date" title="Data de Vencimento" type="date" value={editDate} onChange={e => setEditDate(e.target.value)} />
                   </div>
+                </div>
+                <div style={{ marginBottom: '10px' }}>
+                  <label htmlFor="edit-mach-limit" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>META FINANCEIRA (R$)</label>
+                  <input id="edit-mach-limit" title="Meta Financeira" type="number" placeholder="∞" value={editLimit} onChange={e => setEditLimit(e.target.value)} />
                 </div>
                 <div style={{ marginBottom: '10px' }}>
                   <label style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>SKIN VISUAL</label>
@@ -2915,7 +3041,44 @@ function App() {
                     </div>
                   </div>
 
-                  {/* 3. DADOS */}
+                  {/* 3. GERENCIAR SKINS */}
+                  <div style={{ marginBottom: '24px' }}>
+                    <label style={{ fontSize: '0.65rem', color: '#00A3FF', fontWeight: 800, marginBottom: '12px', display: 'block', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Gerenciar Inventário</label>
+                    <div className="custom-scrollbar" style={{ maxHeight: '160px', overflowY: 'auto', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      {Object.keys(skinCounts).filter(s => skinCounts[s] > 0).length === 0 ? (
+                        <p style={{ fontSize: '0.6rem', opacity: 0.5, textAlign: 'center', margin: '10px 0' }}>Nenhuma skin no inventário.</p>
+                      ) : (
+                        Object.entries(skinCounts).map(([key, count]: [string, any]) => {
+                          if (count <= 0) return null;
+                          return (
+                            <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                              <div>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff' }}>{key.toUpperCase()}</div>
+                                <div style={{ fontSize: '0.55rem', color: '#aaa' }}>Possui: {count}</div>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteSkin(key)}
+                                style={{
+                                  background: 'rgba(255, 77, 77, 0.1)',
+                                  border: '1px solid rgba(255, 77, 77, 0.2)',
+                                  color: '#FF4D4D',
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.5rem',
+                                  fontWeight: 900,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                DELETAR
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 4. DADOS */}
                   <div>
                     <label style={{ fontSize: '0.65rem', color: '#FF4D4D', fontWeight: 800, marginBottom: '12px', display: 'block', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Zona de Perigo</label>
 
@@ -3070,7 +3233,7 @@ function App() {
                     border: '1px solid rgba(0, 163, 255, 0.2)',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '0.45rem', color: '#00A3FF', fontWeight: 900, letterSpacing: '2.5px', marginBottom: '4px' }}>ÚLTIMAS 24H</div>
+                    <div style={{ fontSize: '0.45rem', color: '#00A3FF', fontWeight: 900, letterSpacing: '2.5px', marginBottom: '4px' }}>LUCRO ONTEM</div>
                     <div style={{ fontSize: '1rem', fontWeight: 900, color: '#fff', fontFamily: 'JetBrains Mono' }}>
                       {formatBRLWithPrecision(historyStats.total24h)}
                     </div>
@@ -3203,6 +3366,22 @@ function App() {
                         <span>☕</span> APOIAR CRIADOR (PIX)
                       </button>
                     </div>
+
+                    <div style={{ marginTop: '1.5rem', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => setShowTermsModal(true)}
+                        style={{ background: 'transparent', border: 'none', color: '#00A3FF', fontSize: '0.6rem', fontWeight: 900, cursor: 'pointer', opacity: 0.8, textDecoration: 'underline' }}
+                      >
+                        TERMOS DE USO
+                      </button>
+                      <button
+                        onClick={() => setShowPrivacyModal(true)}
+                        style={{ background: 'transparent', border: 'none', color: '#00A3FF', fontSize: '0.6rem', fontWeight: 900, cursor: 'pointer', opacity: 0.8, textDecoration: 'underline' }}
+                      >
+                        POLÍTICA DE PRIVACIDADE
+                      </button>
+                    </div>
+
                     <div style={{ marginTop: '1rem', fontSize: '0.55rem', opacity: 0.3, textAlign: 'center', fontWeight: 800 }}>
                       SYSTEM VERSION v0.40.0 beta
                     </div>
@@ -3212,6 +3391,47 @@ function App() {
                 <div style={{ display: 'flex', gap: '10px', marginTop: '1.5rem' }}>
                   <button className="primary-btn" style={{ flex: 1 }} onClick={() => setShowHelpModal(false)}>ENTENDI TUDO!</button>
                 </div>
+              </div>
+            </div>
+          )
+        }
+
+        {
+          showTermsModal && (
+            <div className="modal-overlay" style={{ zIndex: 6000 }} onClick={() => setShowTermsModal(false)}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '95%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
+                  <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#00A3FF', fontWeight: 900 }}>📝 TERMOS DE USO</h2>
+                  <button onClick={() => setShowTermsModal(false)} className="icon-btn-small">✖</button>
+                </div>
+                <div style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '12px', fontSize: '0.75rem', lineHeight: '1.6', color: '#fff', opacity: 0.9 }}>
+                  <p><strong>1. Natureza do Serviço:</strong> O CDI Tycoon é uma ferramenta de simulação educacional e entretenimento. Nenhum valor ou rendimento exibido representa dinheiro real.</p>
+                  <p><strong>2. Precisão:</strong> Embora utilizemos taxas reais (Selic, CDI, IPCA), os cálculos podem sofrer variações em relação ao mercado real devido a latências.</p>
+                  <p><strong>3. Responsabilidade:</strong> As decisões financeiras tomadas pelo usuário fora do app são de sua inteira responsabilidade. Consulte profissionais certificados.</p>
+                  <p><strong>4. Propriedade:</strong> Todo o código e design pertencem ao autor (BRUN0XP5).</p>
+                  <p><strong>5. Conduta:</strong> Não é permitido o uso de scripts ou automações para ganho artificial de patrimônio.</p>
+                </div>
+                <button className="primary-btn" style={{ marginTop: '1.5rem', width: '100%' }} onClick={() => setShowTermsModal(false)}>FECHAR</button>
+              </div>
+            </div>
+          )
+        }
+
+        {
+          showPrivacyModal && (
+            <div className="modal-overlay" style={{ zIndex: 6000 }} onClick={() => setShowPrivacyModal(false)}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '95%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
+                  <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#00A3FF', fontWeight: 900 }}>🛡️ PRIVACIDADE</h2>
+                  <button onClick={() => setShowPrivacyModal(false)} className="icon-btn-small">✖</button>
+                </div>
+                <div style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '12px', fontSize: '0.75rem', lineHeight: '1.6', color: '#fff', opacity: 0.9 }}>
+                  <p><strong>1. Coleta:</strong> Coletamos apenas dados para o funcionamento da simulação (username, senha criptografada e progresso).</p>
+                  <p><strong>2. Armazenamento:</strong> Os dados são sincronizados via Supabase e salvos localmente para manter a sessão.</p>
+                  <p><strong>3. Terceiros:</strong> Usamos APIs públicas para cotações. Nenhuma informação pessoal sua é enviada a esses serviços.</p>
+                  <p><strong>4. Segurança:</strong> Seus dados não são vendidos ou compartilhados. O foco é educação e entretenimento.</p>
+                </div>
+                <button className="primary-btn" style={{ marginTop: '1.5rem', width: '100%' }} onClick={() => setShowPrivacyModal(false)}>FECHAR</button>
               </div>
             </div>
           )
@@ -4063,166 +4283,167 @@ function App() {
 
         {/* Global Action Success Popup */}
         {/* DEBTS MODAL */}
-        {showDebtsModal && (
-          <div className="modal-overlay" onClick={() => setShowDebtsModal(false)}>
-            <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px', maxHeight: '85vh', overflow: 'auto', overflowX: 'hidden' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h2 style={{ color: '#FF4D4D', margin: 0 }}>📉 DÍVIDAS & DÉBITOS</h2>
-                <button className="action-btn" onClick={() => setShowDebtsModal(false)} style={{ padding: '4px 8px' }}>X</button>
-              </div>
-
-              {/* SALARY SETUP */}
-              <div style={{ background: 'rgba(0, 163, 255, 0.05)', padding: '15px', borderRadius: '12px', marginBottom: '1rem', border: '1px solid rgba(0, 163, 255, 0.2)' }}>
-                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.7rem', color: '#00A3FF' }}>CONFIGURAR SALÁRIO MENSAL</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', alignItems: 'center' }}>
-                  <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.6rem', color: '#00A3FF', fontWeight: 900 }}>R$</span>
-                    <input
-                      type="number"
-                      placeholder="SALÁRIO"
-                      value={salary || ''}
-                      onChange={e => updateSalary(parseFloat(e.target.value) || 0)}
-                      style={{ width: '100%', background: '#000', border: '1px solid #00A3FF33', padding: '10px 10px 10px 25px', color: '#fff', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 900 }}
-                    />
-                  </div>
-                  <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.6rem', color: '#00A3FF', fontWeight: 900 }}>DIA</span>
-                    <input
-                      type="number"
-                      placeholder="DIA"
-                      min="1"
-                      max="31"
-                      value={salaryDay || ''}
-                      onChange={e => updateSalaryDay(parseInt(e.target.value) || 1)}
-                      style={{ width: '100%', background: '#000', border: '1px solid #00A3FF33', padding: '10px 10px 10px 35px', color: '#fff', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 900 }}
-                    />
-                  </div>
+        {
+          showDebtsModal && (
+            <div className="modal-overlay" onClick={() => setShowDebtsModal(false)}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px', maxHeight: '85vh', overflow: 'auto', overflowX: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h2 style={{ color: '#FF4D4D', margin: 0 }}>📉 DÍVIDAS & DÉBITOS</h2>
+                  <button className="action-btn" onClick={() => setShowDebtsModal(false)} style={{ padding: '4px 8px' }}>X</button>
                 </div>
-                <p style={{ fontSize: '0.55rem', color: '#aaa', marginTop: '8px' }}>Seu salário cai todo dia {salaryDay}. Usamos isso para projetar seu aumento de capital.</p>
-              </div>
 
-              {/* CREATE DEBT FORM */}
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.7rem', color: '#aaa' }}>REGISTRAR NOVA DÍVIDA</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <input
-                    placeholder="NOME DA DÍVIDA"
-                    value={newDebt.nome}
-                    onChange={e => setNewDebt({ ...newDebt, nome: e.target.value })}
-                    style={{ background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', borderRadius: '6px', fontSize: '0.7rem' }}
-                  />
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      type="number"
-                      placeholder="VALOR (R$)"
-                      value={newDebt.valor}
-                      onChange={e => setNewDebt({ ...newDebt, valor: e.target.value })}
-                      style={{ flex: 1, background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', borderRadius: '6px', fontSize: '0.7rem' }}
-                    />
-                    <select
-                      value={newDebt.categoria}
-                      onChange={e => setNewDebt({ ...newDebt, categoria: e.target.value })}
-                      style={{ background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', borderRadius: '6px', fontSize: '0.7rem' }}
-                    >
-                      <option value="cartao">💳 CARTÃO</option>
-                      <option value="emprestimo">🏦 EMPRÉSTIMO</option>
-                      <option value="custom">✨ PERSONALIZADA</option>
-                    </select>
+                {/* SALARY SETUP */}
+                <div style={{ background: 'rgba(0, 163, 255, 0.05)', padding: '15px', borderRadius: '12px', marginBottom: '1rem', border: '1px solid rgba(0, 163, 255, 0.2)' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '0.7rem', color: '#00A3FF' }}>CONFIGURAR SALÁRIO MENSAL</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.6rem', color: '#00A3FF', fontWeight: 900 }}>R$</span>
+                      <input
+                        type="number"
+                        placeholder="SALÁRIO"
+                        value={salary || ''}
+                        onChange={e => updateSalary(parseFloat(e.target.value) || 0)}
+                        style={{ width: '100%', background: '#000', border: '1px solid #00A3FF33', padding: '10px 10px 10px 25px', color: '#fff', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 900 }}
+                      />
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.6rem', color: '#00A3FF', fontWeight: 900 }}>DIA</span>
+                      <input
+                        type="number"
+                        placeholder="DIA"
+                        min="1"
+                        max="31"
+                        value={salaryDay || ''}
+                        onChange={e => updateSalaryDay(parseInt(e.target.value) || 1)}
+                        style={{ width: '100%', background: '#000', border: '1px solid #00A3FF33', padding: '10px 10px 10px 35px', color: '#fff', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 900 }}
+                      />
+                    </div>
                   </div>
+                  <p style={{ fontSize: '0.55rem', color: '#aaa', marginTop: '8px' }}>Seu salário cai todo dia {salaryDay}. Usamos isso para projetar seu aumento de capital.</p>
+                </div>
 
-                  {newDebt.categoria === 'custom' && (
+                {/* CREATE DEBT FORM */}
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '0.7rem', color: '#aaa' }}>REGISTRAR NOVA DÍVIDA</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <input
+                      placeholder="NOME DA DÍVIDA"
+                      value={newDebt.nome}
+                      onChange={e => setNewDebt({ ...newDebt, nome: e.target.value })}
+                      style={{ background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', borderRadius: '6px', fontSize: '0.7rem' }}
+                    />
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <input
-                        placeholder="📦 ÍCONE"
-                        value={newDebt.customIcon}
-                        onChange={e => setNewDebt({ ...newDebt, customIcon: e.target.value })}
-                        style={{ width: '60px', background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', borderRadius: '6px', fontSize: '0.7rem', textAlign: 'center' }}
-                      />
-                      <input
-                        placeholder="NOME DA CATEGORIA (Ex: GASTOS)"
-                        value={newDebt.customLabel}
-                        onChange={e => setNewDebt({ ...newDebt, customLabel: e.target.value })}
+                        type="number"
+                        placeholder="VALOR (R$)"
+                        value={newDebt.valor}
+                        onChange={e => setNewDebt({ ...newDebt, valor: e.target.value })}
                         style={{ flex: 1, background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', borderRadius: '6px', fontSize: '0.7rem' }}
                       />
+                      <select
+                        value={newDebt.categoria}
+                        onChange={e => setNewDebt({ ...newDebt, categoria: e.target.value })}
+                        style={{ background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', borderRadius: '6px', fontSize: '0.7rem' }}
+                      >
+                        <option value="cartao">💳 CARTÃO</option>
+                        <option value="emprestimo">🏦 EMPRÉSTIMO</option>
+                        <option value="custom">✨ PERSONALIZADA</option>
+                      </select>
                     </div>
-                  )}
-                  <button className="action-btn" onClick={createDebt} style={{ background: '#FF4D4D', color: '#fff', border: 'none', padding: '10px', fontWeight: 900 }}>ADICIONAR DÍVIDA</button>
-                </div>
-              </div>
 
-              {/* DEBT LIST */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', color: '#aaa', padding: '0 5px' }}>
-                  <span>DÍVIDAS ATIVAS</span>
-                  <span>TOTAL: R$ {debts.reduce((s, d) => s + d.valor, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                </div>
-
-                {/* CALCULO DE SAÚDE FINANCEIRA */}
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px', marginBottom: '10px', fontSize: '0.7rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ color: '#aaa' }}>PATRIMÔNIO BRUTO:</span>
-                    <span style={{ color: '#fff' }}>R$ {formatBRLWithPrecision(totalPatrimony)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ color: '#aaa' }}>+ SALÁRIO ESTIMADO:</span>
-                    <span style={{ color: '#00E676' }}>R$ {(salary || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '4px', paddingTop: '4px', display: 'flex', justifyContent: 'space-between', fontWeight: 900 }}>
-                    <span style={{ color: '#aaa' }}>DISPONÍVEL REAL:</span>
-                    <span style={{ color: (totalPatrimony + (salary || 0) - debts.reduce((s, d) => s + d.valor, 0)) >= 0 ? '#00E676' : '#FF4D4D' }}>
-                      R$ {(totalPatrimony + (salary || 0) - debts.reduce((s, d) => s + d.valor, 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
+                    {newDebt.categoria === 'custom' && (
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input
+                          placeholder="📦 ÍCONE"
+                          value={newDebt.customIcon}
+                          onChange={e => setNewDebt({ ...newDebt, customIcon: e.target.value })}
+                          style={{ width: '60px', background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', borderRadius: '6px', fontSize: '0.7rem', textAlign: 'center' }}
+                        />
+                        <input
+                          placeholder="NOME DA CATEGORIA (Ex: GASTOS)"
+                          value={newDebt.customLabel}
+                          onChange={e => setNewDebt({ ...newDebt, customLabel: e.target.value })}
+                          style={{ flex: 1, background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', borderRadius: '6px', fontSize: '0.7rem' }}
+                        />
+                      </div>
+                    )}
+                    <button className="action-btn" onClick={createDebt} style={{ background: '#FF4D4D', color: '#fff', border: 'none', padding: '10px', fontWeight: 900 }}>ADICIONAR DÍVIDA</button>
                   </div>
                 </div>
 
-                {debts.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', opacity: 0.5, border: '1px dashed #333', borderRadius: '12px' }}>
-                    NENHUMA DÍVIDA PENDENTE. BOM TRABALHO!
+                {/* DEBT LIST */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', color: '#aaa', padding: '0 5px' }}>
+                    <span>DÍVIDAS ATIVAS</span>
+                    <span>TOTAL: R$ {debts.reduce((s, d) => s + d.valor, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                   </div>
-                ) : (
-                  debts.map(d => (
-                    <div key={d.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontSize: '0.55rem', opacity: 0.6, textTransform: 'uppercase' }}>
-                          {(() => {
-                            if (d.categoria === 'cartao') return '💳 CARTÃO';
-                            if (d.categoria === 'emprestimo') return '🏦 EMPRÉSTIMO';
-                            if (d.categoria?.startsWith('CUSTOM:')) {
-                              const parts = d.categoria.split(':');
-                              return `${parts[1] || '✨'} ${parts[2] || 'OUTRO'}`;
-                            }
-                            return `❓ ${d.categoria || 'DÍVIDA'}`;
-                          })()}
+
+                  {/* CALCULO DE SAÚDE FINANCEIRA */}
+                  <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px', marginBottom: '10px', fontSize: '0.7rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: '#aaa' }}>PATRIMÔNIO BRUTO:</span>
+                      <span style={{ color: '#fff' }}>R$ {formatBRLWithPrecision(totalPatrimony)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: '#aaa' }}>+ SALÁRIO ESTIMADO:</span>
+                      <span style={{ color: '#00E676' }}>R$ {(salary || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '4px', paddingTop: '4px', display: 'flex', justifyContent: 'space-between', fontWeight: 900 }}>
+                      <span style={{ color: '#aaa' }}>DISPONÍVEL REAL:</span>
+                      <span style={{ color: (totalPatrimony + (salary || 0) - debts.reduce((s, d) => s + d.valor, 0)) >= 0 ? '#00E676' : '#FF4D4D' }}>
+                        R$ {(totalPatrimony + (salary || 0) - debts.reduce((s, d) => s + d.valor, 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {debts.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '20px', opacity: 0.5, border: '1px dashed #333', borderRadius: '12px' }}>
+                      NENHUMA DÍVIDA PENDENTE. BOM TRABALHO!
+                    </div>
+                  ) : (
+                    debts.map(d => (
+                      <div key={d.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: '0.55rem', opacity: 0.6, textTransform: 'uppercase' }}>
+                            {(() => {
+                              if (d.categoria === 'cartao') return '💳 CARTÃO';
+                              if (d.categoria === 'emprestimo') return '🏦 EMPRÉSTIMO';
+                              if (d.categoria?.startsWith('CUSTOM:')) {
+                                const parts = d.categoria.split(':');
+                                return `${parts[1] || '✨'} ${parts[2] || 'OUTRO'}`;
+                              }
+                              return `❓ ${d.categoria || 'DÍVIDA'}`;
+                            })()}
+                          </div>
+                          <div style={{ fontWeight: 900, fontSize: '0.85rem', color: '#fff' }}>{d.nome}</div>
+                          <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#FF4D4D' }}>R$ {d.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                         </div>
-                        <div style={{ fontWeight: 900, fontSize: '0.85rem', color: '#fff' }}>{d.nome}</div>
-                        <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#FF4D4D' }}>R$ {d.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <button
+                            onClick={() => setConfirmPayDebt(d)}
+                            className="action-btn"
+                            style={{ padding: '6px 12px', fontSize: '0.65rem', background: 'rgba(0, 230, 118, 0.1)', border: '1px solid #00E676', color: '#00E676' }}
+                          >
+                            PAGAR
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteDebt(d.id)}
+                            className="action-btn"
+                            style={{ padding: '6px 10px', fontSize: '0.65rem', background: confirmDeleteDebt === d.id ? '#FF4D4D' : 'rgba(255, 77, 77, 0.1)', border: '1px solid #FF4D4D', color: confirmDeleteDebt === d.id ? '#fff' : '#FF4D4D', marginLeft: '8px' }}
+                          >
+                            {confirmDeleteDebt === d.id ? '?' : '🗑️'}
+                          </button>
+                          {confirmDeleteDebt === d.id && (
+                            <button onClick={() => deleteDebt(d.id)} className="action-btn" style={{ marginLeft: '4px', background: '#FF4D4D', color: '#fff', fontSize: '0.65rem', padding: '6px' }}>CONFIRMAR</button>
+                          )}
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <button
-                          onClick={() => setConfirmPayDebt(d)}
-                          className="action-btn"
-                          style={{ padding: '6px 12px', fontSize: '0.65rem', background: 'rgba(0, 230, 118, 0.1)', border: '1px solid #00E676', color: '#00E676' }}
-                        >
-                          PAGAR
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteDebt(d.id)}
-                          className="action-btn"
-                          style={{ padding: '6px 10px', fontSize: '0.65rem', background: confirmDeleteDebt === d.id ? '#FF4D4D' : 'rgba(255, 77, 77, 0.1)', border: '1px solid #FF4D4D', color: confirmDeleteDebt === d.id ? '#fff' : '#FF4D4D', marginLeft: '8px' }}
-                        >
-                          {confirmDeleteDebt === d.id ? '?' : '🗑️'}
-                        </button>
-                        {confirmDeleteDebt === d.id && (
-                          <button onClick={() => deleteDebt(d.id)} className="action-btn" style={{ marginLeft: '4px', background: '#FF4D4D', color: '#fff', fontSize: '0.65rem', padding: '6px' }}>CONFIRMAR</button>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          </div >
-        )
+            </div >
+          )
         }
 
         {/* CONFIRM PAY DEBT MODAL */}
