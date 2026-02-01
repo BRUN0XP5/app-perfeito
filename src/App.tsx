@@ -505,7 +505,7 @@ function App() {
   }, [persistedAchievements, session, isInitialLoadComplete]);
 
   // Streak reset logic handled inside loadPlayerData for atomicity
-  const [resetCheckDone, setResetCheckDone] = useState(false);
+
 
   // Auto-save Streak when changed (Debounced effect handled by simple logic)
   useEffect(() => {
