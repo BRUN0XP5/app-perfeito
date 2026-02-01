@@ -10,21 +10,20 @@
 
 ---
 
-## 🆕 O que chegou na v0.41.0? (Estabilidade & Precisão)
+## 🆕 O que chegou na v0.41.0? (Estabilidade & Transparência)
 
-### 📈 Histórico de Ativos (Data de Aplicação)
-*   **Data Personalizada:** Agora você pode definir a data exata em que o investimento foi feito. Isso permite migrar investimentos reais para o app sem resetar o cronômetro do IOF e IR.
-*   **Cálculo Retroativo:** O app calcula automaticamente o desconto de impostos baseado na idade real do ativo.
+### 📉 Resgate Estratégico (Novo Pop-up)
+*   **Transparência Total:** Agora, ao tentar resgatar, você vê exatamente o quanto vai perder em rendimento diário e semanal (informação inversa ao aporte).
+*   **Detector de Impostos:** O sistema agora avisa se o ativo ainda está sob incidência de **IOF** ou qual a alíquota atual de **IR**, ajudando na tomada de decisão.
+*   **Cálculo de Perda:** Exibição em tempo real da porcentagem de queda no lucro líquido baseada no valor do resgate.
 
-### 🛡️ Estabilidade & Missões Diárias
-*   **Sistema de Reset Global:** Missões e streaks agora resetam pontualmente à meia-noite (00:00) de forma global, garantindo consistência entre todos os dispositivos.
-*   **Correção de Resgate:** Corrigido o erro onde o botão "Resgatar" reaparecia após o login caso a conquista já tivesse sido conquistada.
-*   **Persistência Robusta:** Dados de Streak e Missões agora são salvos instantaneamente no Supabase, evitando perda de progresso ao trocar de aba ou deslogar.
+### 💎 Identidade Visual Unificada (Cristal Cube)
+*   **Novo Ícone Oficial:** Uma nova logo premium (Cubo de Cristal com Gráficos 3D) foi implementada em todo o ecossistema (PWA, Favicon do PC, Mobile e Splash Screen).
+*   **Limpeza de Assets:** Removidos ícones antigos e logos padrão (Vite/React) para uma experiência 100% personalizada e profissional.
 
-### 🖼️ Nova Identidade Visual PWA
-*   **Ícone Premium:** Nova arte de PWA com estética high-tech (cubo energético e gráficos financeiros).
-*   **Login Clean:** Removi a imagem de capa da tela de login para um acesso mais direto, rápido e profissional.
-*   **Correção de Build:** Removi variáveis não utilizadas que causavam falhas no deploy da Vercel.
+### 📈 Controle de Ativos
+*   **Data de Aplicação:** Defina a data exata de criação do ativo para migrar investimentos reais sem resetar cronômetros de impostos.
+*   **Estabilidade de Sessão:** Melhorias na persistência de Streaks e Missões no Supabase.
 
 ---
 

@@ -2420,17 +2420,65 @@ function App() {
                     Saldo disponível para resgate: <span style={{ color: '#fff', fontWeight: 800 }}>{formatBRLWithPrecision(showConfirmResgate.valor)}</span>
                   </div>
 
-                  {resgateValue && !isNaN(parseFloat(resgateValue)) && (
-                    <div style={{ marginTop: '1.5rem', padding: '12px', background: 'rgba(255, 77, 77, 0.05)', borderRadius: '16px', border: '1px solid rgba(255, 77, 77, 0.1)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '0.55rem', fontWeight: 800, opacity: 0.6 }}>REMANESCENTE NO ATIVO:</span>
-                        <span style={{ fontSize: '0.55rem', fontWeight: 900, color: (showConfirmResgate.valor - parseFloat(resgateValue)) >= 1 ? '#00E676' : '#FF4D4D' }}>
-                          {formatBRLWithPrecision(Math.max(0, showConfirmResgate.valor - parseFloat(resgateValue)))}
+                  {resgateValue && !isNaN(parseFloat(resgateValue)) && parseFloat(resgateValue) > 0 && (
+                    <div style={{ marginTop: '1.5rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                        {/* ATUAL */}
+                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div style={{ fontSize: '0.45rem', color: '#aaa', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>RENDIMENTO ATUAL</div>
+                          {(() => {
+                            const current = calculateProjection(showConfirmResgate?.valor || 0, '0', showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode);
+                            return (
+                              <>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#fff' }}>R$ {current.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.5 }}>/dia</span></div>
+                                <div style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 700, marginTop: '2px' }}>R$ {current.week.toFixed(2)}/sem</div>
+                              </>
+                            );
+                          })()}
+                        </div>
+
+                        {/* PÓS-RESGATE */}
+                        <div style={{ background: 'rgba(255, 77, 77, 0.05)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(255, 77, 77, 0.2)' }}>
+                          <div style={{ fontSize: '0.45rem', color: '#FF4D4D', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>PROJEÇÃO PÓS-RESGATE</div>
+                          {(() => {
+                            const next = calculateProjection(showConfirmResgate?.valor || 0, `-${resgateValue}`, showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode);
+                            return (
+                              <>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#FF4D4D' }}>R$ {next.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.7 }}>/dia</span></div>
+                                <div style={{ fontSize: '0.65rem', color: '#FF4D4D', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>R$ {next.week.toFixed(2)}/sem</div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                        <span style={{ fontSize: '0.55rem', color: '#FF4D4D', fontWeight: 900, background: 'rgba(255,77,77,0.1)', padding: '6px 14px', borderRadius: '20px', letterSpacing: '0.5px' }}>
+                          📉 -{((1 - calculateProjection(showConfirmResgate?.valor || 0, `-${resgateValue}`, showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode).day / (calculateProjection(showConfirmResgate?.valor || 0, '0', showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode).day || 0.00000001)) * 100).toFixed(1)}% DE PERDA NO RENDIMENTO
                         </span>
                       </div>
-                      {(showConfirmResgate.valor - parseFloat(resgateValue)) < 1 && Math.abs(showConfirmResgate.valor - parseFloat(resgateValue)) > 0.001 && (
-                        <div style={{ fontSize: '0.5rem', color: '#FF4D4D', fontWeight: 800, marginTop: '4px' }}>⚠️ MÍNIMO DE R$ 1,00 PARA MANTER O ATIVO ATIVO.</div>
-                      )}
+
+                      <div style={{ marginTop: '15px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '0.55rem', fontWeight: 800, opacity: 0.6 }}>IMPOSTO DE RENDA (IR):</span>
+                          <span style={{ fontSize: '0.55rem', fontWeight: 900, color: '#fff' }}>{getTaxMultipliers(showConfirmResgate?.created_at, false, currentDate, showConfirmResgate?.investment_type).irRateLabel}</span>
+                        </div>
+                        {getTaxMultipliers(showConfirmResgate?.created_at, false, currentDate, showConfirmResgate?.investment_type).iofApplied && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#FFB300' }}>MULTA IOF ATIVA:</span>
+                            <span style={{ fontSize: '0.55rem', fontWeight: 900, color: '#FFB300' }}>-{((1 - getTaxMultipliers(showConfirmResgate?.created_at, false, currentDate, showConfirmResgate?.investment_type).iofFactor) * 100).toFixed(0)}% DO LUCRO</span>
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                          <span style={{ fontSize: '0.55rem', fontWeight: 800, opacity: 0.6 }}>REMANESCENTE NO ATIVO:</span>
+                          <span style={{ fontSize: '0.55rem', fontWeight: 900, color: (showConfirmResgate.valor - parseFloat(resgateValue)) >= 1 ? '#00E676' : '#FF4D4D' }}>
+                            {formatBRLWithPrecision(Math.max(0, showConfirmResgate.valor - parseFloat(resgateValue)))}
+                          </span>
+                        </div>
+                        {(showConfirmResgate.valor - parseFloat(resgateValue)) < 1 && Math.abs(showConfirmResgate.valor - parseFloat(resgateValue)) > 0.001 && (
+                          <div style={{ fontSize: '0.5rem', color: '#FF4D4D', fontWeight: 800, marginTop: '6px', textAlign: 'center' }}>⚠️ MÍNIMO DE R$ 1,00 PARA MANTER O ATIVO.</div>
+                        )}
+                      </div>
                     </div>
                   )}
 
