@@ -490,15 +490,7 @@ function App() {
       }));
 
       if (achievementsToSave.length > 0) {
-        const { error } = await supabase
-          .from('user_achievements')
-          .update(achievementsToSave) // Use update for efficiency if already exists
-          .eq('user_id', session.id);
-
-        if (error) {
-          // Fallback to upsert if update fails (though onConflict is better)
-          await supabase.from('user_achievements').upsert(achievementsToSave, { onConflict: 'user_id, achievement_id' });
-        }
+        await supabase.from('user_achievements').upsert(achievementsToSave, { onConflict: 'user_id, achievement_id' });
       }
     };
     saveAchievements();
@@ -543,6 +535,15 @@ function App() {
       notified: true
     };
     setPersistedAchievements(newPersisted);
+
+    // Persistência Imediata para evitar que reapareça no login
+    await supabase.from('user_achievements').upsert([{
+      user_id: session.id,
+      achievement_id: achievement.id,
+      unlocked: true,
+      unlocked_at: newPersisted[achievement.id].unlockedAt,
+      notified: true
+    }], { onConflict: 'user_id, achievement_id' });
 
     // STREAK LOGIC: Trigger precisely on claim if it's a daily
     const todayString = new Date().toISOString().split('T')[0];
