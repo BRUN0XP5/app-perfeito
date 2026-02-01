@@ -510,13 +510,13 @@ function App() {
   // Auto-save Streak when changed (Debounced effect handled by simple logic)
   useEffect(() => {
     if (!session || !isInitialLoadComplete) return;
-    if (dailyStreak > 0) {
-      const todayKey = new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-      supabase.from('user_stats').update({
-        daily_streak: dailyStreak,
-        last_streak_date: todayKey
-      }).eq('user_id', session.id).then(() => console.log('🔥 Streak salva:', dailyStreak));
-    }
+
+    // Agora salvamos mesmo se for 0, para permitir que o reset persista no DB
+    const todayKey = new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    supabase.from('user_stats').update({
+      daily_streak: dailyStreak,
+      last_streak_date: lastStreakDate || todayKey
+    }).eq('user_id', session.id);
   }, [dailyStreak, session, isInitialLoadComplete]);
 
 
@@ -608,6 +608,8 @@ function App() {
     setEquippedItems({ aura: '', nickColor: '', background: '', machineSkin: '' })
     setPersistedAchievements({})
     setActivities([])
+    setDailyStreak(0)
+    setLastStreakDate('')
     setIsInitialLoadComplete(false)
     setIsAchievementSystemReady(false)
 
@@ -676,9 +678,13 @@ function App() {
           let streakBroken = false;
 
           if (stats?.last_streak_date) {
-            const lastStreakDate = new Date(stats.last_streak_date);
-            const diffTime = Math.abs(localDate.getTime() - lastStreakDate.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const lsdString = stats.last_streak_date;
+            const lastDate = new Date(lsdString + 'T00:00:00');
+            const currentDateOnly = new Date(todayKey + 'T00:00:00');
+
+            const diffTime = Math.abs(currentDateOnly.getTime() - lastDate.getTime());
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
             if (diffDays > 1) {
               newStreak = 0;
               streakBroken = true;
