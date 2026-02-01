@@ -136,6 +136,7 @@ function App() {
   const [newMachineLimit, setNewMachineLimit] = useState('');
   const [newMachineType, setNewMachineType] = useState<'CDB' | 'IPCA' | 'LCI' | 'LCA'>('CDB');
   const [newMachineYieldMode, setNewMachineYieldMode] = useState<'PRE' | 'POS'>('POS');
+  const [newMachineCreatedAt, setNewMachineCreatedAt] = useState(new Date().toISOString().split('T')[0]);
 
   // Compound Interest Simulator Detailed State
   const [simYears, setSimYears] = useState(1);
@@ -1423,7 +1424,7 @@ function App() {
       max_capacity: newMachineLimit ? parseFloat(newMachineLimit) : null,
       investment_type: newMachineType,
       yield_mode: newMachineYieldMode,
-      created_at: new Date().toISOString()
+      created_at: newMachineCreatedAt ? new Date(newMachineCreatedAt + 'T12:00:00').toISOString() : new Date().toISOString()
     }
     const { data, error } = await supabase.from('maquinas').insert([newMachine]).select().single()
     if (!error && data) {
@@ -2826,6 +2827,13 @@ function App() {
                       <input type="number" placeholder="∞" value={newMachineLimit} onChange={e => setNewMachineLimit(e.target.value)}
                         style={{ width: '100%', padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 700 }} />
                     </div>
+                  </div>
+
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, marginBottom: '6px', display: 'block' }}>DATA DE APLICAÇÃO (INÍCIO)</label>
+                    <input type="date" value={newMachineCreatedAt} onChange={e => setNewMachineCreatedAt(e.target.value)}
+                      style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '0.85rem' }} />
+                    <div style={{ fontSize: '0.5rem', color: '#aaa', marginTop: '4px' }}>* Ajuste para evitar reset do IOF em ativos já existentes.</div>
                   </div>
 
                   <div className="input-group">
