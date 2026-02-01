@@ -90,6 +90,7 @@ function App() {
   const [viewMode, setViewMode] = useState<'mobile' | 'pc'>('mobile')
 
   const [balance, setBalance] = useState(0)
+  const achievementsDataLoadedRef = useRef(false);
   const [salary, setSalary] = useState(0)
   const [salaryDay, setSalaryDay] = useState(5)
   const [usdBalance, setUsdBalance] = useState(0)
@@ -416,10 +417,17 @@ function App() {
   useEffect(() => {
     if (!isAchievementSystemReady || !isInitialLoadComplete) return;
 
+    // Apenas processa se as conquistas persistidas já foram carregadas do DB
+    if (Object.keys(persistedAchievements).length === 0 && achievementsDataLoadedRef.current === false) return;
+
     const newlyFound = ACHIEVEMENTS.filter(ach => {
       const isMet = isRequirementMet(ach, achievementStats);
-      const wasUnlocked = persistedAchievements[ach.id]?.unlocked;
-      return isMet && !wasUnlocked;
+      const p = persistedAchievements[ach.id];
+      const wasUnlocked = p?.unlocked;
+      const wasNotified = p?.notified;
+
+      // Só dispara pop-up se for algo novo e que nunca foi notificado
+      return isMet && !wasUnlocked && !wasNotified;
     });
 
     if (newlyFound.length > 0) {
@@ -434,23 +442,23 @@ function App() {
       setPersistedAchievements(newPersisted);
     }
 
-    // Also handle re-locking in persisted state if needed (optional based on preference, 
-    // but the requirement says 're-lock' should keep it in DB)
-    const needsStatusUpdate = processedAchievements.some(ach => {
+    // Sincronização de status (unlocked) no estado persistido
+    const needsStatusUpdate = ACHIEVEMENTS.some(ach => {
       const p = persistedAchievements[ach.id];
-      return p && p.unlocked !== ach.unlocked;
+      const isMet = isRequirementMet(ach, achievementStats);
+      return p && p.unlocked !== isMet;
     });
 
     if (needsStatusUpdate) {
       const updatedPersisted = { ...persistedAchievements };
-      processedAchievements.forEach(ach => {
+      ACHIEVEMENTS.forEach(ach => {
         if (updatedPersisted[ach.id]) {
-          updatedPersisted[ach.id].unlocked = ach.unlocked;
+          updatedPersisted[ach.id].unlocked = isRequirementMet(ach, achievementStats);
         }
       });
       setPersistedAchievements(updatedPersisted);
     }
-  }, [processedAchievements, session, isInitialLoadComplete]);
+  }, [achievementStats, isInitialLoadComplete, isAchievementSystemReady, persistedAchievements]);
 
   // Popup Queue Consumer
   useEffect(() => {
@@ -613,6 +621,7 @@ function App() {
     setLastStreakDate('')
     setIsInitialLoadComplete(false)
     setIsAchievementSystemReady(false)
+    achievementsDataLoadedRef.current = false;
 
     if (session) {
       loadPlayerData()
@@ -665,51 +674,57 @@ function App() {
         setDailyStreak(stats.daily_streak || 0);
         setLastStreakDate(stats.last_streak_date || '');
 
-        // SISTEMA DE RESET DIÁRIO ROBUSTO (Integrado)
-        const now = new Date();
-        const offset = now.getTimezoneOffset() * 60000;
-        const localDate = new Date(now.getTime() - offset);
-        const todayKey = localDate.toISOString().split('T')[0];
-        const lastReset = stats?.last_daily_reset;
+        // SISTEMA DE RESET DIÁRIO ROBUSTO (Refatorado do Zero)
+        const checkAndResetDaily = async (lastResetDate: string, currentStreak: number, lastStreak: string) => {
+          const now = new Date();
+          const offset = now.getTimezoneOffset() * 60000;
+          const localDate = new Date(now.getTime() - offset);
+          const todayKey = localDate.toISOString().split('T')[0];
 
-        if (lastReset !== todayKey) {
-          console.log(`🌅 NOVO DIA: ${todayKey} (Anterior: ${lastReset})`);
+          if (lastResetDate !== todayKey) {
+            console.log(`🌅 NOVO DIA DETECTADO: ${todayKey}`);
 
-          let newStreak = stats?.daily_streak || 0;
-          let streakBroken = false;
+            let newStreak = currentStreak;
+            let streakBroken = false;
 
-          if (stats?.last_streak_date) {
-            const lsdString = stats.last_streak_date;
-            const lastDate = new Date(lsdString + 'T00:00:00');
-            const currentDateOnly = new Date(todayKey + 'T00:00:00');
+            // Lógica de Streak (Fogo)
+            if (lastStreak) {
+              const lastDate = new Date(lastStreak + 'T00:00:00');
+              const currentDateOnly = new Date(todayKey + 'T00:00:00');
+              const diffTime = Math.abs(currentDateOnly.getTime() - lastDate.getTime());
+              const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-            const diffTime = Math.abs(currentDateOnly.getTime() - lastDate.getTime());
-            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays > 1) {
-              newStreak = 0;
-              streakBroken = true;
+              if (diffDays > 1) {
+                newStreak = 0;
+                streakBroken = true;
+              }
             }
+
+            // 1. Resetar Conquistas Diárias no DB de forma ATÔMICA
+            const dailyIds = ACHIEVEMENTS.filter(a => a.category === 'daily').map(a => a.id);
+            await supabase.from('user_achievements')
+              .update({ unlocked: false, notified: false, unlocked_at: null })
+              .eq('user_id', session.id)
+              .in('achievement_id', dailyIds);
+
+            // 2. Atualizar Stats no DB
+            await supabase.from('user_stats').update({
+              last_daily_reset: todayKey,
+              daily_streak: newStreak,
+              last_deposit_value: 0
+            }).eq('user_id', session.id);
+
+            // 3. Atualizar Estado Local
+            setDailyStreak(newStreak);
+            if (streakBroken) setNotification('💔 QUE PENA! SUA STREAK FOI ZERADA.');
+            else setNotification('☀️ BOM DIA! METAS DIÁRIAS RENOVADAS.');
+
+            return true;
           }
+          return false;
+        };
 
-          // Reset Daily Achievements in DB (Zera unlocked, notified e unlocked_at)
-          const dailyIds = ACHIEVEMENTS.filter(a => a.category === 'daily').map(a => a.id);
-          await supabase.from('user_achievements')
-            .update({ unlocked: false, notified: false, unlocked_at: null })
-            .eq('user_id', session.id)
-            .in('achievement_id', dailyIds);
-
-          // Update Stats
-          await supabase.from('user_stats').update({
-            last_daily_reset: todayKey,
-            daily_streak: newStreak,
-            last_deposit_value: 0
-          }).eq('user_id', session.id);
-
-          setDailyStreak(newStreak);
-          if (streakBroken) setNotification('💔 QUE PENA! SUA STREAK FOI ZERADA.');
-          else if (newStreak > 0) setNotification('☀️ BOM DIA! METAS DIÁRIAS RENOVADAS.');
-        }
+        await checkAndResetDaily(stats.last_daily_reset, stats.daily_streak || 0, stats.last_streak_date || '');
       }
 
 
@@ -790,6 +805,7 @@ function App() {
         });
         setPersistedAchievements(persisted);
       }
+      achievementsDataLoadedRef.current = true;
 
       // 8. Carregar Dívidas
       const { data: debtsData } = await supabase
