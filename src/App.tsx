@@ -413,6 +413,18 @@ function App() {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
+  // DEBT VS INVEST CALCULATOR STATE
+  const [showDebtVsInvestModal, setShowDebtVsInvestModal] = useState(false);
+  const [calcAmount, setCalcAmount] = useState('5000');
+  const [calcDebtRate, setCalcDebtRate] = useState('3.5');
+  const [calcInvestRate, setCalcInvestRate] = useState('1.0');
+  const [calcMonths, setCalcMonths] = useState('12');
+
+  const [isZenMode, setIsZenMode] = useState(false);
+  const [showRealYield, setShowRealYield] = useState(false);
+  const IPCA_ANUAL_MOCK = 0.045; // 4.5% mock
+  const [monthlyInvestment, setMonthlyInvestment] = useState(0);
+
 
   // Achievement Checker - monitors transitions to show popups
   useEffect(() => {
@@ -1045,6 +1057,54 @@ function App() {
       monthlyYield: totalDProjected * 21
     }
   }, [machines, cdiAnual, currentDate, usdBalance, apiRates.USD])
+
+  const freedomProgress = useMemo(() => {
+    if (!salary || salary <= 0) return 0;
+    return Math.min(100, (yields.monthlyYield / salary) * 100);
+  }, [yields.monthlyYield, salary]);
+
+  const timeToFreedom = useMemo(() => {
+    if (!salary || salary <= 0) return { years: 0, months: 0, days: 0, hours: 0, totalDays: 0 };
+    if (freedomProgress >= 100) return { years: 0, months: 0, days: 0, hours: 0, totalDays: 0 };
+
+    const monthlyRate = cdiAnual / 12;
+    if (monthlyRate <= 0) return { years: 99, months: 0, days: 0, hours: 0, totalDays: 36500 };
+
+    const targetPatrimony = salary / monthlyRate;
+    const currentPatrimony = totalPatrimony;
+    const pmt = monthlyInvestment;
+
+    // Fixed formula to find n (months): 
+    // FV = PV*(1+r)^n + PMT*((1+r)^n - 1)/r
+    // Target = PV*(1+r)^n + PMT*(1+r)^n/r - PMT/r
+    // Target + PMT/r = (1+r)^n * (PV + PMT/r)
+    // (1+r)^n = (Target + PMT/r) / (PV + PMT/r)
+    // n = log((Target + PMT/r) / (PV + PMT/r)) / log(1+r)
+
+    let nMonths = 0;
+    if (pmt > 0 || (currentPatrimony * monthlyRate > 0)) {
+      const logNumerator = targetPatrimony + (pmt / monthlyRate);
+      const logDenominator = currentPatrimony + (pmt / monthlyRate);
+      if (logNumerator > 0 && logDenominator > 0) {
+        nMonths = Math.log(logNumerator / logDenominator) / Math.log(1 + monthlyRate);
+      } else {
+        nMonths = 999;
+      }
+    } else {
+      nMonths = 999;
+    }
+
+    if (nMonths < 0) nMonths = 0;
+    if (nMonths > 1200) nMonths = 1200; // Cap at 100 years
+
+    const totalDays = nMonths * 30.4375;
+    const years = Math.floor(nMonths / 12);
+    const months = Math.floor(nMonths % 12);
+    const days = Math.floor((nMonths * 30.4375) % 30.4375);
+    const hours = Math.floor((((nMonths * 30.4375) % 30.4375) % 1) * 24);
+
+    return { years, months, days, hours, totalDays };
+  }, [salary, totalPatrimony, monthlyInvestment, cdiAnual, freedomProgress]);
 
   const timeToYield = useMemo(() => {
     return `00:00:${payoutCountdown.toString().padStart(2, '0')}`;
@@ -1910,7 +1970,6 @@ function App() {
       return (
         <div className="login-screen">
           <div className="glass-panel login-card" style={{ padding: 0, overflow: 'hidden' }}>
-
             <div style={{ padding: '2rem' }}>
               <h1 className="title" style={{ marginTop: 0 }}>CDI_TYCOON</h1>
               <form onSubmit={handleAuth}>
@@ -1932,6 +1991,81 @@ function App() {
           </div>
         </div>
       )
+    }
+
+    if (isZenMode) {
+      return (
+        <div className="zen-mode-screen" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'radial-gradient(circle at center, #0a1128 0%, #020408 100%)',
+          zIndex: 10000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          animation: 'fadeIn 1.5s ease'
+        }}>
+          {/* ZEN BACKGROUND PARTICLES (ANIMATED CIRCLES) */}
+          <div style={{ position: 'absolute', width: '100%', height: '100%', overflow: 'hidden', pointerEvents: 'none' }}>
+            {[...Array(15)].map((_, i) => (
+              <div key={i} style={{
+                position: 'absolute',
+                width: `${Math.random() * 300 + 50}px`,
+                height: `${Math.random() * 300 + 50}px`,
+                background: 'radial-gradient(circle, rgba(0, 163, 255, 0.05) 0%, transparent 70%)',
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                borderRadius: '50%',
+                animation: `floatZen ${Math.random() * 20 + 10}s linear infinite`,
+                animationDelay: `-${Math.random() * 10}s`
+              }} />
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center', zIndex: 10, position: 'relative' }}>
+            <p style={{ fontFamily: 'JetBrains Mono', color: '#00A3FF', letterSpacing: '5px', fontSize: '0.7rem', opacity: 0.6, marginBottom: '1rem' }}>MODO FOCO ATIVO</p>
+            <h1 style={{ fontSize: '4rem', color: '#fff', fontWeight: 900, margin: 0, textShadow: '0 0 40px rgba(255,255,255,0.1)' }}>
+              <AnimatedNumber value={totalPatrimony} format={(v) => formatBRLWithMicroCents(v)} />
+            </h1>
+            <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ margin: 0, fontSize: '0.55rem', color: '#00E676', fontWeight: 800, opacity: 0.6 }}>+</p>
+                <p style={{ margin: 0, fontSize: '1.2rem', color: '#00E676', fontWeight: 900 }}>
+                  R$ {(yields.hourlyYield || 0).toFixed(2)}
+                </p>
+                <p style={{ margin: 0, fontSize: '0.5rem', opacity: 0.4 }}>POR HORA</p>
+              </div>
+              <div style={{ width: '1px', height: '30px', background: 'rgba(255,255,255,0.1)' }}></div>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ margin: 0, fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, opacity: 0.6 }}>+</p>
+                <p style={{ margin: 0, fontSize: '1.2rem', color: '#00A3FF', fontWeight: 900 }}>
+                  R$ {(yields.dailyYield || 0).toFixed(2)}
+                </p>
+                <p style={{ margin: 0, fontSize: '0.5rem', opacity: 0.4 }}>POR DIA</p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setIsZenMode(false)}
+            style={{
+              position: 'absolute', bottom: '10%', background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)',
+              padding: '12px 30px', borderRadius: '50px', cursor: 'pointer',
+              fontSize: '0.7rem', fontWeight: 900, letterSpacing: '1px', transition: 'all 0.3s'
+            }}
+            onMouseOver={e => (e.currentTarget.style.color = '#fff')}
+            onMouseOut={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}
+          >
+            VOLTAR AO DASHBOARD
+          </button>
+
+          <style>{`
+            @keyframes floatZen {
+              0% { transform: translate(0, 0) rotate(0deg); }
+              33% { transform: translate(100px, 50px) rotate(120deg); }
+              66% { transform: translate(-50px, 100px) rotate(240deg); }
+              100% { transform: translate(0, 0) rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      );
     }
 
     return (
@@ -2103,6 +2237,7 @@ function App() {
                   <div className="menu-item" onClick={() => { setViewMode(viewMode === 'mobile' ? 'pc' : 'mobile'); setShowMenu(false); }}>
                     {viewMode === 'mobile' ? '💻 LAYOUT DESKTOP' : '📱 LAYOUT MOBILE'}
                   </div>
+                  <div className="menu-item" onClick={() => { setIsZenMode(true); setShowMenu(false); }}>🧘 MODO FOCO (ZEN)</div>
                   <div className="menu-item" onClick={() => { setShowHelpModal(true); setShowMenu(false); }}>❓ CENTRAL DE AJUDA</div>
                   <div className="menu-item" onClick={() => { setShowPixConfig(true); setShowMenu(false); }}>⚙️ AJUSTES DO SISTEMA</div>
                   <div className="menu-item danger" onClick={() => { setSession(null); setShowMenu(false); }}>DESCONECTAR</div>
@@ -2208,22 +2343,86 @@ function App() {
             </div>
           </div>
 
-          <div style={{ marginTop: '0.8rem', padding: '0.6rem 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-            <p className="balance-title" style={{ color: '#00E676', opacity: 0.8 }}>Total_Investido (Em Operação)</p>
-            <h3 style={{ fontSize: '1.4rem', color: '#00E676', margin: 0, fontWeight: 800 }}>
-              {formatBRLWithMicroCents(totalInvested)}
-            </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '0.8rem' }}>
+            <p className="balance-title" style={{ margin: 0 }}>PROJEÇÃO DE RENDIMENTOS</p>
+            <button
+              onClick={() => setShowRealYield(!showRealYield)}
+              style={{
+                background: showRealYield ? 'rgba(0, 163, 255, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                border: showRealYield ? '1px solid #00A3FF' : '1px solid rgba(255, 255, 255, 0.1)',
+                color: showRealYield ? '#00A3FF' : '#aaa',
+                fontSize: '0.55rem',
+                fontWeight: 900,
+                padding: '4px 10px',
+                borderRadius: '50px',
+                cursor: 'pointer',
+                transition: 'all 0.3s'
+              }}
+            >
+              {showRealYield ? '📈 MOSTRANDO GANHO REAL (PÓS-INFLAÇÃO)' : '📉 MOSTRAR GANHO REAL (IPCA)'}
+            </button>
           </div>
-
-
-
 
           <div className="yield-grid-main">
-            <div className="mini-stat"><span className="label">HORA</span><span className="val" style={{ color: '#00E676' }}>R$ {(yields?.hourlyYield || 0).toFixed(2)}</span></div>
-            <div className="mini-stat"><span className="label">DIA</span><span className="val" style={{ color: '#00E676' }}>R$ {(yields?.dailyYield || 0).toFixed(2)}</span></div>
-            <div className="mini-stat"><span className="label">SEMANA</span><span className="val" style={{ color: '#00E676' }}>R$ {(yields?.weeklyYield || 0).toFixed(2)}</span></div>
-            <div className="mini-stat"><span className="label">MÊS</span><span className="val" style={{ color: '#00E676' }}>R$ {(yields?.monthlyYield || 0).toFixed(2)}</span></div>
+            {(() => {
+              const monthlyInf = (totalPatrimony * IPCA_ANUAL_MOCK) / 12;
+              const dailyInf = monthlyInf / 30;
+              const hYield = showRealYield ? Math.max(0, yields.hourlyYield - (dailyInf / 24)) : yields.hourlyYield;
+              const dYield = showRealYield ? Math.max(0, yields.dailyYield - dailyInf) : yields.dailyYield;
+              const wYield = showRealYield ? Math.max(0, yields.weeklyYield - (dailyInf * 7)) : yields.weeklyYield;
+              const mYield = showRealYield ? Math.max(0, yields.monthlyYield - monthlyInf) : yields.monthlyYield;
+
+              return (
+                <>
+                  <div className="mini-stat"><span className="label">HORA</span><span className="val" style={{ color: showRealYield ? '#00A3FF' : '#00E676' }}>R$ {hYield.toFixed(2)}</span></div>
+                  <div className="mini-stat"><span className="label">DIA</span><span className="val" style={{ color: showRealYield ? '#00A3FF' : '#00E676' }}>R$ {dYield.toFixed(2)}</span></div>
+                  <div className="mini-stat"><span className="label">SEMANA</span><span className="val" style={{ color: showRealYield ? '#00A3FF' : '#00E676' }}>R$ {wYield.toFixed(2)}</span></div>
+                  <div className="mini-stat"><span className="label">MÊS</span><span className="val" style={{ color: showRealYield ? '#00A3FF' : '#00E676' }}>R$ {mYield.toFixed(2)}</span></div>
+                </>
+              );
+            })()}
           </div>
+
+          {salary > 0 && (
+            <div className="freedom-day-panel" style={{
+              background: freedomProgress >= 100 ? 'linear-gradient(135deg, rgba(0, 230, 118, 0.1) 0%, rgba(0, 163, 255, 0.1) 100%)' : 'linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(255, 163, 0, 0.05) 100%)',
+              border: freedomProgress >= 100 ? '1px solid rgba(0, 230, 118, 0.3)' : '1px solid rgba(255, 215, 0, 0.15)',
+              padding: '1rem',
+              borderRadius: '20px',
+              marginTop: '1rem',
+              position: 'relative',
+              overflow: 'hidden',
+              cursor: 'pointer'
+            }} onClick={() => setShowSalaryProjectionModal(true)}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '0.6rem', color: freedomProgress >= 100 ? '#00E676' : '#FFD700', fontWeight: 900, letterSpacing: '1px' }}>
+                    {freedomProgress >= 100 ? '⭐ LIBERDADE ALCANÇADA' : '⏳ DIA DA LIBERDADE'}
+                  </h4>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.5rem', opacity: 0.6, fontWeight: 700 }}>
+                    {freedomProgress >= 100 ? 'Sua renda passiva já cobre seu salário!' : `Renda passiva cobre ${freedomProgress.toFixed(1)}% do seu custo de vida.`}
+                  </p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 900, color: freedomProgress >= 100 ? '#00E676' : '#fff' }}>{freedomProgress.toFixed(1)}%</span>
+                </div>
+              </div>
+              <div style={{ height: '6px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '3px', marginTop: '10px', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${freedomProgress}%`,
+                  background: freedomProgress >= 100 ? 'linear-gradient(90deg, #00E676, #00A3FF)' : 'linear-gradient(90deg, #FFD700, #FFA300)',
+                  boxShadow: freedomProgress >= 100 ? '0 0 15px rgba(0, 230, 118, 0.4)' : '0 0 10px rgba(255, 215, 0, 0.3)',
+                  transition: 'width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                }}></div>
+              </div>
+              {freedomProgress < 100 && (
+                <div style={{ marginTop: '8px', fontSize: '0.45rem', opacity: 0.6, textAlign: 'center', fontWeight: 800, letterSpacing: '0.5px' }}>
+                  ⏳ LIBERDADE EM: {timeToFreedom.years > 0 && `${timeToFreedom.years}A `}{timeToFreedom.months > 0 && `${timeToFreedom.months}M `}{timeToFreedom.days}D {timeToFreedom.hours}H
+                </div>
+              )}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
             <button className="primary-btn" style={{ flex: 1 }} onClick={() => setShowCreateModal(true)}>+ INVESTIR</button>
           </div>
@@ -3358,6 +3557,17 @@ function App() {
 
                 <div className="help-section" style={{ maxHeight: '65vh', overflowY: 'auto', paddingRight: '12px' }}>
 
+                  {/* NOVIDADES V0.42.0 */}
+                  <div style={{ marginBottom: '2rem', background: 'rgba(0,163,255,0.05)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(0,163,255,0.2)' }}>
+                    <h4 style={{ color: '#00A3FF', fontSize: '0.8rem', marginBottom: '10px' }}>⭐ NOVIDADES DA VERSÃO v0.42.0</h4>
+                    <ul style={{ fontSize: '0.7rem', opacity: 0.9, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <li><strong>🧘 Modo Zen:</strong> Acesse pelo menu para uma visualização minimalista e relaxante do seu progresso.</li>
+                      <li><strong>⏳ Dia da Liberdade:</strong> O widget no dashboard mostra quão perto sua renda passiva está de igualar seu salário.</li>
+                      <li><strong>⚔️ Simulador de Dívidas:</strong> Compare o custo de juros de uma dívida contra o ganho de um investimento antes de decidir pagar.</li>
+                      <li><strong>📉 Ganho Real (IPCA):</strong> Use o botão na projeção de rendimentos para ver o lucro descontado pela inflação.</li>
+                    </ul>
+                  </div>
+
                   {/* CONCEITOS BÁSICOS */}
                   <div style={{ marginBottom: '2rem' }}>
                     <h4 style={{ color: '#FFD700', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #FFD700', paddingLeft: '8px' }}>💡 CONCEITOS BÁSICOS</h4>
@@ -3460,7 +3670,7 @@ function App() {
                     </div>
 
                     <div style={{ marginTop: '1rem', fontSize: '0.55rem', opacity: 0.3, textAlign: 'center', fontWeight: 800 }}>
-                      SYSTEM VERSION v0.41.0
+                      SYSTEM VERSION v0.42.0
                     </div>
                   </div>
                 </div>
@@ -3569,7 +3779,52 @@ function App() {
                   </div>
                 )}
 
-                <button className="primary-btn" style={{ marginTop: '2rem' }} onClick={() => setShowSalaryProjectionModal(false)}>FECHAR</button>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ fontSize: '0.6rem', color: '#aaa', fontWeight: 900, marginBottom: '8px', display: 'block' }}>INVESTIMENTO MENSAL ADICIONAL (R$)</label>
+                  <input
+                    type="number"
+                    value={monthlyInvestment === 0 ? '' : monthlyInvestment}
+                    onChange={(e) => setMonthlyInvestment(parseFloat(e.target.value) || 0)}
+                    placeholder="Quanto você aporta por mês?"
+                    style={{
+                      width: '100%',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(0, 163, 255, 0.2)',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      color: '#fff',
+                      fontSize: '1rem',
+                      fontWeight: 800,
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                {freedomProgress < 100 && (
+                  <div style={{ background: 'rgba(255, 215, 0, 0.05)', padding: '1.2rem', borderRadius: '18px', border: '1px solid rgba(255, 215, 0, 0.2)', marginBottom: '1.5rem' }}>
+                    <p className="balance-title" style={{ color: '#FFD700', fontSize: '0.6rem', marginBottom: '8px' }}>TEMPO ESTIMADO ATÉ A LIBERDADE</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '5px' }}>
+                      <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '10px' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff' }}>{timeToFreedom.years}</div>
+                        <div style={{ fontSize: '0.45rem', opacity: 0.5 }}>ANOS</div>
+                      </div>
+                      <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '10px' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff' }}>{timeToFreedom.months}</div>
+                        <div style={{ fontSize: '0.45rem', opacity: 0.5 }}>MESES</div>
+                      </div>
+                      <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '10px' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff' }}>{timeToFreedom.days}</div>
+                        <div style={{ fontSize: '0.45rem', opacity: 0.5 }}>DIAS</div>
+                      </div>
+                      <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '10px' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff' }}>{timeToFreedom.hours}</div>
+                        <div style={{ fontSize: '0.45rem', opacity: 0.5 }}>HORAS</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <button className="primary-btn" style={{ marginTop: '1rem' }} onClick={() => setShowSalaryProjectionModal(false)}>FECHAR</button>
               </div>
             </div>
           )
@@ -4369,6 +4624,26 @@ function App() {
                   <button className="action-btn" onClick={() => setShowDebtsModal(false)} style={{ padding: '4px 8px' }}>X</button>
                 </div>
 
+                <button
+                  className="action-btn"
+                  onClick={() => { setShowDebtVsInvestModal(true); setShowDebtsModal(false); }}
+                  style={{
+                    background: 'rgba(255, 215, 0, 0.1)',
+                    color: '#FFD700',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    width: '100%',
+                    marginBottom: '1.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '12px',
+                    borderRadius: '16px'
+                  }}
+                >
+                  ⚔️ DÍVIDA vs INVESTIMENTO (SIMULADOR)
+                </button>
+
                 {/* SALARY SETUP */}
                 <div style={{ background: 'rgba(0, 163, 255, 0.05)', padding: '15px', borderRadius: '12px', marginBottom: '1rem', border: '1px solid rgba(0, 163, 255, 0.2)' }}>
                   <h4 style={{ margin: '0 0 10px 0', fontSize: '0.7rem', color: '#00A3FF' }}>CONFIGURAR SALÁRIO MENSAL</h4>
@@ -4520,6 +4795,88 @@ function App() {
                 </div>
               </div>
             </div >
+          )
+        }
+
+        {
+          showDebtVsInvestModal && (
+            <div className="modal-overlay" onClick={() => setShowDebtVsInvestModal(false)} style={{ zIndex: 10000 }}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h2 style={{ color: '#FFD700', margin: 0, fontSize: '1.1rem' }}>⚔️ DECISÃO ESTRATÉGICA</h2>
+                  <button className="action-btn" onClick={() => setShowDebtVsInvestModal(false)} style={{ padding: '4px 8px' }}>X</button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  <div className="input-group">
+                    <label style={{ fontSize: '0.55rem', color: '#aaa', fontWeight: 900, marginBottom: '5px', display: 'block' }}>VALOR DA PARCELA OU TOTAL (R$)</label>
+                    <input type="number" value={calcAmount} onChange={e => setCalcAmount(e.target.value)} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px' }} />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div className="input-group">
+                      <label style={{ fontSize: '0.55rem', color: '#FF4D4D', fontWeight: 900, marginBottom: '5px', display: 'block' }}>JUROS DÍVIDA (% MÊS)</label>
+                      <input type="number" value={calcDebtRate} onChange={e => setCalcDebtRate(e.target.value)} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px' }} />
+                    </div>
+                    <div className="input-group">
+                      <label style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, marginBottom: '5px', display: 'block' }}>JUROS INVEST. (% MÊS)</label>
+                      <input type="number" value={calcInvestRate} onChange={e => setCalcInvestRate(e.target.value)} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px' }} />
+                    </div>
+                  </div>
+
+                  <div className="input-group">
+                    <label style={{ fontSize: '0.55rem', color: '#aaa', fontWeight: 900, marginBottom: '5px', display: 'block' }}>PERÍODO DE COMPARAÇÃO (MESES)</label>
+                    <input type="number" value={calcMonths} onChange={e => setCalcMonths(e.target.value)} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px' }} />
+                  </div>
+                </div>
+
+                {(() => {
+                  const amt = parseFloat(calcAmount) || 0;
+                  const dRate = (parseFloat(calcDebtRate) || 0) / 100;
+                  const iRate = (parseFloat(calcInvestRate) || 0) / 100;
+                  const months = parseInt(calcMonths) || 0;
+
+                  const totalDebtCost = amt * Math.pow(1 + dRate, months);
+                  const totalInvestGain = amt * Math.pow(1 + iRate, months);
+                  const debtInterestPaid = totalDebtCost - amt;
+                  const investProfitEarned = totalInvestGain - amt;
+
+                  const betterOption = debtInterestPaid > investProfitEarned ? 'PAY_DEBT' : 'KEEP_INVEST';
+                  const diff = Math.abs(debtInterestPaid - investProfitEarned);
+
+                  return (
+                    <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+                        <div style={{ fontSize: '0.6rem', color: '#aaa', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>VEREDITO DO SIMULADOR</div>
+                        <div style={{ fontSize: '0.9rem', color: betterOption === 'PAY_DEBT' ? '#FF4D4D' : '#00E676', fontWeight: 900, marginTop: '5px' }}>
+                          {betterOption === 'PAY_DEBT' ? '🚨 QUITAR DÍVIDA IMEDIATAMENTE' : '✅ MANTER INVESTIMENTO ATIVO'}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.65rem' }}>
+                        <div style={{ background: 'rgba(255, 77, 77, 0.05)', padding: '10px', borderRadius: '12px' }}>
+                          <span style={{ opacity: 0.6 }}>Custo em Juros:</span><br />
+                          <strong style={{ color: '#FF4D4D' }}>R$ {debtInterestPaid.toFixed(2)}</strong>
+                        </div>
+                        <div style={{ background: 'rgba(0, 230, 118, 0.05)', padding: '10px', borderRadius: '12px' }}>
+                          <span style={{ opacity: 0.6 }}>Ganho em Juros:</span><br />
+                          <strong style={{ color: '#00E676' }}>R$ {investProfitEarned.toFixed(2)}</strong>
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: '15px', textAlign: 'center', fontSize: '0.6rem', opacity: 0.8, color: '#FFD700', fontWeight: 800 }}>
+                        {betterOption === 'PAY_DEBT'
+                          ? `Economia líquida de R$ ${diff.toFixed(2)} ao quitar agora.`
+                          : `Ganho líquido de R$ ${diff.toFixed(2)} ao manter investido.`
+                        }
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <button className="primary-btn" style={{ marginTop: '20px' }} onClick={() => setShowDebtVsInvestModal(false)}>FECHAR SIMULADOR</button>
+              </div>
+            </div>
           )
         }
 

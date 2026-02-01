@@ -1,12 +1,33 @@
-# 🚀 CDI Tycoon v0.41.0 - O Simulador Definitivo de Magnata
+# 🚀 CDI Tycoon v0.42.0 - O Simulador Definitivo de Magnata
 
-![Version](https://img.shields.io/badge/version-0.41.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.42.0-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-Proprietary-red?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19.2.0-61dafb?style=for-the-badge&logo=react)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-Ready-orange?style=for-the-badge)
 
 ** 🎮 CDI Tycoon** não é apenas um simulador financeiro; é a sua jornada de Bronze a Magnata Lendário. Misturando matemática real de investimentos com mecânicas de RPG e Tycoon, aqui seu patrimônio gera XP, desbloqueia tecnologias e define seu status no mercado.
+
+---
+
+## 🆕 O que chegou na v0.42.0? (Independência & Estratégia)
+
+### 🧘 Modo Foco (Zen Mode)
+*   **Minimalismo Extremo:** Uma interface livre de distrações, com animações fluidas e fundos dinâmicos.
+*   **Micro-Cents Precision:** Agora exibe o patrimônio bruto com precisão de 8 casas decimais, permitindo ver cada fração de rendimento em tempo real.
+*   **Estética Premium:** Foca apenas no Patrimônio Total e nos rendimentos por hora/dia.
+
+### ⏳ Widget "Dia da Liberdade" (Independência Financeira)
+*   **Cálculo Dinâmico:** Nova contagem regressiva exibindo o tempo exato em **Anos, Meses, Dias e Horas** para atingir sua liberdade.
+*   **Aporte Mensal:** Possibilidade de definir um investimento mensal fixo para acelerar e tornar o cálculo de independência muito mais realista.
+*   **Gamificação:** Barra de progresso interativa que celebra a isenção total dos seus custos de vida.
+
+### ⚔️ Simulador Dívida vs. Investimento
+*   **Tomada de Decisão:** Ferramenta estratégica para decidir se vale mais a pena quitar uma dívida com juros altos ou manter o dinheiro rendendo no CDB.
+*   **Veredito Matemático:** O sistema calcula a economia líquida de cada opção em tempo real.
+
+### 📈 Corretor de Inflação (IPCA)
+*   **Poder de Compra:** Alterne entre rendimento nominal e rendimento real com inflação descontada.
 
 ---
 
