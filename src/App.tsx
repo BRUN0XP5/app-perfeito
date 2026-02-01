@@ -3392,12 +3392,13 @@ function App() {
 
                   {/* SISTEMA DE TRIBUTAÇÃO */}
                   <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#FF4D4D', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #FF4D4D', paddingLeft: '8px' }}>📉 IMPOSTOS (IR & IOF)</h4>
+                    <h4 style={{ color: '#FF4D4D', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #FF4D4D', paddingLeft: '8px' }}>📉 IMPOSTOS E RESGATES</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Para ativos não isentos, aplicamos a tabela regressiva real:</p>
+                      <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Ao realizar um resgate, o sistema agora mostra o impacto real:</p>
                       <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <li><strong>⚠️ Transparência de Perda:</strong> Você verá o quanto deixará de ganhar em rendimentos ao retirar o capital.</li>
                         <li><strong>🔴 IOF:</strong> Cobrado apenas se resgatar antes de 30 dias. Começa em 96% e zera no 30º dia.</li>
-                        <li><strong>🟡 Imposto de Renda:</strong> Começa em 22.5% e cai para 15% após 2 anos (720 dias). O IR incide apenas sobre o **lucro**.</li>
+                        <li><strong>🟡 IR Regressivo:</strong> Mostra a alíquota atual baseada no tempo do investimento (22.5% a 15%).</li>
                       </ul>
                     </div>
                   </div>
@@ -3407,21 +3408,19 @@ function App() {
                     <h4 style={{ color: '#00A3FF', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #00A3FF', paddingLeft: '8px' }}>🍔 FUNCIONALIDADES DO MENU</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <li><strong>🌍 Câmbio Internacional:</strong> Use a carteira integrada para converter BRL em moedas fortes. A Wise cobra 0.6% de tarifa + IOF.</li>
-                        <li><strong>🧠 Skills & Upgrades:</strong> Gaste seu status para desbloquear ferramentas de análise como o Gráfico de 10 Anos e o Monitor de Eficiência.</li>
-                        <li><strong>🏆 Conquistas:</strong> Complete missões para ganhar troféus e skins de máquinas exclusivas.</li>
-                        <li><strong>🧮 Calculadora:</strong> Simule aportes mensais e veja a mágica dos juros compostos no longo prazo.</li>
+                        <li><strong>🌍 Câmbio Internacional:</strong> Converta BRL em USD/JPY. A Wise cobra 0.6% de tarifa + IOF.</li>
+                        <li><strong>🧠 Skills & Upgrades:</strong> Desbloqueie gráficos e monitores de eficiência avançados.</li>
+                        <li><strong>🏆 Conquistas:</strong> Ganhe troféus e skins aleatórias ao completar missões ou depositar.</li>
+                        <li><strong>📅 Data de Aplicação:</strong> Você pode retroagir a data de criação de um ativo para simular investimentos reais.</li>
                       </ul>
                     </div>
                   </div>
 
-                  {/* SKINS E CUSTOMIZAÇÃO */}
+                  {/* IDENTIDADE VISUAL */}
                   <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#AB47BC', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #AB47BC', paddingLeft: '8px' }}>✨ SKINS E CUSTOMIZAÇÃO</h4>
+                    <h4 style={{ color: '#64FFDA', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #64FFDA', paddingLeft: '8px' }}>💎 VISUAL E PWA</h4>
                     <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>
-                      Existem duas formas principais de ganhar visuais novos:<br />
-                      1. <strong>Depositos PIX:</strong> A cada R$ 1.000,00 depositados (acumulativo), você ganha uma Skin aleatória (Common a Legendary).<br />
-                      2. <strong>Progresso:</strong> Certas conquistas e níveis liberam cores de nome, auras e fundos exclusivos.
+                      O CDI Tycoon agora utiliza o <strong>Crystal Cube</strong> como sua marca oficial. Instale o PWA para ter acesso rápido e notificações de rendimento direto na tela inicial do seu celular.
                     </p>
                   </div>
 
@@ -3461,7 +3460,7 @@ function App() {
                     </div>
 
                     <div style={{ marginTop: '1rem', fontSize: '0.55rem', opacity: 0.3, textAlign: 'center', fontWeight: 800 }}>
-                      SYSTEM VERSION v0.40.0 beta
+                      SYSTEM VERSION v0.41.0
                     </div>
                   </div>
                 </div>
