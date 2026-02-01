@@ -700,12 +700,11 @@ function App() {
               }
             }
 
-            // 1. Resetar Conquistas Diárias no DB de forma ATÔMICA
-            const dailyIds = ACHIEVEMENTS.filter(a => a.category === 'daily').map(a => a.id);
+            // 1. Resetar TODAS as Conquistas no DB (Zera unlocked, notified e unlocked_at)
+            // Agora o reset é global para todas as categorias, não apenas 'daily'
             await supabase.from('user_achievements')
               .update({ unlocked: false, notified: false, unlocked_at: null })
-              .eq('user_id', session.id)
-              .in('achievement_id', dailyIds);
+              .eq('user_id', session.id);
 
             // 2. Atualizar Stats no DB
             await supabase.from('user_stats').update({
