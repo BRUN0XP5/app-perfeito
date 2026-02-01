@@ -10,14 +10,20 @@
 
 ---
 
-## 🆕 O que chegou na v0.41.0?
+## 🆕 O que chegou na v0.41.0? (Estabilidade & Precisão)
+
+### 📈 Histórico de Ativos (Data de Aplicação)
+*   **Data Personalizada:** Agora você pode definir a data exata em que o investimento foi feito. Isso permite migrar investimentos reais para o app sem resetar o cronômetro do IOF e IR.
+*   **Cálculo Retroativo:** O app calcula automaticamente o desconto de impostos baseado na idade real do ativo.
+
+### 🛡️ Estabilidade & Missões Diárias
+*   **Sistema de Reset Global:** Missões e streaks agora resetam pontualmente à meia-noite (00:00) de forma global, garantindo consistência entre todos os dispositivos.
+*   **Correção de Resgate:** Corrigido o erro onde o botão "Resgatar" reaparecia após o login caso a conquista já tivesse sido conquistada.
+*   **Persistência Robusta:** Dados de Streak e Missões agora são salvos instantaneamente no Supabase, evitando perda de progresso ao trocar de aba ou deslogar.
 
 ### 🖼️ Nova Identidade Visual PWA
 *   **Ícone Premium:** Nova arte de PWA com estética high-tech (cubo energético e gráficos financeiros).
 *   **Login Clean:** Removi a imagem de capa da tela de login para um acesso mais direto, rápido e profissional.
-
-### 🛡️ Estabilidade de Missões Diárias
-*   **Persistência de Sessão:** Corrigi o comportamento das missões diárias, garantindo que o progresso não seja resetado ao fazer logout e login no mesmo dia.
 *   **Correção de Build:** Removi variáveis não utilizadas que causavam falhas no deploy da Vercel.
 
 ---
