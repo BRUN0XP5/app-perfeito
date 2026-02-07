@@ -3927,14 +3927,23 @@ function App() {
 
                 <div className="help-section" style={{ maxHeight: '65vh', overflowY: 'auto', paddingRight: '12px' }}>
 
-                  {/* NOVIDADES V0.42.0 */}
-                  <div style={{ marginBottom: '2rem', background: 'rgba(0,163,255,0.05)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(0,163,255,0.2)' }}>
-                    <h4 style={{ color: '#00A3FF', fontSize: '0.8rem', marginBottom: '10px' }}>⭐ NOVIDADES DA VERSÃO v0.42.0</h4>
+                  {/* NOVIDADES V0.43.0 */}
+                  <div style={{ marginBottom: '2rem', background: 'rgba(155, 93, 229, 0.05)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(155, 93, 229, 0.2)' }}>
+                    <h4 style={{ color: '#E0AAFF', fontSize: '0.8rem', marginBottom: '10px' }}>⭐ NOVIDADES DA VERSÃO v0.43.0</h4>
                     <ul style={{ fontSize: '0.7rem', opacity: 0.9, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <li><strong>🧘 Modo Zen:</strong> Acesse pelo menu para uma visualização minimalista e relaxante do seu progresso.</li>
-                      <li><strong>⏳ Dia da Liberdade:</strong> O widget no dashboard mostra quão perto sua renda passiva está de igualar seu salário.</li>
-                      <li><strong>⚔️ Simulador de Dívidas:</strong> Compare o custo de juros de uma dívida contra o ganho de um investimento antes de decidir pagar.</li>
-                      <li><strong>📉 Ganho Real (IPCA):</strong> Use o botão na projeção de rendimentos para ver o lucro descontado pela inflação.</li>
+                      <li><strong>📈 Bolsa Real-Time:</strong> Compre Ações e FIIs com cotações reais via IA (Yahoo Finance).</li>
+                      <li><strong>💰 Venda de Ativos:</strong> Agora você pode vender seus papéis e realizar lucro no saldo líquido.</li>
+                      <li><strong>🧮 Aporte por Cotas:</strong> Invista informando Preço e Quantidade com cálculo automático de total.</li>
+                      <li><strong>📦 Carteira Detalhada:</strong> Veja suas cotas e frequência de dividendos (Mensal, Trimestral) nos cards.</li>
+                    </ul>
+                  </div>
+
+                  {/* NOVIDADES ANTERIORES */}
+                  <div style={{ marginBottom: '2rem', background: 'rgba(0,163,255,0.05)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(0,163,255,0.2)', opacity: 0.7 }}>
+                    <h4 style={{ color: '#00A3FF', fontSize: '0.8rem', marginBottom: '10px' }}>⭐ VERSÃO v0.42.0</h4>
+                    <ul style={{ fontSize: '0.65rem', opacity: 0.9, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <li><strong>🧘 Modo Zen & Dia da Liberdade:</strong> Visualização minimalista e progresso de IF.</li>
+                      <li><strong>⚔️ Simulador de Dívidas & IPCA:</strong> Ferramentas estratégicas de decisão.</li>
                     </ul>
                   </div>
 
@@ -4040,7 +4049,7 @@ function App() {
                     </div>
 
                     <div style={{ marginTop: '1rem', fontSize: '0.55rem', opacity: 0.3, textAlign: 'center', fontWeight: 800 }}>
-                      SYSTEM VERSION v0.41.0
+                      SYSTEM VERSION v0.43.0
                     </div>
                   </div>
                 </div>
