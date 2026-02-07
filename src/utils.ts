@@ -23,7 +23,7 @@ export const getTaxMultipliers = (createdAtStr?: string, ignoreIof = false, refe
     let irRate = 0.225;
     let irRateLabel = '22.5%';
 
-    if (investmentType === 'LCI' || investmentType === 'LCA') {
+    if (investmentType === 'LCI' || investmentType === 'LCA' || investmentType === 'ACAO' || investmentType === 'FII') {
         irRate = 0;
         irRateLabel = 'ISENTO';
     } else {

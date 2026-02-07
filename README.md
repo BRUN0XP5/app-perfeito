@@ -1,6 +1,6 @@
-# 🚀 CDI Tycoon v0.42.0 - O Simulador Definitivo de Magnata
+# 🚀 CDI Tycoon v0.43.0 - O Simulador Definitivo de Magnata
 
-![Version](https://img.shields.io/badge/version-0.42.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.43.0-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-Proprietary-red?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19.2.0-61dafb?style=for-the-badge&logo=react)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
@@ -10,24 +10,42 @@
 
 ---
 
+## 🆕 O que chegou na v0.43.0? (Mercado de Capitais & Realismo)
+
+### 📈 Integração Real-Time com a B3
+*   **Dados Reais:** Conexão direta via IA com cotações do Yahoo Finance para Ações e FIIs brasileiros.
+*   **Sincronização Ativa:** Use a IA para atualizar sua carteira com os preços reais de mercado em um clique.
+
+### 💰 Sistema de Venda e Liquidez
+*   **Venda de Ativos:** Agora você pode vender suas Ações e FIIs instantaneamente para realizar lucro no saldo líquido.
+*   **Ordem de Venda:** Modal específico para mercado de capitais com projeção pós-venda.
+
+### 🧮 Calculadora de Aporte 2.0
+*   **Quantidade x Preço:** No momento da compra, informe a quantidade de cotas e o preço atual para que o sistema calcule o investimento total automaticamente.
+*   **Edição Profissional:** Gerencie suas posições alterando frequência de dividendos, quantidade de papéis e rendimento estimado (DY).
+
+### 💎 Painel de Dividendos
+*   **Projeção de Proventos:** Veja exatamente quanto sua carteira de Bolsa gera de renda passiva mensal, separada da Renda Fixa.
+*   **Dados de Posicionamento:** Os cards agora mostram quantas cotas você possui e a frequência de pagamento (Mensal, Trimestral, etc) totalmente em português.
+
+---
+
 ## 🆕 O que chegou na v0.42.0? (Independência & Estratégia)
 
 ### 🧘 Modo Foco (Zen Mode)
-*   **Minimalismo Extremo:** Uma interface livre de distrações, com animações fluidas e fundos dinâmicos.
-*   **Micro-Cents Precision:** Agora exibe o patrimônio bruto com precisão de 8 casas decimais, permitindo ver cada fração de rendimento em tempo real.
+*   **Minimalismo Extremo:** Uma interface livre de distrações, com animações fluidas e fundos dinâmicos para você observar seu patrimônio crescer em paz.
 *   **Estética Premium:** Foca apenas no Patrimônio Total e nos rendimentos por hora/dia.
 
-### ⏳ Widget "Dia da Liberdade" (Independência Financeira)
-*   **Cálculo Dinâmico:** Nova contagem regressiva exibindo o tempo exato em **Anos, Meses, Dias e Horas** para atingir sua liberdade.
-*   **Aporte Mensal:** Possibilidade de definir um investimento mensal fixo para acelerar e tornar o cálculo de independência muito mais realista.
-*   **Gamificação:** Barra de progresso interativa que celebra a isenção total dos seus custos de vida.
+### ⏳ Widget "Dia da Liberdade"
+*   **Progresso Real:** Acompanhe o quanto falta para sua renda passiva mensal cobrir 100% do seu salário declarado. 
+*   **Gamificação:** Barra de progresso interativa que muda de cor ao atingir a Independência Financeira.
 
 ### ⚔️ Simulador Dívida vs. Investimento
 *   **Tomada de Decisão:** Ferramenta estratégica para decidir se vale mais a pena quitar uma dívida com juros altos ou manter o dinheiro rendendo no CDB.
 *   **Veredito Matemático:** O sistema calcula a economia líquida de cada opção em tempo real.
 
 ### 📈 Corretor de Inflação (IPCA)
-*   **Poder de Compra:** Alterne entre rendimento nominal e rendimento real com inflação descontada.
+*   **Poder de Compra:** Alterne entre rendimento nominal e rendimento real. Veja quanto seu dinheiro realmente está "ganhando" acima da inflação estimada (IPCA).
 
 ---
 

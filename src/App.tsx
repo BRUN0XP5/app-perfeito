@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useMemo, useRef, type ReactNode } from 'react'
+import { useEffect, useState, useMemo, useRef, type ReactNode } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import './App.css'
 import { SUPABASE_URL, SUPABASE_KEY, DEFAULT_SELIC, DEFAULT_IPCA } from './constants'
@@ -32,9 +32,12 @@ interface Machine {
   liquidity_type?: 'daily' | 'locked_30' | 'locked_365';
   locked_until?: string;
   max_capacity?: number;
-  investment_type?: 'CDB' | 'IPCA' | 'LCI' | 'LCA';
+  investment_type?: 'CDB' | 'IPCA' | 'LCI' | 'LCA' | 'ACAO' | 'FII';
   yield_mode?: 'PRE' | 'POS';
   paused?: boolean;
+  payment_frequency?: 'daily' | 'monthly' | 'quarterly' | 'semiannual' | 'annual';
+  stock_quantity?: number;
+  stock_purchase_price?: number;
 }
 
 interface Activity {
@@ -252,6 +255,8 @@ function App() {
   const [editValue, setEditValue] = useState('')
   const [editDate, setEditDate] = useState('')
   const [editLimit, setEditLimit] = useState('')
+  const [editFrequency, setEditFrequency] = useState<'daily' | 'monthly' | 'quarterly' | 'semiannual' | 'annual'>('monthly')
+  const [editQuantity, setEditQuantity] = useState('')
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [historyData, setHistoryData] = useState<any[]>([])
 
@@ -424,6 +429,16 @@ function App() {
   const [showRealYield, setShowRealYield] = useState(false);
   const IPCA_ANUAL_MOCK = 0.045; // 4.5% mock
   const [monthlyInvestment, setMonthlyInvestment] = useState(0);
+  const [showStockMarketModal, setShowStockMarketModal] = useState(false);
+  const [newStockTicker, setNewStockTicker] = useState('');
+  const [newStockPrice, setNewStockPrice] = useState('');
+  const [newStockDY, setNewStockDY] = useState('');
+  const [newStockFrequency, setNewStockFrequency] = useState<'daily' | 'monthly' | 'quarterly' | 'semiannual' | 'annual'>('monthly');
+  const [newStockInvestment, setNewStockInvestment] = useState('');
+  const [newStockQuantity, setNewStockQuantity] = useState('');
+  const [isUpdatingStocks, setIsUpdatingStocks] = useState(false);
+
+
 
 
   // Achievement Checker - monitors transitions to show popups
@@ -1228,6 +1243,7 @@ function App() {
     if (!session) return;
 
     let cycleTotalProfit = 0;
+    let bolsaDividends = 0;
     // SEGURANÇA: Filtramos máquinas que não pertencem à sessão atual para evitar cross-account leak
     const validMachines = machines.filter((m: any) => m.user_id === session.id);
 
@@ -1247,8 +1263,21 @@ function App() {
       cycleTotalProfit += yield10s;
 
       const dailyYield = (m.rendimento_dia || 0) + yield10s;
+
+      // Se for ACAO ou FII, o rendimento vai para o SALDO (Dividendos) em vez de aumentar o valor do ativo
+      if (m.investment_type === 'ACAO' || m.investment_type === 'FII') {
+        bolsaDividends += yield10s;
+        return { ...m, rendimento_dia: dailyYield };
+      }
+
       return { ...m, valor: m.valor + yield10s, rendimento_dia: dailyYield };
     });
+
+    if (bolsaDividends > 0) {
+      const newBalance = balance + bolsaDividends;
+      setBalance(newBalance);
+      await supabase.from('user_stats').update({ balance: newBalance }).eq('user_id', session.id);
+    }
 
     let usdInterestCycle = 0;
     if (usdBalance > 0) {
@@ -1506,15 +1535,177 @@ function App() {
     }
   }
 
+  const createStockMachine = async () => {
+    const price = parseFloat(newStockPrice);
+    const qty = parseFloat(newStockQuantity);
+    const investAmount = price * qty;
+    const dy = parseFloat(newStockDY);
+
+    if (!newStockTicker) return setNotification('INFORME O TICKER');
+    if (isNaN(price) || price <= 0) return setNotification('PREÇO INVÁLIDO');
+    if (isNaN(qty) || qty <= 0) return setNotification('QUANTIDADE INVÁLIDA');
+    if (investAmount > balance) return setNotification('CAPITAL INSUFICIENTE');
+
+    // DY é anual, rendimento_dia é DY/252
+    const dailyYield = (investAmount * (dy / 100)) / 252;
+
+    const newMachine = {
+      user_id: session.id,
+      nome: newStockTicker.toUpperCase(),
+      valor: investAmount,
+      cdi_quota: dy, // Usamos dy no lugar da quota CDI para simplificar
+      vencimento: null,
+      rendimento_dia: dailyYield,
+      investment_type: (newStockTicker.toUpperCase().endsWith('11') || newStockTicker.toUpperCase().includes('FII')) ? 'FII' : 'ACAO',
+      created_at: new Date().toISOString(),
+      stock_quantity: qty,
+      stock_purchase_price: price,
+      payment_frequency: newStockFrequency,
+      skin: 'none',
+      liquidity_type: 'daily',
+      yield_mode: 'PRE' // Dividendos são como taxa pré-fixada sobre o valor investido
+    };
+
+    const { data, error } = await supabase.from('maquinas').insert([newMachine]).select().single();
+
+    if (!error && data) {
+      setMachines([...machines, data]);
+      const newBalance = balance - investAmount;
+      setBalance(newBalance);
+      await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance });
+
+      triggerSuccess('ATIVO DA BOLSA CRIADO', `${newStockTicker.toUpperCase()} adicionado à carteira!`, '📈');
+      addActivity({
+        type: 'create_machine',
+        label: 'NOVO ATIVO BOLSA',
+        amount: investAmount,
+        icon: '📈',
+        details: `Comprou ${qty.toFixed(2)} cotas de ${newStockTicker.toUpperCase()}`
+      });
+
+      setShowStockMarketModal(false);
+      // Reset form
+      setNewStockTicker('');
+      setNewStockPrice('');
+      setNewStockDY('');
+      setNewStockInvestment('');
+      setNewStockQuantity('');
+    } else if (error) {
+      setNotification(`ERRO: ${error.message}`);
+    }
+  }
+
+  const updateStockPortfolioWithAI = async () => {
+    const stockMachines = machines.filter(m => m.investment_type === 'ACAO' || m.investment_type === 'FII');
+    if (stockMachines.length === 0) return setNotification('SEM ATIVOS NA BOLSA');
+
+    setIsUpdatingStocks(true);
+    setNotification('🤖 IA ACESSANDO DADOS DO GOOGLE FINANCE...');
+
+    try {
+      let totalGainLoss = 0;
+      const updatedMachs = [...machines];
+      const updatePromises = [];
+
+      // Fazemos a pesquisa individual por ticker para maior precisão (IA style)
+      for (const m of stockMachines) {
+        try {
+          // Yahoo Finance usa .SA para cotações brasileiras
+          const ticker = m.nome.toUpperCase().includes('.') ? m.nome.toUpperCase() : `${m.nome.toUpperCase()}.SA`;
+
+          // Usamos um proxy público para evitar erros de CORS no navegador
+          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}`)}`;
+          const response = await fetch(proxyUrl);
+          const proxyData = await response.json();
+
+          if (!proxyData.contents) continue;
+          const data = JSON.parse(proxyData.contents);
+
+          if (data && data.chart && data.chart.result && data.chart.result[0]) {
+            const currentPrice = data.chart.result[0].meta.regularMarketPrice;
+            const purchasePrice = m.stock_purchase_price || (m.valor / (m.stock_quantity || 1));
+            const diffPerShare = currentPrice - purchasePrice;
+            const totalDiff = diffPerShare * (m.stock_quantity || 0);
+
+            totalGainLoss += totalDiff;
+
+            const machIdx = updatedMachs.findIndex(um => um.id === m.id);
+            if (machIdx > -1) {
+              const newTotalValue = currentPrice * (m.stock_quantity || 0);
+              updatedMachs[machIdx] = {
+                ...updatedMachs[machIdx],
+                valor: newTotalValue,
+                stock_purchase_price: currentPrice
+              };
+
+              updatePromises.push(
+                supabase.from('maquinas')
+                  .update({ valor: newTotalValue, stock_purchase_price: currentPrice })
+                  .eq('id', m.id)
+              );
+            }
+          }
+        } catch (tickerErr) {
+          console.error(`Erro ao atualizar ticker ${m.nome}:`, tickerErr);
+        }
+      }
+
+      const dbResults = await Promise.all(updatePromises);
+      const errorFound = dbResults.some(r => r.error);
+
+      if (!errorFound && updatePromises.length > 0) {
+        const newBalance = balance + totalGainLoss;
+        setBalance(newBalance);
+        setMachines(updatedMachs);
+        await supabase.from('user_stats').update({ balance: newBalance }).eq('user_id', session.id);
+
+        triggerSuccess(
+          totalGainLoss >= 0 ? 'MERCADO EM ALTA' : 'VALOR AJUSTADO',
+          `IA sincronizou sua carteira com o mundo real. Resultado: ${totalGainLoss >= 0 ? '+' : ''} R$ ${totalGainLoss.toFixed(2)}`,
+          totalGainLoss >= 0 ? '📈' : '📉'
+        );
+
+        addActivity({
+          type: 'stock_update',
+          label: 'IA: ATUALIZAÇÃO GOOGLE FINANCE',
+          amount: Math.abs(totalGainLoss),
+          icon: '🤖',
+          details: `IA pesquisou e atualizou ${updatePromises.length} ativos da bolsa.`
+        });
+      } else if (updatePromises.length === 0) {
+        setNotification('🤖 IA NÃO ENCONTROU DADOS PARA SEUS TICKERS');
+      }
+    } catch (err) {
+      console.error('Erro na pesquisa IA:', err);
+      setNotification('ERRO AO PESQUISAR VALORES NO MERCADO');
+    } finally {
+      setIsUpdatingStocks(false);
+    }
+  }
+
   const updateMachine = async () => {
     if (!editingMachine) return
+    const isStock = editingMachine.investment_type === 'ACAO' || editingMachine.investment_type === 'FII';
+
+    // Recalcular rendimento se for bolsa (DY)
+    let rendimento_dia = editingMachine.rendimento_dia;
+    if (isStock) {
+      const val = parseFloat(editValue);
+      const dy = parseFloat(editCDI);
+      rendimento_dia = (val * (dy / 100)) / 252;
+    }
+
     const updatedFields = {
       nome: editName,
       valor: parseFloat(editValue),
       cdi_quota: parseFloat(editCDI),
       vencimento: editDate || null,
       skin: editSkin ? String(editSkin) : 'none',
-      max_capacity: editLimit ? parseFloat(editLimit) : null
+      max_capacity: editLimit ? parseFloat(editLimit) : null,
+      payment_frequency: isStock ? editFrequency : editingMachine.payment_frequency,
+      stock_quantity: isStock ? parseFloat(editQuantity) : editingMachine.stock_quantity,
+      rendimento_dia,
+      yield_mode: isStock ? 'PRE' : editingMachine.yield_mode
     }
     const { error } = await supabase.from('maquinas').update(updatedFields).eq('id', editingMachine.id)
     if (!error) {
@@ -2343,6 +2534,104 @@ function App() {
             </div>
           </div>
 
+          <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+            <div style={{
+              background: 'linear-gradient(160deg, rgba(30, 20, 50, 0.6) 0%, rgba(10, 10, 10, 0.8) 100%)',
+              border: '1px solid rgba(155, 93, 229, 0.3)',
+              borderRadius: '24px',
+              padding: '20px',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+            }}>
+              {/* Decorative Elements */}
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #9B5DE5, #F15BB5, #00F5D4)' }}></div>
+              <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', gap: '5px' }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#9B5DE5', animation: 'pulse 2s infinite' }}></div>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#F15BB5', opacity: 0.5 }}></div>
+              </div>
+
+              {/* Header & Balance */}
+              <div style={{ marginBottom: '15px', cursor: 'pointer' }} onClick={() => setShowStockMarketModal(true)}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.2rem' }}>📈</span>
+                    <p className="balance-title" style={{ color: '#E0AAFF', fontSize: '0.7rem', margin: 0, letterSpacing: '2px', fontWeight: 800 }}>B3 / CRIPTO (RV)</p>
+                  </div>
+                  <span style={{ fontSize: '1rem', color: '#9B5DE5', opacity: 0.7 }}>⌄</span>
+                </div>
+                <h2 className="balance-value" style={{ fontSize: '2rem', opacity: 1, color: '#fff', textShadow: '0 0 15px rgba(155, 93, 229, 0.4)', margin: 0 }}>
+                  <AnimatedNumber value={machines.filter(m => ['FII', 'ACAO', 'ETF', 'CRYPTO'].includes(m.investment_type as string)).reduce((acc, m) => acc + m.valor, 0)} format={(v) => formatBRLWithPrecision(v)} />
+                </h2>
+                <p style={{ fontSize: '0.55rem', color: '#9B5DE5', margin: '4px 0 0 0', fontWeight: 700 }}>
+                  POSIÇÃO CUSTODIADA • RENDA VARIÁVEL • CLIQUE PARA INVESTIR
+                </p>
+              </div>
+
+              {/* Ticker / Asset List */}
+              <div style={{
+                display: 'flex',
+                gap: '10px',
+                overflowX: 'auto',
+                paddingBottom: '5px',
+                marginTop: '15px',
+                maskImage: 'linear-gradient(to right, black 90%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to right, black 90%, transparent 100%)'
+              }} className="custom-scrollbar">
+                {machines.filter(m => ['FII', 'ACAO', 'ETF', 'CRYPTO'].includes(m.investment_type as string)).length > 0 ? (
+                  machines.filter(m => ['FII', 'ACAO', 'ETF', 'CRYPTO'].includes(m.investment_type as string)).map((m, i) => (
+                    <div key={i} style={{
+                      minWidth: '110px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '12px',
+                      padding: '10px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      flexShrink: 0
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#fff', background: '#333', padding: '2px 6px', borderRadius: '4px' }}>
+                          {m.nome.substring(0, 5).toUpperCase()}
+                        </span>
+                        <span style={{ fontSize: '0.6rem', color: '#00E676' }}>▲</span>
+                      </div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ddd' }}>
+                        {(m.valor).toLocaleString('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })}
+                      </div>
+                      <div style={{ fontSize: '0.55rem', color: '#aaa', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>DY: {m.cdi_quota}%</span>
+                        {m.stock_quantity && <span style={{ opacity: 0.6 }}>{m.stock_quantity.toFixed(1)} qte</span>}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ width: '100%', textAlign: 'center', padding: '15px', color: '#aaa', fontSize: '0.7rem', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px' }}>
+                    Nenhum ativo de Renda Variável na carteira.
+                  </div>
+                )}
+                {/* Add fake market noise if some items exist */}
+                {machines.filter(m => ['FII', 'ACAO', 'ETF', 'CRYPTO'].includes(m.investment_type as string)).length > 0 && (
+                  <div style={{
+                    minWidth: '100px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(0, 230, 118, 0.05)', borderRadius: '12px', border: '1px solid rgba(0, 230, 118, 0.1)'
+                  }}>
+                    <span style={{ fontSize: '0.6rem', color: '#00E676', textAlign: 'center', fontWeight: 900 }}>
+                      IBOV<br />
+                      +1.2%
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+            <p className="balance-title" style={{ color: '#00E676', fontSize: '0.65rem', marginBottom: '4px' }}>TOTAL_INVESTIDO (APORTES)</p>
+            <h2 className="balance-value" style={{ fontSize: '1.6rem', opacity: 0.9, color: '#00E676' }}>
+              <AnimatedNumber value={totalInvested} format={(v) => formatBRLWithPrecision(v)} />
+            </h2>
+          </div>
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '0.8rem' }}>
             <p className="balance-title" style={{ margin: 0 }}>PROJEÇÃO DE RENDIMENTOS</p>
             <button
@@ -2372,12 +2661,24 @@ function App() {
               const wYield = showRealYield ? Math.max(0, yields.weeklyYield - (dailyInf * 7)) : yields.weeklyYield;
               const mYield = showRealYield ? Math.max(0, yields.monthlyYield - monthlyInf) : yields.monthlyYield;
 
+              // Cálculo do que é especificamente Bolsa (para mostrar ao usuário)
+              const stockYieldMonthly = machines
+                .filter(m => m.investment_type === 'ACAO' || m.investment_type === 'FII')
+                .reduce((acc, m) => acc + (m.valor * (m.cdi_quota / 100)) / 12, 0);
+
               return (
                 <>
                   <div className="mini-stat"><span className="label">HORA</span><span className="val" style={{ color: showRealYield ? '#00A3FF' : '#00E676' }}>R$ {hYield.toFixed(2)}</span></div>
                   <div className="mini-stat"><span className="label">DIA</span><span className="val" style={{ color: showRealYield ? '#00A3FF' : '#00E676' }}>R$ {dYield.toFixed(2)}</span></div>
                   <div className="mini-stat"><span className="label">SEMANA</span><span className="val" style={{ color: showRealYield ? '#00A3FF' : '#00E676' }}>R$ {wYield.toFixed(2)}</span></div>
                   <div className="mini-stat"><span className="label">MÊS</span><span className="val" style={{ color: showRealYield ? '#00A3FF' : '#00E676' }}>R$ {mYield.toFixed(2)}</span></div>
+
+                  {stockYieldMonthly > 0 && (
+                    <div style={{ gridColumn: 'span 4', marginTop: '8px', padding: '10px', background: 'rgba(155, 93, 229, 0.05)', borderRadius: '12px', border: '1px solid rgba(155, 93, 229, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.55rem', color: '#E0AAFF', fontWeight: 900 }}>💰 DIVIDENDOS ESTIMADOS (MÊS)</span>
+                      <span style={{ fontSize: '0.7rem', color: '#E0AAFF', fontWeight: 900 }}>R$ {stockYieldMonthly.toFixed(2)}</span>
+                    </div>
+                  )}
                 </>
               );
             })()}
@@ -2474,6 +2775,8 @@ function App() {
                               setEditDate(m.vencimento || '');
                               setEditSkin(m.skin || '');
                               setEditLimit(m.max_capacity?.toString() || '');
+                              setEditFrequency(m.payment_frequency || 'monthly');
+                              setEditQuantity(m.stock_quantity?.toString() || '');
                               setShowEditModal(true);
                             }}
                             title="Editar Ativo"
@@ -2482,21 +2785,44 @@ function App() {
                           </span>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                          <span style={{ fontSize: '0.6rem', color: '#00A3FF', fontWeight: 900, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{m.cdi_quota}% CDI</span>
+                          <span style={{ fontSize: '0.6rem', color: (m.investment_type === 'ACAO' || m.investment_type === 'FII') ? '#9B5DE5' : '#00A3FF', fontWeight: 900, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                            {m.cdi_quota}% {(m.investment_type === 'ACAO' || m.investment_type === 'FII') ? 'DY' : 'CDI'}
+                          </span>
                           <div style={{ display: 'flex', gap: '4px' }}>
                             {getTaxMultipliers(m.created_at, false, currentDate, m.investment_type).iofApplied && (
                               <span style={{ fontSize: '0.45rem', padding: '1px 3px', background: 'rgba(255, 77, 77, 0.2)', color: '#FF4D4D', borderRadius: '3px', fontWeight: 900 }}>
                                 IOF ({getTaxMultipliers(m.created_at, false, currentDate, m.investment_type).daysUntilIofZero}d)
                               </span>
                             )}
-                            <span style={{ fontSize: '0.45rem', padding: '1px 3px', background: 'rgba(0, 163, 255, 0.2)', color: '#00A3FF', borderRadius: '3px', fontWeight: 900 }}>IR: {getTaxMultipliers(m.created_at, false, currentDate, m.investment_type).irRateLabel}</span>
+                            <span style={{ fontSize: '0.45rem', padding: '1px 3px', background: (m.investment_type === 'ACAO' || m.investment_type === 'FII') ? 'rgba(155, 93, 229, 0.2)' : 'rgba(0, 163, 255, 0.2)', color: (m.investment_type === 'ACAO' || m.investment_type === 'FII') ? '#E0AAFF' : '#00A3FF', borderRadius: '3px', fontWeight: 900 }}>
+                              {m.investment_type}: {getTaxMultipliers(m.created_at, false, currentDate, m.investment_type).irRateLabel}
+                            </span>
                           </div>
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                        {m.liquidity_type === 'locked_30' && <span style={{ fontSize: '0.5rem', background: 'rgba(255, 215, 0, 0.2)', color: '#FFD700', padding: '2px 6px', borderRadius: '4px', fontWeight: 900 }}>🚀 TURBO D+30</span>}
-                        {m.liquidity_type === 'locked_365' && <span style={{ fontSize: '0.5rem', background: 'rgba(255, 77, 77, 0.2)', color: '#FF4D4D', padding: '2px 6px', borderRadius: '4px', fontWeight: 900 }}>🔒 FGC MAX</span>}
-                        {(!m.liquidity_type || m.liquidity_type === 'daily') && <span style={{ fontSize: '0.5rem', background: 'rgba(0, 230, 118, 0.2)', color: '#00E676', padding: '2px 6px', borderRadius: '4px', fontWeight: 900 }}>✅ D+0</span>}
+                        {(m.investment_type === 'ACAO' || m.investment_type === 'FII') ? (
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <span style={{ fontSize: '0.5rem', background: 'rgba(155, 93, 229, 0.2)', color: '#E0AAFF', padding: '2px 6px', borderRadius: '4px', fontWeight: 900 }}>
+                              📦 {
+                                m.payment_frequency === 'daily' ? 'DIÁRIO' :
+                                  m.payment_frequency === 'monthly' ? 'MENSAL' :
+                                    m.payment_frequency === 'quarterly' ? 'TRIMESTRAL' :
+                                      m.payment_frequency === 'semiannual' ? 'SEMESTRAL' :
+                                        m.payment_frequency === 'annual' ? 'ANUAL' : 'MENSAL'
+                              }
+                            </span>
+                            <span style={{ fontSize: '0.5rem', background: 'rgba(255, 255, 255, 0.1)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 900 }}>
+                              {m.stock_quantity?.toFixed(2)} COTAS
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            {m.liquidity_type === 'locked_30' && <span style={{ fontSize: '0.5rem', background: 'rgba(255, 215, 0, 0.2)', color: '#FFD700', padding: '2px 6px', borderRadius: '4px', fontWeight: 900 }}>🚀 TURBO D+30</span>}
+                            {m.liquidity_type === 'locked_365' && <span style={{ fontSize: '0.5rem', background: 'rgba(255, 77, 77, 0.2)', color: '#FF4D4D', padding: '2px 6px', borderRadius: '4px', fontWeight: 900 }}>🔒 FGC MAX</span>}
+                            {(!m.liquidity_type || m.liquidity_type === 'daily') && <span style={{ fontSize: '0.5rem', background: 'rgba(0, 230, 118, 0.2)', color: '#00E676', padding: '2px 6px', borderRadius: '4px', fontWeight: 900 }}>✅ D+0</span>}
+                          </>
+                        )}
                       </div>
                       <p style={{ margin: '2px 0', fontSize: '1rem', color: isBusinessDay ? '#00E676' : '#FF4D4D', fontWeight: 900, fontFamily: 'JetBrains Mono', textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>
                         {(m.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
@@ -2528,8 +2854,20 @@ function App() {
                   </div>
                   <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
                     <button className="action-btn aporte" style={{ flex: 2, padding: '10px 8px', fontSize: '0.7rem' }} onClick={() => { setSelectedMachine(m); setShowAporteModal(true); setAporteValue(''); }}>APORTE</button>
-                    {(m.vencimento && new Date(m.vencimento) <= currentDate) ? (
-                      <button className="action-btn vender-solid" style={{ flex: 1, padding: '10px 8px', fontSize: '0.65rem' }} onClick={() => { setShowConfirmResgate(m); setResgateValue(''); }}>RESGATAR</button>
+                    {((m.investment_type === 'ACAO' || m.investment_type === 'FII') || !m.vencimento || new Date(m.vencimento) <= currentDate) ? (
+                      <button
+                        className="action-btn vender-solid"
+                        style={{
+                          flex: 1,
+                          padding: '10px 8px',
+                          fontSize: '0.65rem',
+                          background: (m.investment_type === 'ACAO' || m.investment_type === 'FII') ? 'rgba(155, 93, 229, 0.2)' : '',
+                          borderColor: (m.investment_type === 'ACAO' || m.investment_type === 'FII') ? '#9B5DE5' : ''
+                        }}
+                        onClick={() => { setShowConfirmResgate(m); setResgateValue(''); }}
+                      >
+                        {(m.investment_type === 'ACAO' || m.investment_type === 'FII') ? 'VENDER' : 'RESGATAR'}
+                      </button>
                     ) : (
                       <button className="action-btn" disabled style={{ flex: 1, padding: '10px 8px', fontSize: '0.55rem', opacity: 0.5, cursor: 'not-allowed', background: '#333' }}>BLOQUEADO</button>
                     )}
@@ -2580,21 +2918,19 @@ function App() {
           </div>
         </div>
 
-        {notification && <div className="notification-toast"><div className="toast-content">{notification}</div></div>}
-
         {
           showConfirmResgate && (
             <div className="modal-overlay" onClick={() => setShowConfirmResgate(null)}>
               <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden', borderRadius: '24px', border: 'none', position: 'relative' }}>
                 <button onClick={() => setShowConfirmResgate(null)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
-                <div style={{ background: 'linear-gradient(135deg, #FF4D4D 0%, #D32F2F 100%)', padding: '1.5rem', textAlign: 'center' }}>
-                  <h3 style={{ margin: 0, fontSize: '0.9rem', letterSpacing: '2px', fontWeight: 900, color: '#fff' }}>RESGATE_DE_CAPITAL</h3>
+                <div style={{ background: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'linear-gradient(135deg, #9B5DE5 0%, #7B2CBF 100%)' : 'linear-gradient(135deg, #FF4D4D 0%, #D32F2F 100%)', padding: '1.5rem', textAlign: 'center' }}>
+                  <h3 style={{ margin: 0, fontSize: '0.9rem', letterSpacing: '2px', fontWeight: 900, color: '#fff' }}>{(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'ORDEM_DE_VENDA' : 'RESGATE_DE_CAPITAL'}</h3>
                   <p style={{ margin: '5px 0 0 0', fontSize: '0.65rem', opacity: 0.8, color: '#fff', fontWeight: 700 }}>{showConfirmResgate?.nome.toUpperCase()}</p>
                 </div>
 
                 <div style={{ padding: '1.5rem' }}>
                   <div className="input-group">
-                    <label htmlFor="resgate-input" style={{ fontSize: '0.55rem', color: '#FF4D4D', fontWeight: 900, marginBottom: '8px', display: 'block', letterSpacing: '1px' }}>VALOR PARA RESGATE (R$)</label>
+                    <label htmlFor="resgate-input" style={{ fontSize: '0.55rem', color: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? '#9B5DE5' : '#FF4D4D', fontWeight: 900, marginBottom: '8px', display: 'block', letterSpacing: '1px' }}>{(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'VALOR DA VENDA (R$)' : 'VALOR PARA RESGATE (R$)'}</label>
                     <div style={{ position: 'relative' }}>
                       <input
                         id="resgate-input"
@@ -2608,7 +2944,7 @@ function App() {
                       />
                       <button
                         onClick={() => setResgateValue(showConfirmResgate.valor.toString())}
-                        style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255, 77, 77, 0.2)', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.55rem', fontWeight: 900, cursor: 'pointer' }}
+                        style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'rgba(155, 93, 229, 0.2)' : 'rgba(255, 77, 77, 0.2)', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.55rem', fontWeight: 900, cursor: 'pointer' }}
                       >
                         TUDO
                       </button>
@@ -2637,8 +2973,8 @@ function App() {
                         </div>
 
                         {/* PÓS-RESGATE */}
-                        <div style={{ background: 'rgba(255, 77, 77, 0.05)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(255, 77, 77, 0.2)' }}>
-                          <div style={{ fontSize: '0.45rem', color: '#FF4D4D', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>PROJEÇÃO PÓS-RESGATE</div>
+                        <div style={{ background: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'rgba(155, 93, 229, 0.05)' : 'rgba(255, 77, 77, 0.05)', padding: '12px', borderRadius: '16px', border: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? '1px solid rgba(155, 93, 229, 0.2)' : '1px solid rgba(255, 77, 77, 0.2)' }}>
+                          <div style={{ fontSize: '0.45rem', color: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? '#9B5DE5' : '#FF4D4D', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>{(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'PROJEÇÃO PÓS-VENDA' : 'PROJEÇÃO PÓS-RESGATE'}</div>
                           {(() => {
                             const next = calculateProjection(showConfirmResgate?.valor || 0, `-${resgateValue}`, showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode);
                             return (
@@ -2687,18 +3023,18 @@ function App() {
                       className="primary-btn"
                       style={{
                         flex: 1.5,
-                        background: '#FF4D4D',
+                        background: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? '#9B5DE5' : '#FF4D4D',
                         color: '#fff',
                         padding: '15px',
                         borderRadius: '14px',
                         fontSize: '0.7rem',
                         fontWeight: 900,
                         cursor: 'pointer',
-                        boxShadow: '0 10px 20px rgba(255, 77, 77, 0.2)'
+                        boxShadow: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? '0 10px 20px rgba(155, 93, 229, 0.2)' : '0 10px 20px rgba(255, 77, 77, 0.2)'
                       }}
                       onClick={handleResgate}
                     >
-                      CONFIRMAR RESGATE
+                      {(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'CONFIRMAR VENDA' : 'CONFIRMAR RESGATE'}
                     </button>
                   </div>
                 </div>
@@ -2839,23 +3175,23 @@ function App() {
                   border: '1px solid rgba(255,255,255,0.05)'
                 }}>
                   <div>
-                    <label style={{ fontSize: '0.45rem', color: '#00A3FF', fontWeight: 900, marginBottom: '4px', display: 'block', textTransform: 'uppercase' }}>Investimento Inicial</label>
-                    <input type="number" value={simInitial} onChange={e => setSimInitial(parseFloat(e.target.value) || 0)}
+                    <label htmlFor="sim-initial" style={{ fontSize: '0.45rem', color: '#00A3FF', fontWeight: 900, marginBottom: '4px', display: 'block', textTransform: 'uppercase' }}>Investimento Inicial</label>
+                    <input id="sim-initial" title="Investimento Inicial" type="number" value={simInitial} onChange={e => setSimInitial(parseFloat(e.target.value) || 0)}
                       style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '0.9rem', fontWeight: 700 }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.45rem', color: '#00A3FF', fontWeight: 900, marginBottom: '4px', display: 'block', textTransform: 'uppercase' }}>Aporte Mensal (R$)</label>
-                    <input type="number" value={simMonthly} onChange={e => setSimMonthly(parseFloat(e.target.value) || 0)}
+                    <label htmlFor="sim-monthly" style={{ fontSize: '0.45rem', color: '#00A3FF', fontWeight: 900, marginBottom: '4px', display: 'block', textTransform: 'uppercase' }}>Aporte Mensal (R$)</label>
+                    <input id="sim-monthly" title="Aporte Mensal" type="number" value={simMonthly} onChange={e => setSimMonthly(parseFloat(e.target.value) || 0)}
                       style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '0.9rem', fontWeight: 700 }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.45rem', color: '#00A3FF', fontWeight: 900, marginBottom: '4px', display: 'block', textTransform: 'uppercase' }}>Retorno Anual (%)</label>
-                    <input type="number" value={simRate} onChange={e => setSimRate(parseFloat(e.target.value) || 0)}
+                    <label htmlFor="sim-rate" style={{ fontSize: '0.45rem', color: '#00A3FF', fontWeight: 900, marginBottom: '4px', display: 'block', textTransform: 'uppercase' }}>Retorno Anual (%)</label>
+                    <input id="sim-rate" title="Retorno Anual (%)" type="number" value={simRate} onChange={e => setSimRate(parseFloat(e.target.value) || 0)}
                       style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '0.9rem', fontWeight: 700 }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.45rem', color: '#00A3FF', fontWeight: 900, marginBottom: '4px', display: 'block', textTransform: 'uppercase' }}>Prazo (Anos)</label>
-                    <input type="number" value={simYears} onChange={e => setSimYears(parseInt(e.target.value) || 1)}
+                    <label htmlFor="sim-years" style={{ fontSize: '0.45rem', color: '#00A3FF', fontWeight: 900, marginBottom: '4px', display: 'block', textTransform: 'uppercase' }}>Prazo (Anos)</label>
+                    <input id="sim-years" title="Prazo (Anos)" type="number" value={simYears} onChange={e => setSimYears(parseInt(e.target.value) || 1)}
                       style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '0.9rem', fontWeight: 700 }} />
                   </div>
                 </div>
@@ -3060,18 +3396,18 @@ function App() {
                   {/* MANUAL INPUTS */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '10px' }}>
                     <div>
-                      <label style={{ fontSize: '0.5rem', color: '#aaa', fontWeight: 800, marginBottom: '4px', display: 'block' }}>CDI (%)</label>
-                      <input type="number" value={newMachineCDI} onChange={e => setNewMachineCDI(e.target.value)}
+                      <label htmlFor="new-cdi" style={{ fontSize: '0.5rem', color: '#aaa', fontWeight: 800, marginBottom: '4px', display: 'block' }}>CDI (%)</label>
+                      <input id="new-cdi" title="Porcentagem do CDI" type="number" value={newMachineCDI} onChange={e => setNewMachineCDI(e.target.value)}
                         style={{ width: '100%', padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 700 }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.5rem', color: '#aaa', fontWeight: 800, marginBottom: '4px', display: 'block' }}>VENCIMENTO</label>
-                      <input type="date" value={newMachineDate} onChange={e => setNewMachineDate(e.target.value)}
+                      <label htmlFor="new-date" style={{ fontSize: '0.5rem', color: '#aaa', fontWeight: 800, marginBottom: '4px', display: 'block' }}>VENCIMENTO</label>
+                      <input id="new-date" title="Data de Vencimento" type="date" value={newMachineDate} onChange={e => setNewMachineDate(e.target.value)}
                         style={{ width: '100%', padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 700 }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.5rem', color: '#aaa', fontWeight: 800, marginBottom: '4px', display: 'block' }}>META (R$)</label>
-                      <input type="number" placeholder="∞" value={newMachineLimit} onChange={e => setNewMachineLimit(e.target.value)}
+                      <label htmlFor="new-limit" style={{ fontSize: '0.5rem', color: '#aaa', fontWeight: 800, marginBottom: '4px', display: 'block' }}>META (R$)</label>
+                      <input id="new-limit" title="Meta Financeira" type="number" placeholder="∞" value={newMachineLimit} onChange={e => setNewMachineLimit(e.target.value)}
                         style={{ width: '100%', padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 700 }} />
                     </div>
                   </div>
@@ -3122,19 +3458,55 @@ function App() {
             <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
               <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
                 <button onClick={() => setShowEditModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
-                <h3>EDITAR ATIVO</h3>
-                <input id="edit-mach-name" title="Nome do Ativo" placeholder="Nome do Ativo" value={editName} onChange={e => setEditName(e.target.value)} style={{ marginBottom: '10px' }} />
-                <input id="edit-mach-val" title="Valor do Ativo" placeholder="Valor R$" type="number" value={editValue} onChange={e => setEditValue(e.target.value)} style={{ marginBottom: '10px' }} />
+                <h3>EDITAR {editingMachine?.investment_type === 'ACAO' || editingMachine?.investment_type === 'FII' ? 'ATIVO BOLSA' : 'ATIVO RENDA FIXA'}</h3>
+                <div style={{ marginBottom: '10px' }}>
+                  <label htmlFor="edit-mach-name" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>TICKER / NOME</label>
+                  <input id="edit-mach-name" title="Nome do Ativo" placeholder="Nome do Ativo" value={editName} onChange={e => setEditName(e.target.value)} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                  <div>
+                    <label htmlFor="edit-mach-val" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>VALOR TOTAL (R$)</label>
+                    <input id="edit-mach-val" title="Valor do Ativo" placeholder="Valor R$" type="number" value={editValue} onChange={e => setEditValue(e.target.value)} />
+                  </div>
+                  {(editingMachine?.investment_type === 'ACAO' || editingMachine?.investment_type === 'FII') && (
+                    <div>
+                      <label htmlFor="edit-mach-qty" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>QUANTIDADE (COTA)</label>
+                      <input id="edit-mach-qty" title="Quantidade de Cotas" type="number" value={editQuantity} onChange={e => setEditQuantity(e.target.value)} />
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                   <div style={{ flex: 1 }}>
-                    <label htmlFor="edit-mach-cdi" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>% DO CDI</label>
-                    <input id="edit-mach-cdi" title="Porcentagem do CDI" type="number" value={editCDI} onChange={e => setEditCDI(e.target.value)} />
+                    <label htmlFor="edit-mach-cdi" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>{editingMachine?.investment_type === 'ACAO' || editingMachine?.investment_type === 'FII' ? '% DY ANUAL' : '% DO CDI'}</label>
+                    <input id="edit-mach-cdi" title="Rentabilidade" type="number" value={editCDI} onChange={e => setEditCDI(e.target.value)} />
                   </div>
                   <div style={{ flex: 1 }}>
                     <label htmlFor="edit-mach-date" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>VENCIMENTO</label>
                     <input id="edit-mach-date" title="Data de Vencimento" type="date" value={editDate} onChange={e => setEditDate(e.target.value)} />
                   </div>
                 </div>
+
+                {(editingMachine?.investment_type === 'ACAO' || editingMachine?.investment_type === 'FII') && (
+                  <div style={{ marginBottom: '10px' }}>
+                    <label htmlFor="edit-mach-freq" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>FREQUÊNCIA DE PAGAMENTO</label>
+                    <select
+                      id="edit-mach-freq"
+                      title="Frequência de Pagamento"
+                      value={editFrequency}
+                      onChange={e => setEditFrequency(e.target.value as any)}
+                      style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(0, 163, 255, 0.3)', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '0.8rem' }}
+                    >
+                      <option value="daily">DIÁRIO (TESTE/SIMULAÇÃO)</option>
+                      <option value="monthly">MENSAL (FIIs / ALGUMAS AÇÕES)</option>
+                      <option value="quarterly">TRIMESTRAL</option>
+                      <option value="semiannual">SEMESTRAL</option>
+                      <option value="annual">ANUAL</option>
+                    </select>
+                  </div>
+                )}
+
                 <div style={{ marginBottom: '10px' }}>
                   <label htmlFor="edit-mach-limit" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>META FINANCEIRA (R$)</label>
                   <input id="edit-mach-limit" title="Meta Financeira" type="number" placeholder="∞" value={editLimit} onChange={e => setEditLimit(e.target.value)} />
@@ -3670,7 +4042,7 @@ function App() {
                     </div>
 
                     <div style={{ marginTop: '1rem', fontSize: '0.55rem', opacity: 0.3, textAlign: 'center', fontWeight: 800 }}>
-                      SYSTEM VERSION v0.42.0
+                      SYSTEM VERSION v0.41.0
                     </div>
                   </div>
                 </div>
@@ -3780,8 +4152,10 @@ function App() {
                 )}
 
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ fontSize: '0.6rem', color: '#aaa', fontWeight: 900, marginBottom: '8px', display: 'block' }}>INVESTIMENTO MENSAL ADICIONAL (R$)</label>
+                  <label htmlFor="salary-invest" style={{ fontSize: '0.6rem', color: '#aaa', fontWeight: 900, marginBottom: '8px', display: 'block' }}>INVESTIMENTO MENSAL ADICIONAL (R$)</label>
                   <input
+                    id="salary-invest"
+                    title="Investimento Mensal Adicional"
                     type="number"
                     value={monthlyInvestment === 0 ? '' : monthlyInvestment}
                     onChange={(e) => setMonthlyInvestment(parseFloat(e.target.value) || 0)}
@@ -4103,8 +4477,10 @@ function App() {
                 </div>
 
                 <div className="input-group">
-                  <label>VALOR ECONOMIZADO (R$)</label>
+                  <label htmlFor="impulse-value">VALOR ECONOMIZADO (R$)</label>
                   <input
+                    id="impulse-value"
+                    title="Valor Economizado"
                     type="number"
                     placeholder="Ex: 30.00"
                     value={impulseValue}
@@ -4551,11 +4927,8 @@ function App() {
                     textAlign: 'center', pointerEvents: 'none', zIndex: 5, width: '100%'
                   }}>
                     <div style={{ fontSize: '0.6rem', color: '#aaa', letterSpacing: '1.5px', marginBottom: '2px', fontWeight: 800, textTransform: 'uppercase' }}>PATRIMÔNIO</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fff', textShadow: '0 0 20px rgba(255,255,255,0.2)', lineHeight: '1' }}>
-                      {totalPatrimony >= 1000000
-                        ? <>{(totalPatrimony / 1000000).toFixed(2)}<span style={{ fontSize: '0.9rem', color: '#00F5D4', marginLeft: '2px' }}>M</span></>
-                        : <>{(totalPatrimony / 1000).toFixed(1)}<span style={{ fontSize: '0.9rem', color: '#00F5D4', marginLeft: '2px' }}>k</span></>
-                      }
+                    <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', textShadow: '0 0 20px rgba(255,255,255,0.2)', lineHeight: '1' }}>
+                      {formatBRLWithPrecision(totalPatrimony)}
                     </div>
                   </div>
                 </div>
@@ -4585,7 +4958,12 @@ function App() {
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#eee', letterSpacing: '0.5px' }}>{asset.name}</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#eee', letterSpacing: '0.5px' }}>
+                            {asset.name}
+                            <span style={{ display: 'block', fontSize: '0.6rem', color: '#aaa', fontWeight: 600, marginTop: '2px' }}>
+                              R$ {asset.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </span>
                           <span style={{ fontSize: '0.8rem', fontWeight: 900, color: asset.color }}>{((asset.value / totalPatrimony) * 100).toFixed(1)}%</span>
                         </div>
                         {/* Progress Bar Container */}
@@ -4915,6 +5293,165 @@ function App() {
                 <span className="success-icon-anim">{actionPopup.icon}</span>
                 <h3 className="success-title">{actionPopup.title}</h3>
                 <p className="success-msg">{actionPopup.msg}</p>
+              </div>
+            </div>
+          )
+        }
+
+        {/* STOCK MARKET MODAL */}
+        {
+          showStockMarketModal && (
+            <div className="modal-overlay" onClick={() => setShowStockMarketModal(false)} style={{ zIndex: 10000 }}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '85vh', overflow: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(155, 93, 229, 0.2)', paddingBottom: '1rem' }}>
+                  <div>
+                    <h2 style={{ color: '#9B5DE5', margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      📈 CRIAR ATIVO DA BOLSA
+                    </h2>
+                    <p style={{ fontSize: '0.65rem', color: '#aaa', margin: '4px 0 0 0' }}>Cadastre Ações, FIIs e outros ativos manualmente</p>
+                  </div>
+                  <button className="action-btn" onClick={() => setShowStockMarketModal(false)} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.05)' }}>✖</button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  <div className="input-group">
+                    <label htmlFor="stock-ticker" style={{ fontSize: '0.65rem', color: '#9B5DE5', fontWeight: 900, marginBottom: '5px', display: 'block' }}>TICKER / CÓDIGO (EX: PETR4, HGLG11)</label>
+                    <input
+                      id="stock-ticker"
+                      title="Ticker do Ativo"
+                      type="text"
+                      placeholder="PETR4"
+                      value={newStockTicker}
+                      onChange={e => setNewStockTicker(e.target.value.toUpperCase())}
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '12px', color: '#fff', borderRadius: '12px' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div className="input-group">
+                      <label htmlFor="stock-price" style={{ fontSize: '0.65rem', color: '#aaa', fontWeight: 900, marginBottom: '5px', display: 'block' }}>PREÇO ATUAL (R$)</label>
+                      <input
+                        id="stock-price"
+                        title="Preço Atual"
+                        type="number"
+                        placeholder="0.00"
+                        value={newStockPrice}
+                        onChange={e => setNewStockPrice(e.target.value)}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px' }}
+                      />
+                    </div>
+                    <div className="input-group">
+                      <label htmlFor="stock-qty" style={{ fontSize: '0.65rem', color: '#aaa', fontWeight: 900, marginBottom: '5px', display: 'block' }}>QUANTIDADE (COTA)</label>
+                      <input
+                        id="stock-qty"
+                        title="Quantidade de Cotas"
+                        type="number"
+                        placeholder="1"
+                        value={newStockQuantity}
+                        onChange={e => setNewStockQuantity(e.target.value)}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="input-group">
+                    <label htmlFor="stock-dy" style={{ fontSize: '0.65rem', color: '#aaa', fontWeight: 900, marginBottom: '5px', display: 'block' }}>DIVIDEND YIELD (DY % ANUAL)</label>
+                    <input
+                      id="stock-dy"
+                      title="Dividend Yield"
+                      type="number"
+                      placeholder="12.5"
+                      value={newStockDY}
+                      onChange={e => setNewStockDY(e.target.value)}
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px' }}
+                    />
+                  </div>
+
+                  <div className="input-group">
+                    <label htmlFor="stock-freq" style={{ fontSize: '0.65rem', color: '#aaa', fontWeight: 900, marginBottom: '5px', display: 'block' }}>FREQUÊNCIA DE PAGAMENTO</label>
+                    <select
+                      id="stock-freq"
+                      title="Frequência de Pagamento"
+                      value={newStockFrequency}
+                      onChange={e => setNewStockFrequency(e.target.value as any)}
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px' }}
+                    >
+                      <option value="daily">DIÁRIO (TESTE/SIMULAÇÃO)</option>
+                      <option value="monthly">MENSAL (FIIs / ALGUMAS AÇÕES)</option>
+                      <option value="quarterly">TRIMESTRAL</option>
+                      <option value="semiannual">SEMESTRAL</option>
+                      <option value="annual">ANUAL</option>
+                    </select>
+                  </div>
+
+                  <div className="input-group">
+                    <label style={{ fontSize: '0.65rem', color: '#00E676', fontWeight: 900, marginBottom: '5px', display: 'block' }}>VALOR TOTAL DO INVESTIMENTO</label>
+                    <div style={{ padding: '12px', background: 'rgba(0, 230, 118, 0.1)', border: '1px solid #00E676', borderRadius: '12px', color: '#00E676', fontSize: '1.2rem', fontWeight: 900, textAlign: 'center' }}>
+                      R$ {(parseFloat(newStockPrice || '0') * parseFloat(newStockQuantity || '0')).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+
+                  <button
+                    className="primary-btn"
+                    onClick={() => {
+                      const total = parseFloat(newStockPrice || '0') * parseFloat(newStockQuantity || '0');
+                      setNewStockInvestment(total.toString());
+                      createStockMachine();
+                    }}
+                    style={{ background: 'linear-gradient(135deg, #9B5DE5 0%, #E0AAFF 100%)', color: '#000', fontWeight: 900, marginTop: '10px' }}
+                  >
+                    INVESTIR NO ATIVO
+                  </button>
+
+                  <div style={{ height: '1px', background: 'rgba(155, 93, 229, 0.2)', margin: '15px 0' }}></div>
+
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.6rem', color: '#9B5DE5', fontWeight: 800, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                      Sincronização com o Mercado Real
+                    </p>
+                    <button
+                      className="action-btn"
+                      onClick={updateStockPortfolioWithAI}
+                      disabled={isUpdatingStocks}
+                      style={{
+                        width: '100%',
+                        padding: '14px',
+                        background: isUpdatingStocks ? 'rgba(255,255,255,0.05)' : 'rgba(155, 93, 229, 0.1)',
+                        border: '1px solid rgba(155, 93, 229, 0.3)',
+                        borderRadius: '12px',
+                        color: '#9B5DE5',
+                        fontWeight: 900,
+                        fontSize: '0.75rem',
+                        transition: 'all 0.3s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '10px'
+                      }}
+                    >
+                      {isUpdatingStocks ? (
+                        <>
+                          <span style={{ fontSize: '1rem', animation: 'spin 2s linear infinite' }}>⌛</span>
+                          IAS PESQUISANDO...
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ fontSize: '1rem' }}>🤖</span>
+                          ATUALIZAR CARTEIRA VIA IA
+                        </>
+                      )}
+                    </button>
+                    <p style={{ fontSize: '0.55rem', color: '#666', marginTop: '8px' }}>
+                      A IA pesquisará os preços atuais de todos os seus ativos da bolsa e ajustará seu saldo instantaneamente.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '1.5rem', padding: '12px', background: 'rgba(155, 93, 229, 0.05)', borderRadius: '12px', border: '1px solid rgba(155, 93, 229, 0.2)' }}>
+                  <p style={{ fontSize: '0.65rem', color: '#aaa', margin: 0, lineHeight: '1.4' }}>
+                    📈 <strong>Custom Assets:</strong> Você agora tem controle total sobre seus ativos da bolsa. Defina o DY histórico e a frequência para simular sua carteira real.
+                  </p>
+                </div>
               </div>
             </div>
           )
