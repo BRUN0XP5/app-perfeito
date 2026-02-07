@@ -2188,59 +2188,63 @@ function App() {
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'radial-gradient(circle at center, #0a1128 0%, #020408 100%)',
           zIndex: 10000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          animation: 'fadeIn 1.5s ease'
+          animation: 'fadeIn 1.5s ease',
+          padding: '20px',
+          boxSizing: 'border-box'
         }}>
           {/* ZEN BACKGROUND PARTICLES (ANIMATED CIRCLES) */}
           <div style={{ position: 'absolute', width: '100%', height: '100%', overflow: 'hidden', pointerEvents: 'none' }}>
-            {[...Array(15)].map((_, i) => (
+            {[...Array(10)].map((_, i) => (
               <div key={i} style={{
                 position: 'absolute',
-                width: `${Math.random() * 300 + 50}px`,
-                height: `${Math.random() * 300 + 50}px`,
+                width: `${Math.random() * 200 + 50}px`,
+                height: `${Math.random() * 200 + 50}px`,
                 background: 'radial-gradient(circle, rgba(0, 163, 255, 0.05) 0%, transparent 70%)',
                 top: `${Math.random() * 100}%`,
                 left: `${Math.random() * 100}%`,
                 borderRadius: '50%',
-                animation: `floatZen ${Math.random() * 20 + 10}s linear infinite`,
+                animation: `floatZen ${Math.random() * 20 + 20}s linear infinite`,
                 animationDelay: `-${Math.random() * 10}s`
               }} />
             ))}
           </div>
 
-          <div style={{ textAlign: 'center', zIndex: 10, position: 'relative' }}>
-            <p style={{ fontFamily: 'JetBrains Mono', color: '#00A3FF', letterSpacing: '5px', fontSize: '0.7rem', opacity: 0.6, marginBottom: '1rem' }}>MODO FOCO ATIVO</p>
-            <h1 style={{ fontSize: '4rem', color: '#fff', fontWeight: 900, margin: 0, textShadow: '0 0 40px rgba(255,255,255,0.1)' }}>
+          <div className="zen-content-wrapper" style={{ textAlign: 'center', zIndex: 10, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <p style={{ fontFamily: 'JetBrains Mono', color: '#00A3FF', letterSpacing: '5px', fontSize: '0.6rem', opacity: 0.6, marginBottom: '0.5rem' }}>MODO FOCO ATIVO</p>
+            <h1 className="zen-main-value" style={{ fontSize: '4.5rem', color: '#fff', fontWeight: 900, margin: 0, textShadow: '0 0 40px rgba(255,255,255,0.1)', letterSpacing: '-2px' }}>
               <AnimatedNumber value={totalPatrimony} format={(v) => formatBRLWithMicroCents(v)} />
             </h1>
-            <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+            <div className="zen-stats-row" style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '30px' }}>
               <div style={{ textAlign: 'center' }}>
                 <p style={{ margin: 0, fontSize: '0.55rem', color: '#00E676', fontWeight: 800, opacity: 0.6 }}>+</p>
-                <p style={{ margin: 0, fontSize: '1.2rem', color: '#00E676', fontWeight: 900 }}>
+                <p style={{ margin: 0, fontSize: '1.4rem', color: '#00E676', fontWeight: 900 }}>
                   R$ {(yields.hourlyYield || 0).toFixed(2)}
                 </p>
-                <p style={{ margin: 0, fontSize: '0.5rem', opacity: 0.4 }}>POR HORA</p>
+                <p style={{ margin: 0, fontSize: '0.45rem', opacity: 0.4, letterSpacing: '1px' }}>POR HORA</p>
               </div>
-              <div style={{ width: '1px', height: '30px', background: 'rgba(255,255,255,0.1)' }}></div>
+              <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} className="zen-divider"></div>
               <div style={{ textAlign: 'center' }}>
                 <p style={{ margin: 0, fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, opacity: 0.6 }}>+</p>
-                <p style={{ margin: 0, fontSize: '1.2rem', color: '#00A3FF', fontWeight: 900 }}>
+                <p style={{ margin: 0, fontSize: '1.4rem', color: '#00A3FF', fontWeight: 900 }}>
                   R$ {(yields.dailyYield || 0).toFixed(2)}
                 </p>
-                <p style={{ margin: 0, fontSize: '0.5rem', opacity: 0.4 }}>POR DIA</p>
+                <p style={{ margin: 0, fontSize: '0.45rem', opacity: 0.4, letterSpacing: '1px' }}>POR DIA</p>
               </div>
             </div>
           </div>
 
           <button
+            className="zen-back-btn"
             onClick={() => setIsZenMode(false)}
             style={{
-              position: 'absolute', bottom: '10%', background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)',
-              padding: '12px 30px', borderRadius: '50px', cursor: 'pointer',
-              fontSize: '0.7rem', fontWeight: 900, letterSpacing: '1px', transition: 'all 0.3s'
+              position: 'absolute', bottom: '8%', background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)',
+              padding: '14px 40px', borderRadius: '50px', cursor: 'pointer',
+              fontSize: '0.75rem', fontWeight: 900, letterSpacing: '2px', transition: 'all 0.3s',
+              backdropFilter: 'blur(10px)'
             }}
-            onMouseOver={e => (e.currentTarget.style.color = '#fff')}
-            onMouseOut={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}
+            onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
+            onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
           >
             VOLTAR AO DASHBOARD
           </button>
@@ -2248,13 +2252,42 @@ function App() {
           <style>{`
             @keyframes floatZen {
               0% { transform: translate(0, 0) rotate(0deg); }
-              33% { transform: translate(100px, 50px) rotate(120deg); }
-              66% { transform: translate(-50px, 100px) rotate(240deg); }
-              100% { transform: translate(0, 0) rotate(360deg); }
+              33% { transform: translate(30px, -50px) rotate(5deg); }
+              66% { transform: translate(-20px, 40px) rotate(-5deg); }
+              100% { transform: translate(0, 0) rotate(0deg); }
+            }
+
+            @media (max-width: 480px) {
+              .zen-main-value { font-size: 3rem !important; }
+              .zen-stats-row { gap: 15px !important; margin-top: 1.5rem !important; }
+              .zen-stats-row p { font-size: 1.1rem !important; }
+            }
+
+            @media (orientation: landscape) and (max-height: 500px) {
+              .zen-content-wrapper { 
+                flex-direction: row !important; 
+                gap: 50px !important; 
+                text-align: left !important;
+                align-items: center !important;
+              }
+              .zen-main-value { font-size: 3.5rem !important; margin-bottom: 0 !important; }
+              .zen-stats-row { 
+                margin-top: 0 !important; 
+                flex-direction: column !important; 
+                align-items: flex-start !important; 
+                gap: 15px !important;
+              }
+              .zen-divider { display: none !important; }
+              .zen-back-btn { 
+                bottom: 20px !important; 
+                right: 20px !important; 
+                padding: 10px 25px !important;
+                font-size: 0.6rem !important;
+              }
             }
           `}</style>
         </div>
-      );
+      )
     }
 
     return (
@@ -2284,7 +2317,8 @@ function App() {
           >
             {c.type === 'bag' ? '💰' : '💵'}
           </div>
-        ))}        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', padding: viewMode === 'mobile' ? '1rem 1.2rem 0.5rem 1.2rem' : '0 0.5rem 1.5rem 0.5rem' }}>
+        ))}
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', padding: viewMode === 'mobile' ? '1rem 1.2rem 0.5rem 1.2rem' : '0 0.5rem 1.5rem 0.5rem' }}>
           <div>
             <div style={{ opacity: 0.4, fontSize: '0.6rem', letterSpacing: '1px' }}>PLAYER: <span className={equippedItems?.nickColor || ''}>{(session?.username || 'USUÁRIO').toUpperCase()}</span></div>
 
@@ -2304,14 +2338,14 @@ function App() {
                   padding: '4px 8px',
                   borderRadius: '6px',
                   background: isMarketOpen ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 77, 77, 0.1)',
-                  border: `1px solid ${isMarketOpen ? 'rgba(0, 230, 118, 0.2)' : 'rgba(255, 77, 77, 0.2)'}`
+                  border: `1px solid ${isMarketOpen ? 'rgba(0, 230, 118, 0.2)' : 'rgba(255, 77, 77, 0.2)'} `
                 }}>
                   <div style={{
                     width: '6px',
                     height: '6px',
                     borderRadius: '50%',
                     background: isMarketOpen ? '#00E676' : '#FF4D4D',
-                    boxShadow: `0 0 10px ${isMarketOpen ? '#00E676' : '#FF4D4D'}`
+                    boxShadow: `0 0 10px ${isMarketOpen ? '#00E676' : '#FF4D4D'} `
                   }}></div>
                   <span style={{
                     fontSize: '0.55rem',
@@ -2463,7 +2497,7 @@ function App() {
                 className="xp-bar-fill"
                 style={{
                   height: '100%',
-                  width: `${((xp || 0) % 1000) / 10}%`,
+                  width: `${((xp || 0) % 1000) / 10}% `,
                   background: 'linear-gradient(90deg, #00A3FF, #00E676, #00A3FF)',
                   backgroundSize: '200% 100%',
                   animation: 'xpGradient 3s linear infinite',
@@ -2709,7 +2743,7 @@ function App() {
               <div style={{ height: '6px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '3px', marginTop: '10px', overflow: 'hidden' }}>
                 <div style={{
                   height: '100%',
-                  width: `${freedomProgress}%`,
+                  width: `${freedomProgress}% `,
                   background: freedomProgress >= 100 ? 'linear-gradient(90deg, #00E676, #00A3FF)' : 'linear-gradient(90deg, #FFD700, #FFA300)',
                   boxShadow: freedomProgress >= 100 ? '0 0 15px rgba(0, 230, 118, 0.4)' : '0 0 10px rgba(255, 215, 0, 0.3)',
                   transition: 'width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
@@ -2717,7 +2751,7 @@ function App() {
               </div>
               {freedomProgress < 100 && (
                 <div style={{ marginTop: '8px', fontSize: '0.45rem', opacity: 0.6, textAlign: 'center', fontWeight: 800, letterSpacing: '0.5px' }}>
-                  ⏳ LIBERDADE EM: {timeToFreedom.years > 0 && `${timeToFreedom.years}A `}{timeToFreedom.months > 0 && `${timeToFreedom.months}M `}{timeToFreedom.days}D {timeToFreedom.hours}H
+                  ⏳ LIBERDADE EM: {timeToFreedom.years > 0 && `${timeToFreedom.years} A `}{timeToFreedom.months > 0 && `${timeToFreedom.months} M `}{timeToFreedom.days}D {timeToFreedom.hours}H
                 </div>
               )}
             </div>
@@ -2749,14 +2783,14 @@ function App() {
           <div className="machine-list">
             {machines.map((m, i) => {
               return (
-                <div key={i} className={`machine-card ${isBusinessDay ? 'active-working' : ''} ${m.skin === 'none' ? '' : (m.skin || equippedItems.machineSkin || '')}`}>
+                <div key={i} className={`machine - card ${isBusinessDay ? 'active-working' : ''} ${m.skin === 'none' ? '' : (m.skin || equippedItems.machineSkin || '')} `}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                     <div className="engine-core" style={{ transform: 'scale(0.8)', margin: '-5px' }}>
                       <div className="fan-frame"><div className="fan-blades"></div></div>
                       <div className="status-leds">
-                        <div className={`led green ${isBusinessDay ? 'active' : ''}`}></div>
-                        <div className={`led blue ${isBusinessDay ? 'active' : ''}`} style={{ animationDelay: '0.2s' }}></div>
-                        <div className={`led amber ${isBusinessDay ? 'active' : ''}`} style={{ animationDelay: '0.4s' }}></div>
+                        <div className={`led green ${isBusinessDay ? 'active' : ''} `}></div>
+                        <div className={`led blue ${isBusinessDay ? 'active' : ''} `} style={{ animationDelay: '0.2s' }}></div>
+                        <div className={`led amber ${isBusinessDay ? 'active' : ''} `} style={{ animationDelay: '0.4s' }}></div>
                       </div>
                     </div>
                     <div style={{ flex: 1 }}>
@@ -2827,7 +2861,7 @@ function App() {
                       </p>
                       {m.vencimento && (
                         <div style={{ fontSize: '0.5rem', color: new Date(m.vencimento) <= currentDate ? '#00E676' : '#FFD700', fontWeight: 900, marginTop: '4px' }}>
-                          {(m.vencimento && new Date(m.vencimento) <= currentDate) ? 'DISPONÍVEL' : (m.vencimento ? `LIBERA: ${new Date(m.vencimento).toLocaleDateString('pt-BR')}` : 'SEM PRAZO')}
+                          {(m.vencimento && new Date(m.vencimento) <= currentDate) ? 'DISPONÍVEL' : (m.vencimento ? `LIBERA: ${new Date(m.vencimento).toLocaleDateString('pt-BR')} ` : 'SEM PRAZO')}
                         </div>
                       )}
                       {m.max_capacity && m.max_capacity > 0 && (
@@ -2839,7 +2873,7 @@ function App() {
                           <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.02)' }}>
                             <div style={{
                               height: '100%',
-                              width: `${Math.min(100, (m.valor / m.max_capacity) * 100)}%`,
+                              width: `${Math.min(100, (m.valor / m.max_capacity) * 100)}% `,
                               background: (m.valor / m.max_capacity) >= 1 ? 'linear-gradient(90deg, #00E676, #00ff80)' : 'linear-gradient(90deg, #00A3FF, #00E676)',
                               boxShadow: (m.valor / m.max_capacity) >= 1 ? '0 0 10px rgba(0, 230, 118, 0.4)' : 'none',
                               transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)'
@@ -2974,7 +3008,7 @@ function App() {
                         <div style={{ background: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'rgba(155, 93, 229, 0.05)' : 'rgba(255, 77, 77, 0.05)', padding: '12px', borderRadius: '16px', border: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? '1px solid rgba(155, 93, 229, 0.2)' : '1px solid rgba(255, 77, 77, 0.2)' }}>
                           <div style={{ fontSize: '0.45rem', color: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? '#9B5DE5' : '#FF4D4D', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>{(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'PROJEÇÃO PÓS-VENDA' : 'PROJEÇÃO PÓS-RESGATE'}</div>
                           {(() => {
-                            const next = calculateProjection(showConfirmResgate?.valor || 0, `-${resgateValue}`, showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode);
+                            const next = calculateProjection(showConfirmResgate?.valor || 0, `- ${resgateValue} `, showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode);
                             return (
                               <>
                                 <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#FF4D4D' }}>R$ {next.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.7 }}>/dia</span></div>
@@ -2987,7 +3021,7 @@ function App() {
 
                       <div style={{ marginTop: '12px', textAlign: 'center' }}>
                         <span style={{ fontSize: '0.55rem', color: '#FF4D4D', fontWeight: 900, background: 'rgba(255,77,77,0.1)', padding: '6px 14px', borderRadius: '20px', letterSpacing: '0.5px' }}>
-                          📉 -{((1 - calculateProjection(showConfirmResgate?.valor || 0, `-${resgateValue}`, showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode).day / (calculateProjection(showConfirmResgate?.valor || 0, '0', showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode).day || 0.00000001)) * 100).toFixed(1)}% DE PERDA NO RENDIMENTO
+                          📉 -{((1 - calculateProjection(showConfirmResgate?.valor || 0, `- ${resgateValue} `, showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode).day / (calculateProjection(showConfirmResgate?.valor || 0, '0', showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode).day || 0.00000001)) * 100).toFixed(1)}% DE PERDA NO RENDIMENTO
                         </span>
                       </div>
 
@@ -3242,7 +3276,7 @@ function App() {
                             </defs>
                             <Tooltip
                               contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px', fontSize: '0.7rem' }}
-                              labelFormatter={(m: any) => `Mês ${m}`}
+                              labelFormatter={(m: any) => `Mês ${m} `}
                               formatter={(v: any) => formatBRLWithPrecision(v)}
                             />
                             <Area type="monotone" dataKey="balance" stroke="#00E676" strokeWidth={3} fill="url(#simGradient)" name="Patrimônio" animationDuration={1000} />
@@ -3288,7 +3322,7 @@ function App() {
                                     background: isYear ? 'rgba(0, 230, 118, 0.08)' : 'transparent'
                                   }}>
                                     <td style={{ padding: '10px 20px', fontSize: '0.7rem', fontWeight: isYear ? 900 : 500, color: isYear ? '#00E676' : '#fff' }}>
-                                      {isYear ? `🏠 ANO ${row.month / 12}` : `Mês ${row.month}`}
+                                      {isYear ? `🏠 ANO ${row.month / 12} ` : `Mês ${row.month} `}
                                     </td>
                                     <td style={{ padding: '10px 20px', textAlign: 'right', fontSize: '0.7rem', color: '#00E676', whiteSpace: 'nowrap' }}>
                                       {formatBRLWithPrecision(monthInt)}
@@ -3776,8 +3810,8 @@ function App() {
               <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
                 <button onClick={() => { setShowPixDeposit(false); setDepositStep(1); }} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
                 <div className="pix-steps">
-                  <div className={`pix-step ${depositStep === 1 ? 'active' : ''}`}>1. VALOR</div>
-                  <div className={`pix-step ${depositStep === 2 ? 'active' : ''}`}>2. PAGAMENTO</div>
+                  <div className={`pix - step ${depositStep === 1 ? 'active' : ''} `}>1. VALOR</div>
+                  <div className={`pix - step ${depositStep === 2 ? 'active' : ''} `}>2. PAGAMENTO</div>
                 </div>
 
                 {depositStep === 1 ? (
@@ -3791,7 +3825,7 @@ function App() {
                         <span style={{ color: '#00E676' }}>FALTAM R$ {(1000 - cumulativeDeposits).toLocaleString('pt-BR')}</span>
                       </div>
                       <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${(cumulativeDeposits / 1000) * 100}%`, background: 'linear-gradient(90deg, #00A3FF, #00E676)', boxShadow: '0 0 10px rgba(0,163,255,0.5)' }}></div>
+                        <div style={{ height: '100%', width: `${(cumulativeDeposits / 1000) * 100}% `, background: 'linear-gradient(90deg, #00A3FF, #00E676)', boxShadow: '0 0 10px rgba(0,163,255,0.5)' }}></div>
                       </div>
                     </div>
 
@@ -3810,9 +3844,10 @@ function App() {
                       <img
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pixPayload)}`}
                         alt="PIX QR Code"
-                        style={{ width: '150px', height: '150px' }}
+                        style={{ width: '150px', height: '150px' }
+                        }
                       />
-                    </div>
+                    </div >
 
                     <div className="copy-cola-box" onClick={() => copyToClipboard(pixPayload)}>
                       {pixPayload.substring(0, 30)}... [CLIQUE PARA COPIAR]
@@ -3826,10 +3861,10 @@ function App() {
                       <button className="action-btn" style={{ flex: 1 }} onClick={() => setDepositStep(1)}>VOLTAR</button>
                       <button className="primary-btn" style={{ flex: 1, background: '#00E676', color: '#000' }} onClick={confirmPixPayment}>CONFIRMAR DEPÓSITO</button>
                     </div>
-                  </div>
+                  </div >
                 )}
-              </div>
-            </div>
+              </div >
+            </div >
           )
         }
 
@@ -4883,12 +4918,14 @@ function App() {
                     <PieChart>
                       <Pie
                         data={[
-                          { name: 'CDB', value: machines.filter(m => (!m.investment_type || m.investment_type === 'CDB')).reduce((acc, m) => acc + m.valor, 0), color: '#00F5D4' }, // Turquoise Neon
-                          { name: 'LCI', value: machines.filter(m => m.investment_type === 'LCI').reduce((acc, m) => acc + m.valor, 0), color: '#2D7DD2' }, // Ocean Blue
-                          { name: 'LCA', value: machines.filter(m => m.investment_type === 'LCA').reduce((acc, m) => acc + m.valor, 0), color: '#F4ACB7' }, // Pastel Pink Agro
-                          { name: 'IPCA+', value: machines.filter(m => m.investment_type === 'IPCA').reduce((acc, m) => acc + m.valor, 0), color: '#FF6B35' }, // Burnt Orange
-                          { name: 'Dólar', value: usdBalance * apiRates.USD, color: '#9B5DE5' }, // Crypto Purple
-                          { name: 'Iene', value: jpyBalance * apiRates.JPY, color: '#F15BB5' } // Hot Pink
+                          { name: 'CDB', value: machines.filter(m => (!m.investment_type || m.investment_type === 'CDB')).reduce((acc, m) => acc + m.valor, 0), color: '#00F5D4' },
+                          { name: 'LCI', value: machines.filter(m => m.investment_type === 'LCI').reduce((acc, m) => acc + m.valor, 0), color: '#2D7DD2' },
+                          { name: 'LCA', value: machines.filter(m => m.investment_type === 'LCA').reduce((acc, m) => acc + m.valor, 0), color: '#F4ACB7' },
+                          { name: 'IPCA+', value: machines.filter(m => m.investment_type === 'IPCA').reduce((acc, m) => acc + m.valor, 0), color: '#FF6B35' },
+                          { name: 'Ações', value: machines.filter(m => m.investment_type === 'ACAO').reduce((acc, m) => acc + m.valor, 0), color: '#FFCA3A' },
+                          { name: 'FIIs', value: machines.filter(m => m.investment_type === 'FII').reduce((acc, m) => acc + m.valor, 0), color: '#8AC926' },
+                          { name: 'Dólar', value: usdBalance * apiRates.USD, color: '#9B5DE5' },
+                          { name: 'Iene', value: jpyBalance * apiRates.JPY, color: '#F15BB5' }
                         ].filter(d => d.value > 0)}
                         cx="50%"
                         cy="50%"
@@ -4905,6 +4942,8 @@ function App() {
                             { name: 'LCI', value: machines.filter(m => m.investment_type === 'LCI').reduce((acc, m) => acc + m.valor, 0), color: '#2D7DD2' },
                             { name: 'LCA', value: machines.filter(m => m.investment_type === 'LCA').reduce((acc, m) => acc + m.valor, 0), color: '#F4ACB7' },
                             { name: 'IPCA+', value: machines.filter(m => m.investment_type === 'IPCA').reduce((acc, m) => acc + m.valor, 0), color: '#FF6B35' },
+                            { name: 'Ações', value: machines.filter(m => m.investment_type === 'ACAO').reduce((acc, m) => acc + m.valor, 0), color: '#FFCA3A' },
+                            { name: 'FIIs', value: machines.filter(m => m.investment_type === 'FII').reduce((acc, m) => acc + m.valor, 0), color: '#8AC926' },
                             { name: 'Dólar', value: usdBalance * apiRates.USD, color: '#9B5DE5' },
                             { name: 'Iene', value: jpyBalance * apiRates.JPY, color: '#F15BB5' }
                           ].filter(d => d.value > 0).map((entry, index) => (
@@ -4946,6 +4985,8 @@ function App() {
                     { name: 'LCI IMOBILIÁRIO', short: 'LCI', value: machines.filter(m => m.investment_type === 'LCI').reduce((acc, m) => acc + m.valor, 0), color: '#2D7DD2', bg: 'rgba(45, 125, 210, 0.15)', icon: '🏗️' },
                     { name: 'LCA AGRONEGÓCIO', short: 'LCA', value: machines.filter(m => m.investment_type === 'LCA').reduce((acc, m) => acc + m.valor, 0), color: '#F4ACB7', bg: 'rgba(244, 172, 183, 0.15)', icon: '🚜' },
                     { name: 'TESOURO IPCA+', short: 'IPCA', value: machines.filter(m => m.investment_type === 'IPCA').reduce((acc, m) => acc + m.valor, 0), color: '#FF6B35', bg: 'rgba(255, 107, 53, 0.15)', icon: '📈' },
+                    { name: 'AÇÕES BRASIL', short: 'ACAO', value: machines.filter(m => m.investment_type === 'ACAO').reduce((acc, m) => acc + m.valor, 0), color: '#FFCA3A', bg: 'rgba(255, 202, 58, 0.15)', icon: '🏛️' },
+                    { name: 'FUNDOS IMOBIL.', short: 'FII', value: machines.filter(m => m.investment_type === 'FII').reduce((acc, m) => acc + m.valor, 0), color: '#8AC926', bg: 'rgba(138, 201, 38, 0.15)', icon: '🏢' },
                     { name: 'DÓLAR AMERICANO', short: 'USD', value: usdBalance * apiRates.USD, color: '#9B5DE5', bg: 'rgba(155, 93, 229, 0.15)', icon: '🇺🇸' },
                     { name: 'IENE JAPONÊS', short: 'JPY', value: jpyBalance * apiRates.JPY, color: '#F15BB5', bg: 'rgba(241, 91, 181, 0.15)', icon: '🇯🇵' }
                   ].filter(d => d.value > 0).sort((a, b) => b.value - a.value).map(asset => (
