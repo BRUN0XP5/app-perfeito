@@ -434,7 +434,6 @@ function App() {
   const [newStockPrice, setNewStockPrice] = useState('');
   const [newStockDY, setNewStockDY] = useState('');
   const [newStockFrequency, setNewStockFrequency] = useState<'daily' | 'monthly' | 'quarterly' | 'semiannual' | 'annual'>('monthly');
-  const [newStockInvestment, setNewStockInvestment] = useState('');
   const [newStockQuantity, setNewStockQuantity] = useState('');
   const [isUpdatingStocks, setIsUpdatingStocks] = useState(false);
 
@@ -1588,7 +1587,6 @@ function App() {
       setNewStockTicker('');
       setNewStockPrice('');
       setNewStockDY('');
-      setNewStockInvestment('');
       setNewStockQuantity('');
     } else if (error) {
       setNotification(`ERRO: ${error.message}`);
@@ -5394,8 +5392,6 @@ function App() {
                   <button
                     className="primary-btn"
                     onClick={() => {
-                      const total = parseFloat(newStockPrice || '0') * parseFloat(newStockQuantity || '0');
-                      setNewStockInvestment(total.toString());
                       createStockMachine();
                     }}
                     style={{ background: 'linear-gradient(135deg, #9B5DE5 0%, #E0AAFF 100%)', color: '#000', fontWeight: 900, marginTop: '10px' }}
