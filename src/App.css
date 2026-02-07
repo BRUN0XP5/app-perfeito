@@ -258,8 +258,8 @@
   position: relative;
   overflow: hidden !important;
   transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 230, 118, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 10px rgba(0, 230, 118, 0.1);
 }
 
 .machine-card h4,
@@ -360,9 +360,10 @@
 }
 
 .machine-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(0, 163, 255, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 0 10px rgba(0, 163, 255, 0.05);
+  border-radius: 20px;
   padding: 1rem;
   display: flex;
   flex-direction: column;

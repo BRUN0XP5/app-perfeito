@@ -2846,7 +2846,7 @@ function App() {
           <div className="machine-list">
             {machines.map((m, i) => {
               return (
-                <div key={i} className={`machine - card ${isBusinessDay ? 'active-working' : ''} ${m.skin === 'none' ? '' : (m.skin || equippedItems.machineSkin || '')} `}>
+                <div key={i} className={`machine-card ${isBusinessDay ? 'active-working' : ''} ${m.skin === 'none' ? '' : (m.skin || equippedItems.machineSkin || '')}`}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                     <div className="engine-core" style={{ transform: 'scale(0.8)', margin: '-5px' }}>
                       <div className="fan-frame"><div className="fan-blades"></div></div>
