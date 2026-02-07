@@ -12,40 +12,41 @@
 
 ## 🆕 O que chegou na v0.43.0? (Mercado de Capitais & Realismo)
 
-### 📈 Integração Real-Time com a B3
-*   **Dados Reais:** Conexão direta via IA com cotações do Yahoo Finance para Ações e FIIs brasileiros.
-*   **Sincronização Ativa:** Use a IA para atualizar sua carteira com os preços reais de mercado em um clique.
+### 📈 Integração Real-Time com a B3 (Powered by IA)
+*   **Dados Reais em Tempo de Execução:** O simulador agora se conecta a metadados do **Yahoo Finance** para buscar cotações de Ações e FIIs brasileiros.
+*   **Inteligência Artificial:** A IA atua como seu corretor pessoal, sugerindo tickers e atualizando os preços da sua carteira com um simples comando "Atualizar Bolsa".
+*   **Frequência de Proventos:** Configure se o papel paga Dividendos Mensais, Trimestrais ou Anuais para uma projeção de fluxo de caixa precisa.
 
-### 💰 Sistema de Venda e Liquidez
-*   **Venda de Ativos:** Agora você pode vender suas Ações e FIIs instantaneamente para realizar lucro no saldo líquido.
-*   **Ordem de Venda:** Modal específico para mercado de capitais com projeção pós-venda.
+### 💰 Sistema de Gestão de Ativos (Liquidez)
+*   **Venda de Ativos de Bolsa:** Realize lucro (ou prejuízo) instantaneamente. Ao vender um ativo de bolsa, o valor total (Preço Atual x Quantidade) volta para o seu saldo líquido.
+*   **Resgate Inteligente de Renda Fixa:** Ao tentar resgatar CDBs ou LCIs, o sistema agora exibe um painel de impacto detalhando perdas de rendimento e impostos incidentes.
 
-### 🧮 Calculadora de Aporte 2.0
-*   **Quantidade x Preço:** No momento da compra, informe a quantidade de cotas e o preço atual para que o sistema calcule o investimento total automaticamente.
-*   **Edição Profissional:** Gerencie suas posições alterando frequência de dividendos, quantidade de papéis e rendimento estimado (DY).
+### 🧮 Hub de Investimento 2.0
+*   **Investimento por Cotas:** Não compre apenas por valor financeiro. Informe o preço do papel e a quantidade de cotas; o sistema faz o cálculo do aporte total e valida seu saldo.
+*   **Gráfico de Alocação 360°:** O novo gráfico de pizza (PieChart) agora segmenta sua carteira em: CDB, LCI, LCA, Tesouro IPCA+, Ações, FIIs, Dólar e Iene.
 
-### 💎 Painel de Dividendos
-*   **Projeção de Proventos:** Veja exatamente quanto sua carteira de Bolsa gera de renda passiva mensal, separada da Renda Fixa.
-*   **Dados de Posicionamento:** Os cards agora mostram quantas cotas você possui e a frequência de pagamento (Mensal, Trimestral, etc) totalmente em português.
+### 💎 Projeção de Dividendos Separada
+*   **Dashboard de Bolsa:** Uma nova métrica no painel de projeções mostra quanto você ganha exclusivamente em dividendos, permitindo separar sua estratégia de acumulação (Renda Fixa) da estratégia de renda passiva (Bolsa).
 
 ---
 
 ## 🆕 O que chegou na v0.42.0? (Independência & Estratégia)
 
 ### 🧘 Modo Foco (Zen Mode)
-*   **Minimalismo Extremo:** Uma interface livre de distrações, com animações fluidas e fundos dinâmicos para você observar seu patrimônio crescer em paz.
-*   **Estética Premium:** Foca apenas no Patrimônio Total e nos rendimentos por hora/dia.
+*   **Aparência Ultra-Premium:** Uma interface minimalista inspirada em dashboards de alto luxo.
+*   **Otimização Mobile:** Totalmente responsivo para telas verticais (celular) e horizontais (tablet/desktop), garantindo que você possa acompanhar seu patrimônio de qualquer lugar.
+*   **Foco na Renda:** Exibe apenas o Patrimônio Total Bruto e os rendimentos acumulados por Hora e por Dia.
 
-### ⏳ Widget "Dia da Liberdade"
-*   **Progresso Real:** Acompanhe o quanto falta para sua renda passiva mensal cobrir 100% do seu salário declarado. 
-*   **Gamificação:** Barra de progresso interativa que muda de cor ao atingir a Independência Financeira.
+### ⏳ Widget "Dia da Liberdade" (Independência Financeira)
+*   **O Santo Graal das Finanças:** O sistema calcula automaticamente quando sua renda passiva mensal (Renda Fixa + Dividendos) iguala ou supera seu salário declarado. 
+*   **Percentual de Liberdade:** Uma barra de progresso visual que mostra quão perto você está de poder "se aposentar" no simulador.
 
-### ⚔️ Simulador Dívida vs. Investimento
-*   **Tomada de Decisão:** Ferramenta estratégica para decidir se vale mais a pena quitar uma dívida com juros altos ou manter o dinheiro rendendo no CDB.
-*   **Veredito Matemático:** O sistema calcula a economia líquida de cada opção em tempo real.
+### ⚔️ Simulador Dívida vs. Investimento (Batalha Financeira)
+*   **Decisor Estratégico:** Uma ferramenta onde você insere o valor e o juro de uma dívida e o sistema compara contra o rendimento do seu melhor investimento atual.
+*   **O Veredito da IA:** O app te diz matematicamente se é melhor quitar a dívida agora ou deixar o dinheiro rendendo, considerando impostos e taxas.
 
-### 📈 Corretor de Inflação (IPCA)
-*   **Poder de Compra:** Alterne entre rendimento nominal e rendimento real. Veja quanto seu dinheiro realmente está "ganhando" acima da inflação estimada (IPCA).
+### 📈 Corretor de Inflação (Poder de Compra)
+*   **Lucro Real vs. Lucro Nominal:** Um botão de alternância na projeção permite descontar a inflação média (IPCA) do seu lucro, revelando o aumento real do seu poder de compra.
 
 ---
 

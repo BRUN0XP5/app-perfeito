@@ -4064,6 +4064,20 @@ function App() {
                     </div>
                   </div>
 
+                  {/* MERCADO DE CAPITAIS */}
+                  <div style={{ marginBottom: '2rem' }}>
+                    <h4 style={{ color: '#E0AAFF', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #E0AAFF', paddingLeft: '8px' }}>📈 MERCADO DE CAPITAIS (BOLSA)</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Agora você pode diversificar além da renda fixa com ativos reais:</p>
+                      <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <li><strong>🏷️ Ações e FIIs:</strong> O rendimento é baseado no **Dividend Yield (DY)** anual informado. FIIs costumam pagar mensalmente.</li>
+                        <li><strong>🔄 Cotações Dinâmicas:</strong> Use o botão de atualizar para buscar o preço real do papel via IA.</li>
+                        <li><strong>📊 Proventos:</strong> Diferente da renda fixa, os dividendos são projetados separadamente para facilitar sua estratégia de renda passiva.</li>
+                        <li><strong>📉 Venda de Ativos:</strong> Ao vender, o capital (preço x quantidade) volta para seu saldo líquido instantaneamente.</li>
+                      </ul>
+                    </div>
+                  </div>
+
                   {/* MECÂNICAS DE RENDIMENTO */}
                   <div style={{ marginBottom: '2rem' }}>
                     <h4 style={{ color: '#00E676', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #00E676', paddingLeft: '8px' }}>⚙️ MECÂNICAS DE RENDIMENTO</h4>
@@ -4103,12 +4117,17 @@ function App() {
                     </div>
                   </div>
 
-                  {/* IDENTIDADE VISUAL */}
+                  {/* IDENTIDADE VISUAL & MODO ZEN */}
                   <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#64FFDA', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #64FFDA', paddingLeft: '8px' }}>💎 VISUAL E PWA</h4>
-                    <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>
-                      O CDI Tycoon agora utiliza o <strong>Crystal Cube</strong> como sua marca oficial. Instale o PWA para ter acesso rápido e notificações de rendimento direto na tela inicial do seu celular.
-                    </p>
+                    <h4 style={{ color: '#64FFDA', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #64FFDA', paddingLeft: '8px' }}>💎 INTERFACE E MODO ZEN</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>O CDI Tycoon oferece experiências visuais distintas:</p>
+                      <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <li><strong>🧘 Modo Zen:</strong> Acesse pelo menu para esconder a complexidade e apenas observar seus números crescerem em um ambiente relaxante.</li>
+                        <li><strong>📱 Responsividade Total:</strong> O app se adapta se você estiver com o celular em pé ou deitado.</li>
+                        <li><strong>📦 PWA:</strong> Instale o app no seu celular para uma experiência nativa, sem as barras do navegador.</li>
+                      </ul>
+                    </div>
                   </div>
 
                   {/* SUPORTE E DOAÇÃO */}
