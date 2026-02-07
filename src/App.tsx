@@ -2186,104 +2186,167 @@ function App() {
       return (
         <div className="zen-mode-screen" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'radial-gradient(circle at center, #0a1128 0%, #020408 100%)',
+          background: 'radial-gradient(circle at center, #02040a 0%, #000 100%)',
           zIndex: 10000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          animation: 'fadeIn 1.5s ease',
+          animation: 'fadeIn 2s ease',
           padding: '20px',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+          fontFamily: "'Outfit', sans-serif"
         }}>
-          {/* ZEN BACKGROUND PARTICLES (ANIMATED CIRCLES) */}
+          {/* DEPTH LAYERS: NEBULA & STARS */}
           <div style={{ position: 'absolute', width: '100%', height: '100%', overflow: 'hidden', pointerEvents: 'none' }}>
-            {[...Array(10)].map((_, i) => (
-              <div key={i} style={{
-                position: 'absolute',
-                width: `${Math.random() * 200 + 50}px`,
-                height: `${Math.random() * 200 + 50}px`,
-                background: 'radial-gradient(circle, rgba(0, 163, 255, 0.05) 0%, transparent 70%)',
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                borderRadius: '50%',
-                animation: `floatZen ${Math.random() * 20 + 20}s linear infinite`,
-                animationDelay: `-${Math.random() * 10}s`
-              }} />
-            ))}
+            <div className="zen-nebula-blue" style={{
+              position: 'absolute', width: '100%', height: '100%',
+              background: 'radial-gradient(circle at 20% 40%, rgba(0, 163, 255, 0.05) 0%, transparent 40%)',
+              filter: 'blur(60px)', animation: 'pulseNebula 20s ease-in-out infinite'
+            }} />
+            <div className="zen-nebula-purple" style={{
+              position: 'absolute', width: '100%', height: '100%',
+              background: 'radial-gradient(circle at 80% 60%, rgba(155, 93, 229, 0.05) 0%, transparent 40%)',
+              filter: 'blur(60px)', animation: 'pulseNebula 25s ease-in-out infinite reverse'
+            }} />
+
+            <div className="stars-layer" style={{ position: 'absolute', inset: 0, opacity: 0.4 }}>
+              {[...Array(60)].map((_, i) => (
+                <div key={i} style={{
+                  position: 'absolute',
+                  width: `${Math.random() * 2}px`,
+                  height: `${Math.random() * 2}px`,
+                  background: '#fff',
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                  borderRadius: '50%',
+                  animation: `twinkle ${Math.random() * 4 + 2}s infinite alternate`
+                }} />
+              ))}
+            </div>
+
+            {/* DEEP SCAN LINES (Subtle Tech Texture) */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255,255,255,0.01) 1px, rgba(255,255,255,0.01) 2px)',
+              backgroundSize: '100% 4px', pointerEvents: 'none', opacity: 0.5
+            }} />
           </div>
 
-          <div className="zen-content-wrapper" style={{ textAlign: 'center', zIndex: 10, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <p style={{ fontFamily: 'JetBrains Mono', color: '#00A3FF', letterSpacing: '5px', fontSize: '0.6rem', opacity: 0.6, marginBottom: '0.5rem' }}>MODO FOCO ATIVO</p>
-            <h1 className="zen-main-value" style={{ fontSize: '4.5rem', color: '#fff', fontWeight: 900, margin: 0, textShadow: '0 0 40px rgba(255,255,255,0.1)', letterSpacing: '-2px' }}>
-              <AnimatedNumber value={totalPatrimony} format={(v) => formatBRLWithMicroCents(v)} />
-            </h1>
-            <div className="zen-stats-row" style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '30px' }}>
+          <div className="zen-main-container" style={{ textAlign: 'center', zIndex: 10, position: 'relative' }}>
+            {/* HALO RINGS */}
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+              width: '180%', height: '180%', border: '1px solid rgba(0, 163, 255, 0.05)',
+              borderRadius: '50%', animation: 'rotate3D 30s linear infinite', pointerEvents: 'none'
+            }} />
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(45deg)',
+              width: '200%', height: '200%', border: '1px solid rgba(155, 93, 229, 0.03)',
+              borderRadius: '50%', animation: 'rotate3D 45s linear infinite reverse', pointerEvents: 'none'
+            }} />
+
+            <div style={{ marginBottom: '2rem', animation: 'float 6s ease-in-out infinite' }}>
+              <div style={{
+                fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: '#00A3FF',
+                fontWeight: 900, letterSpacing: '10px', opacity: 0.9, marginBottom: '1rem',
+                animation: 'textPulse 3s ease-in-out infinite'
+              }}>
+                • ARCHIVE SYNCING •
+              </div>
+
+              <h1 className="zen-main-value" style={{
+                fontSize: '6rem', fontWeight: 900, color: '#fff', margin: 0,
+                letterSpacing: '-4px', textShadow: '0 0 50px rgba(255,255,255,0.2)',
+                background: 'linear-gradient(to bottom, #fff, #999)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
+              }}>
+                <AnimatedNumber value={totalPatrimony} format={(v) => formatBRLWithMicroCents(v)} />
+              </h1>
+            </div>
+
+            <div className="zen-stats-row" style={{
+              display: 'flex', gap: '60px', justifyContent: 'center', alignItems: 'center',
+              background: 'rgba(255,255,255,0.02)', padding: '20px 40px', borderRadius: '24px',
+              border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)'
+            }}>
               <div style={{ textAlign: 'center' }}>
-                <p style={{ margin: 0, fontSize: '0.55rem', color: '#00E676', fontWeight: 800, opacity: 0.6 }}>+</p>
-                <p style={{ margin: 0, fontSize: '1.4rem', color: '#00E676', fontWeight: 900 }}>
-                  R$ {(yields.hourlyYield || 0).toFixed(2)}
-                </p>
-                <p style={{ margin: 0, fontSize: '0.45rem', opacity: 0.4, letterSpacing: '1px' }}>POR HORA</p>
+                <div style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, letterSpacing: '2px', opacity: 0.5, marginBottom: '4px' }}>HRLY_YIELD</div>
+                <div style={{ fontSize: '1.8rem', color: '#00E676', fontWeight: 900, textShadow: '0 0 20px rgba(0, 230, 118, 0.2)' }}>
+                  R$ {(yields.hourlyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
               </div>
               <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} className="zen-divider"></div>
               <div style={{ textAlign: 'center' }}>
-                <p style={{ margin: 0, fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, opacity: 0.6 }}>+</p>
-                <p style={{ margin: 0, fontSize: '1.4rem', color: '#00A3FF', fontWeight: 900 }}>
-                  R$ {(yields.dailyYield || 0).toFixed(2)}
-                </p>
-                <p style={{ margin: 0, fontSize: '0.45rem', opacity: 0.4, letterSpacing: '1px' }}>POR DIA</p>
+                <div style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 900, letterSpacing: '2px', opacity: 0.5, marginBottom: '4px' }}>DAY_YIELD</div>
+                <div style={{ fontSize: '1.8rem', color: '#00A3FF', fontWeight: 900, textShadow: '0 0 20px rgba(0, 163, 255, 0.2)' }}>
+                  R$ {(yields.dailyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
               </div>
             </div>
+
+            {salary > 0 && (
+              <div style={{ marginTop: '3rem', maxWidth: '250px', marginLeft: 'auto', marginRight: 'auto' }}>
+                <div style={{ height: '2px', background: 'rgba(255,255,255,0.05)', width: '100%', position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute', height: '100%', background: 'linear-gradient(90deg, #00A3FF, #00E676)',
+                    width: `${Math.min(freedomProgress, 100)}%`, boxShadow: '0 0 15px rgba(0, 163, 255, 0.5)'
+                  }} />
+                </div>
+                <div style={{ marginTop: '10px', fontSize: '0.5rem', color: '#888', fontWeight: 900, letterSpacing: '2px' }}>
+                  FINANCIAL FREEDOM: <span style={{ color: '#fff' }}>{freedomProgress.toFixed(2)}%</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <button
             className="zen-back-btn"
             onClick={() => setIsZenMode(false)}
             style={{
-              position: 'absolute', bottom: '8%', background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)',
-              padding: '14px 40px', borderRadius: '50px', cursor: 'pointer',
-              fontSize: '0.75rem', fontWeight: 900, letterSpacing: '2px', transition: 'all 0.3s',
-              backdropFilter: 'blur(10px)'
+              position: 'absolute', bottom: '8%', border: '1px solid rgba(255,255,255,0.1)',
+              background: 'transparent', color: 'rgba(255,255,255,0.4)', padding: '12px 30px',
+              borderRadius: '10px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 900,
+              letterSpacing: '3px', transition: 'all 0.4s', backdropFilter: 'blur(5px)'
             }}
-            onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
-            onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+            onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+            onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.background = 'transparent' }}
           >
-            VOLTAR AO DASHBOARD
+            RETURN_TO_DASHBOARD
           </button>
 
           <style>{`
-            @keyframes floatZen {
-              0% { transform: translate(0, 0) rotate(0deg); }
-              33% { transform: translate(30px, -50px) rotate(5deg); }
-              66% { transform: translate(-20px, 40px) rotate(-5deg); }
-              100% { transform: translate(0, 0) rotate(0deg); }
+            @keyframes pulseNebula {
+              0%, 100% { transform: scale(1); opacity: 0.5; }
+              50% { transform: scale(1.2); opacity: 0.8; }
+            }
+            @keyframes twinkle {
+              from { opacity: 0.2; transform: scale(0.8); }
+              to { opacity: 0.7; transform: scale(1.1); }
+            }
+            @keyframes rotate3D {
+              from { transform: translate(-50%, -50%) rotate(0deg); }
+              to { transform: translate(-50%, -50%) rotate(360deg); }
+            }
+            @keyframes float {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-15px); }
+            }
+            @keyframes textPulse {
+              0%, 100% { letter-spacing: 10px; opacity: 0.7; }
+              50% { letter-spacing: 12px; opacity: 1; }
             }
 
-            @media (max-width: 480px) {
-              .zen-main-value { font-size: 3rem !important; }
-              .zen-stats-row { gap: 15px !important; margin-top: 1.5rem !important; }
-              .zen-stats-row p { font-size: 1.1rem !important; }
+            @media (max-width: 600px) {
+              .zen-main-value { font-size: 3.5rem !important; }
+              .zen-stats-row { gap: 20px !important; padding: 15px 25px !important; }
+              .zen-stats-row > div > div:nth-child(2) { font-size: 1.3rem !important; }
+              .zen-divider { height: 30px !important; }
             }
 
             @media (orientation: landscape) and (max-height: 500px) {
-              .zen-content-wrapper { 
-                flex-direction: row !important; 
-                gap: 50px !important; 
-                text-align: left !important;
-                align-items: center !important;
-              }
-              .zen-main-value { font-size: 3.5rem !important; margin-bottom: 0 !important; }
-              .zen-stats-row { 
-                margin-top: 0 !important; 
-                flex-direction: column !important; 
-                align-items: flex-start !important; 
-                gap: 15px !important;
-              }
+              .zen-main-container { display: flex; align-items: center; gap: 40px; }
+              .zen-main-value { font-size: 3.5rem !important; }
+              .zen-stats-row { flex-direction: column; gap: 10px !important; padding: 15px !important; }
               .zen-divider { display: none !important; }
-              .zen-back-btn { 
-                bottom: 20px !important; 
-                right: 20px !important; 
-                padding: 10px 25px !important;
-                font-size: 0.6rem !important;
-              }
+              .zen-back-btn { bottom: 20px !important; right: 20px !important; }
             }
           `}</style>
         </div>
