@@ -6097,6 +6097,30 @@ function App() {
 
                 <div className="custom-scrollbar" style={{ paddingRight: '10px' }}>
 
+                  {/* CARTA DO DEV / DOAÇÃO (TOPO) */}
+                  <div style={{ marginBottom: '20px', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255, 215, 0, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h3 style={{ fontSize: '0.9rem', color: '#FFD700', margin: 0 }}>Apoie o Projeto!</h3>
+                      <p style={{ fontSize: '0.75rem', color: '#ccc', margin: '4px 0 0 0' }}>Ajude a manter o servidor ligado e o café quente.</p>
+                    </div>
+                    <button
+                      onClick={() => window.open('https://github.com/BRUN0XP5/app-perfeito', '_blank')}
+                      style={{
+                        background: 'linear-gradient(135deg, #FFD700 0%, #FF8C00 100%)',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        color: '#000',
+                        fontWeight: 900,
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        boxShadow: '0 4px 15px rgba(255, 215, 0, 0.3)'
+                      }}
+                    >
+                      ☕ APOIAR
+                    </button>
+                  </div>
+
                   {/* NOVIDADES V0.43.0 */}
                   <div style={{ marginBottom: '20px', background: 'rgba(0, 163, 255, 0.1)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(0, 163, 255, 0.2)' }}>
                     <h3 style={{ fontSize: '1rem', color: '#00A3FF', borderBottom: '1px solid rgba(0, 163, 255, 0.2)', paddingBottom: '5px', marginTop: 0 }}>🚀 NOVIDADES v0.43.0</h3>
@@ -6134,6 +6158,25 @@ function App() {
                     <h3 style={{ fontSize: '1rem', color: '#9B5DE5', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>📱 SISTEMA DE PIX & APORTES</h3>
                     <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.4' }}>
                       Para adicionar dinheiro, vá no Menu ☰ e clique em <strong>NOVO APORTE</strong>. Digite o valor que deseja "depositar" na sua conta virtual. Use isso para simular seu salário real ou testar estratégias com valores altos.
+                    </p>
+                  </div>
+
+                  <div style={{ marginTop: '20px' }}>
+                    <h3 style={{ fontSize: '1rem', color: '#FF8C00', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>🛠️ FERRAMENTAS & GAMIFICAÇÃO</h3>
+                    <ul style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.8', paddingLeft: '20px' }}>
+                      <li><strong>Simulador de Dívidas:</strong> Descubra matematicamente se vale a pena quitar uma dívida ou investir.</li>
+                      <li><strong>Calculadora de Juros:</strong> Projete sua riqueza para daqui a 10 anos.</li>
+                      <li><strong>Modo Zen:</strong> Interface limpa para foco total no crescimento patrimonial.</li>
+                      <li><strong>Skins & Customização:</strong> Desbloqueie visuais únicos para o app baseados no seu nível de riqueza.</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px' }}>
+                    <h3 style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '10px' }}>⚖️ TERMOS DE USO</h3>
+                    <p style={{ fontSize: '0.75rem', color: '#666', lineHeight: '1.5', margin: 0 }}>
+                      1. <strong>Natureza Educacional:</strong> O Tycoon é um simulador. Lucros e perdas são virtuais.<br />
+                      2. <strong>Dados:</strong> Seus dados são salvos localmente e na nuvem para sincronização.<br />
+                      3. <strong>Open Source:</strong> Projeto de código aberto. Contribua no GitHub!
                     </p>
                   </div>
 
