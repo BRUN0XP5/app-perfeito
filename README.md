@@ -23,6 +23,7 @@
 ### 📊 Clareza em Movimentações
 *   **Câmbio Detalhado:** Operações de compra e venda de moeda estrangeira agora mostram explicitamente o valor de origem (saída) e o valor de destino (entrada).
 *   **Alocação vs. Gasto:** O sistema agora diferencia visualmente o que é um gasto real (perda de patrimônio) do que é apenas uma alocação em investimentos (troca de carteira), usando cores neutras e setas indicativas.
+*   **Central de Ajuda 2.0:** Reformulada com layout vertical expandido, tutoriais detalhados de todas as mecânicas, termos de uso e seção de apoio ao desenvolvedor.
 
 ---
 
