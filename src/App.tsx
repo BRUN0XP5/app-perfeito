@@ -535,7 +535,7 @@ function App() {
   const [showImpulseModal, setShowImpulseModal] = useState(false)
   const [impulseValue, setImpulseValue] = useState('')
   const [showMenu, setShowMenu] = useState(false)
-  const [payoutCountdown, setPayoutCountdown] = useState(10) // Novo contador de 10s
+
   const [coins, setCoins] = useState<{ id: number, x: number, y: number }[]>([])
   const [lastDepositValue, setLastDepositValue] = useState(0);
   const [activities, setActivities] = useState<Activity[]>([])
