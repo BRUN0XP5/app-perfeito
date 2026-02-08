@@ -6096,36 +6096,53 @@ function App() {
                 </div>
 
                 <div className="custom-scrollbar" style={{ paddingRight: '10px' }}>
-                  <div style={{ marginBottom: '20px' }}>
-                    <h3 style={{ fontSize: '0.8rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>🚀 O QUE HÁ DE NOVO</h3>
-                    <ul style={{ fontSize: '0.65rem', color: '#ccc', lineHeight: '1.6', paddingLeft: '20px' }}>
-                      <li><strong>Registro de Gastos:</strong> Agora você pode registrar despesas (compras, PIX, contas) que são deduzidas diretamente do seu Capital Líquido. Use o botão vermelho "TRANSFERIR" na tela principal.</li>
-                      <li><strong>Filtros de Histórico:</strong> O histórico de atividades agora possui abas para filtrar por GANHOS (Verde), GASTOS (Vermelho) e INVESTIMENTOS (Azul), facilitando a auditoria.</li>
-                      <li><strong>Visualização de Câmbio:</strong> Operações de câmbio agora mostram claramente o valor de entrada e saída em suas respectivas moedas.</li>
+
+                  {/* NOVIDADES V0.43.0 */}
+                  <div style={{ marginBottom: '20px', background: 'rgba(0, 163, 255, 0.1)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(0, 163, 255, 0.2)' }}>
+                    <h3 style={{ fontSize: '0.8rem', color: '#00A3FF', borderBottom: '1px solid rgba(0, 163, 255, 0.2)', paddingBottom: '5px', marginTop: 0 }}>🚀 NOVIDADES v0.43.0</h3>
+                    <ul style={{ fontSize: '0.65rem', color: '#fff', lineHeight: '1.6', paddingLeft: '20px', margin: '5px 0' }}>
+                      <li><strong>Registro de Gastos:</strong> Use o botão vermelho "TRANSFERIR" para registrar despesas. Elas saem do seu saldo!</li>
+                      <li><strong>Filtros de Histórico:</strong> Agora você pode filtrar por GANHOS (Verde), GASTOS (Vermelho) e INVESTIMENTOS (Azul).</li>
+                      <li><strong>Detector de Câmbio:</strong> Veja quanto saiu (em BRL) e quanto entrou (em USD/JPY) claramente.</li>
                     </ul>
                   </div>
 
-                  <div style={{ marginBottom: '20px' }}>
-                    <h3 style={{ fontSize: '0.8rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>💰 COMO FUNCIONA O CAPÍTAL</h3>
-                    <p style={{ fontSize: '0.65rem', color: '#aaa', lineHeight: '1.4' }}>
-                      <strong>Capital Líquido (Disponível):</strong> É o seu dinheiro em conta corrente, pronto para uso ou investimento. Não rende juros.<br />
-                      <strong>Investimentos (Máquinas/Ações):</strong> Dinheiro alocado que rende juros (CDI, Dividendos). Para usar este dinheiro, você deve fazer um RESGATE.<br />
-                      <strong>Patrimônio Total:</strong> A soma de todo o seu dinheiro (Líquido + Investido + Câmbio).
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                    <div>
+                      <h3 style={{ fontSize: '0.8rem', color: '#00E676', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>💸 COMO GANHAR DINHEIRO</h3>
+                      <p style={{ fontSize: '0.6rem', color: '#aaa', lineHeight: '1.4' }}>
+                        <strong>1. Investimentos (CDI):</strong> Crie máquinas (CDB, LCI) que rendem juros automáticos a cada 10 segundos.<br /><br />
+                        <strong>2. Aportes via PIX:</strong> Injete dinheiro simulado na sua conta para aumentar seu capital inicial.<br /><br />
+                        <strong>3. Câmbio (Nível 2+):</strong> Compre Dólar (USD) ou Iene (JPY) e lucre com a valorização cambial.<br /><br />
+                        <strong>4. Bolsa (Nível 3+):</strong> Compre Ações e FIIs e receba dividendos periódicos.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h3 style={{ fontSize: '0.8rem', color: '#FFD700', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>👑 RATING & NÍVEIS</h3>
+                      <p style={{ fontSize: '0.6rem', color: '#aaa', lineHeight: '1.4' }}>
+                        Seu <strong>NÍVEL (TYCOON)</strong> é baseado no seu Patrimônio Total (1 XP = R$ 1,00).<br /><br />
+                        <strong>Nível 1 (Bronze):</strong> Acesso básico.<br />
+                        <strong>Nível 2 (Prata):</strong> Desbloqueia Câmbio (Dólar/Iene) e Gráficos.<br />
+                        <strong>Nível 3 (Ouro):</strong> Desbloqueia Bolsa de Valores, Skins e Calculadoras Pro.<br /><br />
+                        Suba de nível acumulando patrimônio!
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '20px' }}>
+                    <h3 style={{ fontSize: '0.8rem', color: '#9B5DE5', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>📱 SISTEMA DE PIX & APORTES</h3>
+                    <p style={{ fontSize: '0.65rem', color: '#ccc', lineHeight: '1.4' }}>
+                      Para adicionar dinheiro, vá no Menu ☰ e clique em <strong>NOVO APORTE</strong>. Digite o valor que deseja "depositar" na sua conta virtual. Use isso para simular seu salário real ou testar estratégias com valores altos.
                     </p>
                   </div>
 
-                  <div style={{ marginBottom: '20px' }}>
-                    <h3 style={{ fontSize: '0.8rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>🌐 CÂMBIO E MOEDAS</h3>
-                    <p style={{ fontSize: '0.65rem', color: '#aaa', lineHeight: '1.4' }}>
-                      A partir do Nível 2, você pode converter Real (BRL) para Dólar (USD) e Iene (JPY).<br />
-                      Isso protege seu capital contra a desvalorização cambial. As taxas são atualizadas em tempo real via API oficial.
-                    </p>
-                  </div>
-
-                  <div style={{ marginBottom: '20px' }}>
-                    <h3 style={{ fontSize: '0.8rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>📈 BOLSA DE VALORES</h3>
-                    <p style={{ fontSize: '0.65rem', color: '#aaa', lineHeight: '1.4' }}>
-                      No Nível 3, você desbloqueia a Bolsa. Você pode cadastrar ativos reais (PETR4, VALE3) e usar a IA para atualizar os preços automaticamente, simulando uma carteira real.
+                  <div style={{ marginTop: '20px' }}>
+                    <h3 style={{ fontSize: '0.8rem', color: '#FF4D4D', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>⚠️ SAVES E RESET</h3>
+                    <p style={{ fontSize: '0.65rem', color: '#ccc', lineHeight: '1.4' }}>
+                      Seu progresso é salvo <strong>automaticamente</strong> no seu navegador e na nuvem.<br />
+                      Você pode <strong>EXPORTAR BACKUP</strong> no menu para salvar um arquivo .txt seguro.<br />
+                      O jogo roda 24/7, seus juros continuam rendendo mesmo com o app fechado!
                     </p>
                   </div>
 
@@ -6140,6 +6157,7 @@ function App() {
             </div>
           )
         }
+
 
 
         {notification && <div className="notification-toast"><div className="toast-content">{notification}</div></div>}
