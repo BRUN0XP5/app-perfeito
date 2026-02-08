@@ -6099,18 +6099,18 @@ function App() {
 
                   {/* NOVIDADES V0.43.0 */}
                   <div style={{ marginBottom: '20px', background: 'rgba(0, 163, 255, 0.1)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(0, 163, 255, 0.2)' }}>
-                    <h3 style={{ fontSize: '0.8rem', color: '#00A3FF', borderBottom: '1px solid rgba(0, 163, 255, 0.2)', paddingBottom: '5px', marginTop: 0 }}>🚀 NOVIDADES v0.43.0</h3>
-                    <ul style={{ fontSize: '0.65rem', color: '#fff', lineHeight: '1.6', paddingLeft: '20px', margin: '5px 0' }}>
+                    <h3 style={{ fontSize: '1rem', color: '#00A3FF', borderBottom: '1px solid rgba(0, 163, 255, 0.2)', paddingBottom: '5px', marginTop: 0 }}>🚀 NOVIDADES v0.43.0</h3>
+                    <ul style={{ fontSize: '0.85rem', color: '#fff', lineHeight: '1.6', paddingLeft: '20px', margin: '5px 0' }}>
                       <li><strong>Registro de Gastos:</strong> Use o botão vermelho "TRANSFERIR" para registrar despesas. Elas saem do seu saldo!</li>
                       <li><strong>Filtros de Histórico:</strong> Agora você pode filtrar por GANHOS (Verde), GASTOS (Vermelho) e INVESTIMENTOS (Azul).</li>
                       <li><strong>Detector de Câmbio:</strong> Veja quanto saiu (em BRL) e quanto entrou (em USD/JPY) claramente.</li>
                     </ul>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
                     <div>
-                      <h3 style={{ fontSize: '0.8rem', color: '#00E676', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>💸 COMO GANHAR DINHEIRO</h3>
-                      <p style={{ fontSize: '0.6rem', color: '#aaa', lineHeight: '1.4' }}>
+                      <h3 style={{ fontSize: '1rem', color: '#00E676', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>💸 COMO GANHAR DINHEIRO</h3>
+                      <p style={{ fontSize: '0.85rem', color: '#aaa', lineHeight: '1.4' }}>
                         <strong>1. Investimentos (CDI):</strong> Crie máquinas (CDB, LCI) que rendem juros automáticos a cada 10 segundos.<br /><br />
                         <strong>2. Aportes via PIX:</strong> Injete dinheiro simulado na sua conta para aumentar seu capital inicial.<br /><br />
                         <strong>3. Câmbio (Nível 2+):</strong> Compre Dólar (USD) ou Iene (JPY) e lucre com a valorização cambial.<br /><br />
@@ -6119,8 +6119,8 @@ function App() {
                     </div>
 
                     <div>
-                      <h3 style={{ fontSize: '0.8rem', color: '#FFD700', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>👑 RATING & NÍVEIS</h3>
-                      <p style={{ fontSize: '0.6rem', color: '#aaa', lineHeight: '1.4' }}>
+                      <h3 style={{ fontSize: '1rem', color: '#FFD700', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>👑 RATING & NÍVEIS</h3>
+                      <p style={{ fontSize: '0.85rem', color: '#aaa', lineHeight: '1.4' }}>
                         Seu <strong>NÍVEL (TYCOON)</strong> é baseado no seu Patrimônio Total (1 XP = R$ 1,00).<br /><br />
                         <strong>Nível 1 (Bronze):</strong> Acesso básico.<br />
                         <strong>Nível 2 (Prata):</strong> Desbloqueia Câmbio (Dólar/Iene) e Gráficos.<br />
@@ -6131,15 +6131,15 @@ function App() {
                   </div>
 
                   <div style={{ marginTop: '20px' }}>
-                    <h3 style={{ fontSize: '0.8rem', color: '#9B5DE5', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>📱 SISTEMA DE PIX & APORTES</h3>
-                    <p style={{ fontSize: '0.65rem', color: '#ccc', lineHeight: '1.4' }}>
+                    <h3 style={{ fontSize: '1rem', color: '#9B5DE5', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>📱 SISTEMA DE PIX & APORTES</h3>
+                    <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.4' }}>
                       Para adicionar dinheiro, vá no Menu ☰ e clique em <strong>NOVO APORTE</strong>. Digite o valor que deseja "depositar" na sua conta virtual. Use isso para simular seu salário real ou testar estratégias com valores altos.
                     </p>
                   </div>
 
                   <div style={{ marginTop: '20px' }}>
-                    <h3 style={{ fontSize: '0.8rem', color: '#FF4D4D', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>⚠️ SAVES E RESET</h3>
-                    <p style={{ fontSize: '0.65rem', color: '#ccc', lineHeight: '1.4' }}>
+                    <h3 style={{ fontSize: '1rem', color: '#FF4D4D', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>⚠️ SAVES E RESET</h3>
+                    <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.4' }}>
                       Seu progresso é salvo <strong>automaticamente</strong> no seu navegador e na nuvem.<br />
                       Você pode <strong>EXPORTAR BACKUP</strong> no menu para salvar um arquivo .txt seguro.<br />
                       O jogo roda 24/7, seus juros continuam rendendo mesmo com o app fechado!
@@ -6147,7 +6147,7 @@ function App() {
                   </div>
 
                   <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', textAlign: 'center' }}>
-                    <p style={{ fontSize: '0.6rem', color: '#666', margin: 0 }}>
+                    <p style={{ fontSize: '0.85rem', color: '#666', margin: 0 }}>
                       Desenvolvido com ❤️ por Antigravity. Versão 0.43.0 (Alpha).<br />
                       Se encontrar bugs, reporte ao desenvolvedor.
                     </p>
