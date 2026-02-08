@@ -1047,18 +1047,23 @@ function App() {
   const yields = useMemo(() => {
     let totalD = 0;
     let totalH = 0;
-    let totalDProjected = 0; // Para cálculos de semana e mês, ignoramos IOF momentâneo
+    let totalDProjected = 0;
+
+    let fixedD = 0;
+    let stockD = 0;
+    let fixedDProj = 0;
+    let stockDProj = 0;
 
     machines.forEach((m: any) => {
       const { iofFactor, irFactor } = getTaxMultipliers(m.created_at, false, currentDate, m.investment_type);
-      const { irFactor: irFactorProj } = getTaxMultipliers(m.created_at, true, currentDate, m.investment_type); // Ignora IOF
+      const { irFactor: irFactorProj } = getTaxMultipliers(m.created_at, true, currentDate, m.investment_type);
 
       let rate = m.yield_mode === 'PRE' ? (m.cdi_quota / 100) : (m.cdi_quota / 100) * cdiAnual;
       if (m.investment_type === 'IPCA') rate += DEFAULT_IPCA;
       const dailyGross = (m.valor * rate) / 252;
 
       const dailyNet = dailyGross * irFactor * iofFactor;
-      const dailyNetProjected = dailyGross * irFactorProj; // Sem IOF
+      const dailyNetProjected = dailyGross * irFactorProj;
 
       const yield10s = dailyNet / 8640;
       const hourlyNet = yield10s * 360;
@@ -1066,22 +1071,34 @@ function App() {
       totalD += dailyNet;
       totalH += hourlyNet;
       totalDProjected += dailyNetProjected;
+
+      if (m.investment_type === 'ACAO' || m.investment_type === 'FII') {
+        stockD += dailyNet;
+        stockDProj += dailyNetProjected;
+      } else {
+        fixedD += dailyNet;
+        fixedDProj += dailyNetProjected;
+      }
     });
 
-    // Adiciona o rendimento do saldo USD (Wise Rende+)
+    // Adiciona o rendimento do saldo USD (Wise Rende+) à Renda Fixa
     if (usdBalance > 0) {
       const usdDailyRate = WISE_USD_APY / 365;
       const usdDailyYieldInBRL = (usdBalance * usdDailyRate) * apiRates.USD;
       totalD += usdDailyYieldInBRL;
       totalH += (usdDailyYieldInBRL / 24);
       totalDProjected += usdDailyYieldInBRL;
+      fixedD += usdDailyYieldInBRL;
+      fixedDProj += usdDailyYieldInBRL;
     }
 
     return {
       hourlyYield: totalH,
       dailyYield: totalD,
       weeklyYield: totalDProjected * 5,
-      monthlyYield: totalDProjected * 21
+      monthlyYield: totalDProjected * 21,
+      fixedMonthly: fixedDProj * 21,
+      stockMonthly: stockDProj * 21
     }
   }, [machines, cdiAnual, currentDate, usdBalance, apiRates.USD])
 
@@ -2968,11 +2985,6 @@ function App() {
               const wYield = showRealYield ? Math.max(0, yields.weeklyYield - (dailyInf * 7)) : yields.weeklyYield;
               const mYield = showRealYield ? Math.max(0, yields.monthlyYield - monthlyInf) : yields.monthlyYield;
 
-              // Cálculo do que é especificamente Bolsa (para mostrar ao usuário)
-              const stockYieldMonthly = machines
-                .filter(m => m.investment_type === 'ACAO' || m.investment_type === 'FII')
-                .reduce((acc, m) => acc + (m.valor * (m.cdi_quota / 100)) / 12, 0);
-
               return (
                 <>
                   <div className="mini-stat"><span className="label">HORA</span><span className="val" style={{ color: showRealYield ? '#00A3FF' : '#00E676' }}>R$ {hYield.toFixed(2)}</span></div>
@@ -2980,12 +2992,44 @@ function App() {
                   <div className="mini-stat"><span className="label">SEMANA</span><span className="val" style={{ color: showRealYield ? '#00A3FF' : '#00E676' }}>R$ {wYield.toFixed(2)}</span></div>
                   <div className="mini-stat"><span className="label">MÊS</span><span className="val" style={{ color: showRealYield ? '#00A3FF' : '#00E676' }}>R$ {mYield.toFixed(2)}</span></div>
 
-                  {stockYieldMonthly > 0 && (
-                    <div style={{ gridColumn: 'span 4', marginTop: '8px', padding: '10px', background: 'rgba(155, 93, 229, 0.05)', borderRadius: '12px', border: '1px solid rgba(155, 93, 229, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.55rem', color: '#E0AAFF', fontWeight: 900 }}>💰 DIVIDENDOS ESTIMADOS (MÊS)</span>
-                      <span style={{ fontSize: '0.7rem', color: '#E0AAFF', fontWeight: 900 }}>R$ {stockYieldMonthly.toFixed(2)}</span>
+                  <div style={{
+                    gridColumn: 'span 4',
+                    marginTop: '12px',
+                    padding: '16px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '0.75rem' }}>
+                      <span style={{ color: '#aaa', fontWeight: 700 }}>📊 RENDA FIXA (MÊS)</span>
+                      <span style={{ color: '#fff', fontWeight: 900 }}>R$ {yields.fixedMonthly.toFixed(2)}</span>
                     </div>
-                  )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '0.75rem' }}>
+                      <span style={{ color: '#E0AAFF', fontWeight: 700 }}>💰 DIVIDENDOS (MÊS)</span>
+                      <span style={{ color: '#E0AAFF', fontWeight: 900 }}>R$ {yields.stockMonthly.toFixed(2)}</span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      paddingTop: '12px',
+                      borderTop: '1px solid rgba(255,255,255,0.1)',
+                      alignItems: 'baseline'
+                    }}>
+                      <span style={{ color: '#00E676', fontWeight: 900, fontSize: '0.8rem', letterSpacing: '1px' }}>RENDIMENTO TOTAL ESTIMADO</span>
+                      <span style={{
+                        color: '#00E676',
+                        fontWeight: 900,
+                        fontSize: '1.2rem',
+                        textShadow: '0 0 15px rgba(0, 230, 118, 0.4)'
+                      }}>
+                        R$ {(yields.fixedMonthly + yields.stockMonthly).toFixed(2)}
+                      </span>
+                    </div>
+                    <p style={{ margin: '8px 0 0 0', fontSize: '0.55rem', color: '#666', textAlign: 'right', fontStyle: 'italic' }}>
+                      * Projeção baseada em 21 dias úteis/mês e isenção de IR em Dividendos.
+                    </p>
+                  </div>
                 </>
               );
             })()}
@@ -4423,177 +4467,10 @@ function App() {
           )
         }
 
-        {
-          showHelpModal && (
-            <div className="modal-overlay" style={{ zIndex: 5000 }} onClick={() => setShowHelpModal(false)}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '95%' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
-                  <div>
-                    <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#00A3FF', fontWeight: 900 }}>❓ GUIA COMPLETO DO JOGO</h2>
-                    <p style={{ margin: 0, fontSize: '0.6rem', opacity: 0.5, letterSpacing: '1px' }}>APRENDA A DOMINAR SUAS FINANÇAS</p>
-                  </div>
-                  <button onClick={() => setShowHelpModal(false)} className="icon-btn-small">✖</button>
-                </div>
-
-                <div className="help-section" style={{ maxHeight: '65vh', overflowY: 'auto', paddingRight: '12px' }}>
-
-                  {/* NOVIDADES V0.43.0 */}
-                  <div style={{ marginBottom: '2rem', background: 'rgba(155, 93, 229, 0.05)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(155, 93, 229, 0.2)' }}>
-                    <h4 style={{ color: '#E0AAFF', fontSize: '0.8rem', marginBottom: '10px' }}>⭐ NOVIDADES DA VERSÃO v0.43.0</h4>
-                    <ul style={{ fontSize: '0.7rem', opacity: 0.9, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <li><strong>📈 Bolsa Real-Time:</strong> Compre Ações e FIIs com cotações reais via IA (Yahoo Finance).</li>
-                      <li><strong>💰 Venda por Cotas:</strong> Realize lucro vendendo unidades inteiras de suas ações.</li>
-                      <li><strong>🧮 Aporte por Unidade:</strong> Invista informando Preço e Quantidade com trava para números inteiros.</li>
-                      <li><strong>📊 Projeção Reativa:</strong> Veja o impacto exato no rendimento ao simular vendas ou aportes em tempo real.</li>
-                    </ul>
-                  </div>
-
-                  {/* NOVIDADES ANTERIORES */}
-                  <div style={{ marginBottom: '2rem', background: 'rgba(0,163,255,0.05)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(0,163,255,0.2)', opacity: 0.7 }}>
-                    <h4 style={{ color: '#00A3FF', fontSize: '0.8rem', marginBottom: '10px' }}>⭐ VERSÃO v0.42.0</h4>
-                    <ul style={{ fontSize: '0.65rem', opacity: 0.9, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <li><strong>🧘 Modo Zen & Dia da Liberdade:</strong> Visualização minimalista e progresso de IF.</li>
-                      <li><strong>⚔️ Simulador de Dívidas & IPCA:</strong> Ferramentas estratégicas de decisão.</li>
-                    </ul>
-                  </div>
-
-                  {/* CONCEITOS BÁSICOS */}
-                  <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#FFD700', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #FFD700', paddingLeft: '8px' }}>💡 CONCEITOS BÁSICOS</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <div>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>Patrimônio Total (Bruto)</p>
-                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>A soma de todos os seus ativos convertidos para Real (BRL). Inclui saldo líquido, valor investido em máquinas, carteiras de Dólar (USD) e Iene (JPY).</p>
-                      </div>
-                      <div>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>Capital Líquido</p>
-                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Seu saldo disponível para novos investimentos, compras na Wise ou pagamento de dívidas. Rendimentos são adicionados aqui apenas após a "Venda" de um ativo.</p>
-                      </div>
-                      <div>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>Ranking e XP</p>
-                        <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Seu nível reflete seu **Patrimônio Total**. Cada R$ 1,00 em patrimônio equivale a 1 XP. Subir de nível desbloqueia novas salas, skins raras e títulos honorários.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* MERCADO DE CAPITAIS */}
-                  <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#E0AAFF', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #E0AAFF', paddingLeft: '8px' }}>📈 MERCADO DE CAPITAIS (BOLSA)</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Agora você pode diversificar além da renda fixa com ativos reais:</p>
-                      <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <li><strong>🏷️ Ações e FIIs:</strong> O rendimento é baseado no **Dividend Yield (DY)** anual informado. FIIs costumam pagar mensalmente.</li>
-                        <li><strong>🔄 Cotações Dinâmicas:</strong> Use o botão de atualizar para buscar o preço real do papel via IA.</li>
-                        <li><strong>📊 Proventos:</strong> Diferente da renda fixa, os dividendos são projetados separadamente para facilitar sua estratégia de renda passiva.</li>
-                        <li><strong>📉 Venda de Ativos:</strong> Ao vender, o capital (preço x quantidade) volta para seu saldo líquido instantaneamente.</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* MECÂNICAS DE RENDIMENTO */}
-                  <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#00E676', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #00E676', paddingLeft: '8px' }}>⚙️ MECÂNICAS DE RENDIMENTO</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>O simulador utiliza a **Regra dos 252 dias úteis**. O mercado financeiro opera de Segunda a Sexta:</p>
-                      <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <li><strong>💲 Rendimento Automático:</strong> Seus ativos geram lucro a cada 10 segundos enquanto o mercado estiver aberto.</li>
-                        <li><strong>📊 Tipos de Ativos:</strong> CDB e IPCA+ possuem incidência de IR. LCI e LCA são **Isentos de Imposto de Renda**.</li>
-                        <li><strong>💤 Lucro Offline:</strong> Caso fique fora do sistema, seus rendimentos são calculados e creditados automaticamente no seu próximo login (limitado a dias úteis).</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* SISTEMA DE TRIBUTAÇÃO */}
-                  <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#FF4D4D', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #FF4D4D', paddingLeft: '8px' }}>📉 IMPOSTOS E RESGATES</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>Ao realizar um resgate, o sistema agora mostra o impacto real:</p>
-                      <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <li><strong>⚠️ Transparência de Perda:</strong> Você verá o quanto deixará de ganhar em rendimentos ao retirar o capital.</li>
-                        <li><strong>🔴 IOF:</strong> Cobrado apenas se resgatar antes de 30 dias. Começa em 96% e zera no 30º dia.</li>
-                        <li><strong>🟡 IR Regressivo:</strong> Mostra a alíquota atual baseada no tempo do investimento (22.5% a 15%).</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* MENU E FUNCIONALIDADES */}
-                  <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#00A3FF', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #00A3FF', paddingLeft: '8px' }}>🍔 FUNCIONALIDADES DO MENU</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <li><strong>🌍 Câmbio Internacional:</strong> Converta BRL em USD/JPY. A Wise cobra 0.6% de tarifa + IOF.</li>
-                        <li><strong>🧠 Skills & Upgrades:</strong> Desbloqueie gráficos e monitores de eficiência avançados.</li>
-                        <li><strong>🏆 Conquistas:</strong> Ganhe troféus e skins aleatórias ao completar missões ou depositar.</li>
-                        <li><strong>📅 Data de Aplicação:</strong> Você pode retroagir a data de criação de um ativo para simular investimentos reais.</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* IDENTIDADE VISUAL & MODO ZEN */}
-                  <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ color: '#64FFDA', fontSize: '0.8rem', marginBottom: '10px', borderLeft: '3px solid #64FFDA', paddingLeft: '8px' }}>💎 INTERFACE E MODO ZEN</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <p style={{ fontSize: '0.7rem', opacity: 0.7, lineHeight: '1.4' }}>O CDI Tycoon oferece experiências visuais distintas:</p>
-                      <ul style={{ fontSize: '0.7rem', opacity: 0.8, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <li><strong>🧘 Modo Zen:</strong> Acesse pelo menu para esconder a complexidade e apenas observar seus números crescerem em um ambiente relaxante.</li>
-                        <li><strong>📱 Responsividade Total:</strong> O app se adapta se você estiver com o celular em pé ou deitado.</li>
-                        <li><strong>📦 PWA:</strong> Instale o app no seu celular para uma experiência nativa, sem as barras do navegador.</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* SUPORTE E DOAÇÃO */}
-                  <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
-                    <h4 style={{ color: '#E91E63', fontSize: '0.8rem', marginBottom: '12px', borderLeft: '3px solid #E91E63', paddingLeft: '8px' }}>💬 CONTATO & APOIO</h4>
-                    <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
-                      <button
-                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', color: '#fff', padding: '12px', borderRadius: '12px', cursor: 'not-allowed', fontSize: '0.7rem', fontWeight: 800, textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', opacity: 0.5 }}
-                      >
-                        <span>🛠️</span> SUPORTE TÉCNICO (DISCORD)
-                      </button>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText('7a9d849a-a3ee-4c9c-bef5-a42d448b954b');
-                          triggerSuccess('PIX COPIADO', 'Chave Pix copiada com sucesso!', '❤️');
-                        }}
-                        style={{ background: 'rgba(233, 30, 99, 0.1)', border: '1px solid rgba(233, 30, 99, 0.2)', color: '#FF4081', padding: '12px', borderRadius: '12px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 900, textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
-                      >
-                        <span>☕</span> APOIAR CRIADOR (PIX)
-                      </button>
-                    </div>
-
-                    <div style={{ marginTop: '1.5rem', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <button
-                        onClick={() => setShowTermsModal(true)}
-                        style={{ background: 'transparent', border: 'none', color: '#00A3FF', fontSize: '0.6rem', fontWeight: 900, cursor: 'pointer', opacity: 0.8, textDecoration: 'underline' }}
-                      >
-                        TERMOS DE USO
-                      </button>
-                      <button
-                        onClick={() => setShowPrivacyModal(true)}
-                        style={{ background: 'transparent', border: 'none', color: '#00A3FF', fontSize: '0.6rem', fontWeight: 900, cursor: 'pointer', opacity: 0.8, textDecoration: 'underline' }}
-                      >
-                        POLÍTICA DE PRIVACIDADE
-                      </button>
-                    </div>
-
-                    <div style={{ marginTop: '1rem', fontSize: '0.55rem', opacity: 0.3, textAlign: 'center', fontWeight: 800 }}>
-                      SYSTEM VERSION v0.43.0
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px', marginTop: '1.5rem' }}>
-                  <button className="primary-btn" style={{ flex: 1 }} onClick={() => setShowHelpModal(false)}>ENTENDI TUDO!</button>
-                </div>
-              </div>
-            </div>
-          )
-        }
 
         {
           showTermsModal && (
-            <div className="modal-overlay" style={{ zIndex: 6000 }} onClick={() => setShowTermsModal(false)}>
+            <div className="modal-overlay" style={{ zIndex: 11000 }} onClick={() => setShowTermsModal(false)}>
               <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '95%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
                   <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#00A3FF', fontWeight: 900 }}>📝 TERMOS DE USO</h2>
@@ -4614,7 +4491,7 @@ function App() {
 
         {
           showPrivacyModal && (
-            <div className="modal-overlay" style={{ zIndex: 6000 }} onClick={() => setShowPrivacyModal(false)}>
+            <div className="modal-overlay" style={{ zIndex: 11000 }} onClick={() => setShowPrivacyModal(false)}>
               <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '95%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
                   <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#00A3FF', fontWeight: 900 }}>🛡️ PRIVACIDADE</h2>
@@ -6086,23 +5963,26 @@ function App() {
           )
         }
 
-        {/* CENTRAL DE AJUDA MODAL */}
+        {/* CENTRAL DE AJUDA & GUIA COMPLETO (REFATORADO E DETALHADO) */}
         {
           showHelpModal && (
             <div className="modal-overlay" onClick={() => setShowHelpModal(false)} style={{ zIndex: 10000 }}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h2 style={{ color: '#00A3FF', margin: 0, fontSize: '1.1rem' }}>❓ CENTRAL DE AJUDA v0.43.0</h2>
-                  <button className="action-btn" onClick={() => setShowHelpModal(false)} style={{ padding: '4px 8px' }}>X</button>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '650px', maxHeight: '85vh', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(0, 163, 255, 0.2)', paddingBottom: '1rem' }}>
+                  <div>
+                    <h2 style={{ color: '#00A3FF', margin: 0, fontSize: '1.3rem', fontWeight: 900 }}>❓ CENTRAL DE AJUDA & GUIA</h2>
+                    <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, letterSpacing: '1px', fontWeight: 800 }}>SISTEMA VERSÃO v0.43.0 | MODO ESPECIALISTA</p>
+                  </div>
+                  <button className="action-btn" onClick={() => setShowHelpModal(false)} style={{ padding: '8px 12px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }}>✖</button>
                 </div>
 
-                <div className="custom-scrollbar" style={{ paddingRight: '10px' }}>
+                <div className="custom-scrollbar" style={{ paddingRight: '12px' }}>
 
-                  {/* CARTA DO DEV / DOAÇÃO (TOPO) */}
-                  <div style={{ marginBottom: '20px', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255, 215, 0, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <h3 style={{ fontSize: '0.9rem', color: '#FFD700', margin: 0 }}>Apoie o Projeto!</h3>
-                      <p style={{ fontSize: '0.75rem', color: '#ccc', margin: '4px 0 0 0' }}>Ajude a manter o servidor ligado e o café quente.</p>
+                  {/* APOIO AO DESENVOLVEDOR */}
+                  <div style={{ marginBottom: '25px', background: 'linear-gradient(135deg, rgba(155, 93, 229, 0.1) 0%, rgba(0, 163, 255, 0.1) 100%)', padding: '18px', borderRadius: '14px', border: '1px solid rgba(155, 93, 229, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ fontSize: '1rem', color: '#E0AAFF', margin: 0, fontWeight: 900 }}>Apoie o Projeto! ☕</h3>
+                      <p style={{ fontSize: '0.75rem', color: '#ccc', margin: '6px 0 0 0', lineHeight: '1.4' }}>Sua contribuição mantém os servidores ativos e financia novas mecânicas reais para o simulador.</p>
                     </div>
                     <button
                       onClick={() => {
@@ -6112,171 +5992,152 @@ function App() {
                         setTimeout(() => setPixCopied(false), 3000);
                       }}
                       style={{
-                        background: pixCopied ? '#00E676' : 'linear-gradient(135deg, #FFD700 0%, #FF8C00 100%)',
+                        background: pixCopied ? '#00E676' : 'linear-gradient(135deg, #9B5DE5 0%, #00A3FF 100%)',
                         border: 'none',
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        color: pixCopied ? '#fff' : '#000',
+                        padding: '10px 20px',
+                        borderRadius: '10px',
+                        color: '#fff',
                         fontWeight: 900,
                         cursor: 'pointer',
-                        fontSize: '0.75rem',
-                        boxShadow: pixCopied ? '0 0 15px rgba(0, 230, 118, 0.5)' : '0 4px 15px rgba(255, 215, 0, 0.3)',
-                        transition: 'all 0.3s ease'
+                        fontSize: '0.8rem',
+                        boxShadow: pixCopied ? '0 0 20px rgba(0, 230, 118, 0.4)' : '0 4px 15px rgba(0,0,0,0.3)',
+                        transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        marginLeft: '15px',
+                        whiteSpace: 'nowrap'
                       }}
                     >
-                      {pixCopied ? '✅ COPIADO!' : '☕ COPIAR PIX'}
+                      {pixCopied ? '✅ COPIADO!' : 'COPIAR PIX'}
                     </button>
                   </div>
 
-                  {/* NOVIDADES V0.43.0 */}
-                  <div style={{ marginBottom: '25px', background: 'rgba(0, 163, 255, 0.08)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(0, 163, 255, 0.2)' }}>
-                    <h3 style={{ fontSize: '1rem', color: '#00A3FF', borderBottom: '1px solid rgba(0, 163, 255, 0.2)', paddingBottom: '8px', marginTop: 0 }}>🚀 NOVIDADES DA VERSÃO 0.43.0</h3>
-                    <ul style={{ fontSize: '0.85rem', color: '#e0e0e0', lineHeight: '1.6', paddingLeft: '20px', margin: '10px 0' }}>
-                      <li style={{ marginBottom: '8px' }}><strong>Fluxo de Caixa Real (Prejuízo):</strong> Agora você pode registrar gastos da vida real (contas, lanches) usando o botão vermelho <span style={{ color: '#ff4d4d' }}>TRANSFERIR</span>. Isso reduz seu patrimônio, tornando o desafio de enriquecer mais realista.</li>
-                      <li style={{ marginBottom: '8px' }}><strong>Cores de Histórico:</strong>
-                        <br /><span style={{ color: '#00E676' }}>● Verde:</span> Ganhos passivos e aportes.
-                        <br /><span style={{ color: '#ff4d4d' }}>● Vermelho:</span> Gastos e impostos pagos.
-                        <br /><span style={{ color: '#00A3FF' }}>● Azul:</span> Rebalanceamento de carteira (não altera patrimônio).
-                      </li>
-                      <li><strong>Detector de Câmbio:</strong> Transações internacionais agora mostram explicitamente: "Saiu R$ 1.000,00 ➔ Entrou $ 185,00".</li>
-                    </ul>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '35px' }}>
-
-                    {/* SEÇÃO 1: RENDA FIXA & MATEMÁTICA */}
-                    <section>
-                      <h3 style={{ fontSize: '1.1rem', color: '#00E676', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', marginBottom: '15px' }}>
-                        📊 MECÂNICA DE RENDA FIXA
-                      </h3>
-                      <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6', marginBottom: '15px' }}>
-                        O core do jogo. Seus investimentos rendem a cada <strong>10 segundos</strong> baseados na taxa SELIC (100% CDI). O cálculo utiliza juros compostos diários.
-                      </p>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px' }}>
-                          <strong style={{ color: '#00E676', fontSize: '0.9rem' }}>CDB & LCI</strong>
-                          <p style={{ fontSize: '0.8rem', color: '#aaa', margin: '5px 0 0' }}>Segurança total. O CDB sofre IR, a LCI é isenta (mas rende menos % CDI bruto).</p>
+                  {/* NOVIDADES DA VERSÃO */}
+                  <section style={{ marginBottom: '35px' }}>
+                    <h3 style={{ color: '#00E676', fontSize: '0.9rem', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ background: 'rgba(0, 230, 118, 0.1)', padding: '4px 8px', borderRadius: '6px' }}>🚀</span>
+                      O QUE HÁ DE NOVO NA v0.43.0
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '12px' }}>
+                      {[
+                        { t: 'Fluxo de Caixa Real', d: 'Botão TRANSFERIR para registrar gastos do dia a dia (lanches, boletos). Realismo total.', c: '#FF4D4D' },
+                        { t: 'Bolsa Real-Time (IA)', d: 'Ações e FIIs com preços extraídos diretamente do mercado financeiro (Yahoo Finance).', c: '#9B5DE5' },
+                        { t: 'Venda Fracionada/Cotas', d: 'Agora você pode vender unidades específicas de seus ativos da bolsa.', c: '#00A3FF' },
+                        { t: 'Visão de Rendimento', d: 'Passe o mouse ou toque nos ativos para ver a projeção exata de ganhos diários/mensais.', c: '#FFD700' }
+                      ].map((item, i) => (
+                        <div key={i} style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '10px', borderLeft: `4px solid ${item.c}` }}>
+                          <strong style={{ color: item.c, fontSize: '0.85rem', display: 'block', marginBottom: '4px' }}>{item.t}</strong>
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: '#aaa', lineHeight: '1.4' }}>{item.d}</p>
                         </div>
-                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px' }}>
-                          <strong style={{ color: '#FFD700', fontSize: '0.9rem' }}>IPCA+</strong>
-                          <p style={{ fontSize: '0.8rem', color: '#aaa', margin: '5px 0 0' }}>Proteção contra inflação. Rende uma taxa fixa + variação da inflação.</p>
-                        </div>
-                      </div>
+                      ))}
+                    </div>
+                  </section>
 
-                      <div style={{ background: 'rgba(255, 77, 77, 0.1)', padding: '15px', borderRadius: '8px', borderLeft: '4px solid #ff4d4d' }}>
-                        <strong style={{ color: '#ff4d4d', fontSize: '0.9rem' }}>☠️ TRIBUTAÇÃO (O INIMIGO)</strong>
-                        <ul style={{ fontSize: '0.8rem', color: '#ccc', margin: '8px 0 0', paddingLeft: '20px' }}>
-                          <li><strong>IOF:</strong> Imposto regressivo nos primeiros 30 dias. Se sacar no dia 1, perde 96% do lucro. No dia 30, paga 0%. <em style={{ color: '#fff' }}>Dica: Não gire a carteira toda hora!</em></li>
-                          <li><strong>Imposto de Renda (IR):</strong>
-                            <br />Até 180 dias: 22.5%
-                            <br />181 a 360 dias: 20.0%
-                            <br />361 a 720 dias: 17.5%
-                            <br />720+ dias: 15.0% (Alíquota mínima)
-                          </li>
-                        </ul>
-                      </div>
-                    </section>
-
-                    {/* SEÇÃO 2: BOLSA DE VALORES */}
-                    <section>
-                      <h3 style={{ fontSize: '1.1rem', color: '#9B5DE5', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', marginBottom: '15px' }}>
-                        📈 BOLSA DE VALORES (NÍVEL 3)
-                      </h3>
-                      <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6' }}>
-                        Investimento de Risco Variável. Aqui, a brincadeira fica séria. Cotações reais e perdas reais (de XP).
-                      </p>
-                      <ul style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6', paddingLeft: '20px' }}>
-                        <li style={{ marginBottom: '8px' }}><strong>🤖 Cotações Reais (IA):</strong> Os preços das <strong>Ações e FIIs</strong> seguem o mercado real (B3), processados por Inteligência Artificial para garantir realismo absoluto. Não é aleatório!</li>
-                        <li style={{ marginBottom: '8px' }}><strong>💰 Dividendos:</strong> Ao segurar FIIs (como HGLG11), você recebe "aluguéis virtuais" periodicamente na sua conta.</li>
-                        <li><strong>Volatilidade:</strong> O mercado reage a notícias mundo afora. Use a análise gráfica para comprar na baixa e vender na alta.</li>
+                  {/* MECÂNICA DE PATRIMÔNIO */}
+                  <section style={{ marginBottom: '35px' }}>
+                    <h2 style={{ fontSize: '1rem', color: '#fff', borderLeft: '4px solid #00A3FF', paddingLeft: '12px', marginBottom: '15px', fontWeight: 900 }}>💰 O CONCEITO DE PATRIMÔNIO</h2>
+                    <div style={{ color: '#ccc', fontSize: '0.85rem', lineHeight: '1.6' }}>
+                      <p>No <strong>CDI Tycoon</strong>, seu sucesso é medido pelo seu <strong>Patrimônio Bruto Total</strong>. Ele é a soma de:</p>
+                      <ul style={{ paddingLeft: '20px', marginTop: '10px', color: '#eee' }}>
+                        <li><strong>Capital Líquido:</strong> Dinheiro "na mão" para novos aportes ou gastos.</li>
+                        <li><strong>Ativos em Real (BRL):</strong> CDBs, LCIs, IPCA+ e sua Carteira de Ações.</li>
+                        <li><strong>Moedas Estrangeiras:</strong> USD (Dólar) e JPY (Iene) convertidos pela cotação atual.</li>
                       </ul>
-                    </section>
+                      <p style={{ marginTop: '10px', fontSize: '0.75rem', background: 'rgba(255, 215, 0, 0.05)', padding: '10px', borderRadius: '8px', border: '1px dashed rgba(255, 215, 0, 0.2)' }}>
+                        ⚠️ <strong>IMPORTANTE:</strong> Seu <strong>XP</strong> é uma representação direta do seu patrimônio. Se você gastar dinheiro (Transferir), seu nível pode cair!
+                      </p>
+                    </div>
+                  </section>
 
-                    {/* SEÇÃO 3: CÂMBIO & DOLARIZAÇÃO */}
-                    <section>
-                      <h3 style={{ fontSize: '1.1rem', color: '#00E676', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', marginBottom: '15px' }}>
-                        🌍 CÂMBIO & PROTEÇÃO (HEGE)
-                      </h3>
+                  {/* RENDA FIXA */}
+                  <section style={{ marginBottom: '35px' }}>
+                    <h2 style={{ fontSize: '1rem', color: '#fff', borderLeft: '4px solid #00E676', paddingLeft: '12px', marginBottom: '15px', fontWeight: 900 }}>📊 MECÂNICAS DE RENDA FIXA</h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                       <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6' }}>
-                        Disponível no Nível 2. Comprar Moeda Estrangeira (USD/JPY) não gera juros automáticos, mas protege seu patrimônio se o Real desvalorizar.
+                        Simulamos a <strong>Regra dos 252 dias úteis</strong>. O rendimento ocorre a cada <strong>10 segundos</strong> de forma contínua enquanto o mercado estiver aberto.
                       </p>
-                      <div style={{ marginTop: '10px', padding: '10px', border: '1px dashed #444', borderRadius: '8px' }}>
-                        <strong style={{ color: '#aaa', fontSize: '0.8rem' }}>⚠️ CUSTOS DE OPERAÇÃO (SPREAD)</strong>
-                        <p style={{ fontSize: '0.8rem', color: '#666', margin: '5px 0 0' }}>
-                          Toda compra de dólar tem um custo (IOF + Spread bancário). Você já começa "perdendo" uns 2%. Só compre se acreditar que o dólar vai subir mais que isso a longo prazo.
-                        </p>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                        <div style={{ background: 'rgba(0, 230, 118, 0.05)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(0, 230, 118, 0.1)' }}>
+                          <strong style={{ color: '#00E676', fontSize: '0.85rem' }}>CDB & IPCA+</strong>
+                          <p style={{ fontSize: '0.75rem', color: '#aaa', marginTop: '5px' }}>Rendimentos mais altos, porém sofrem incidência de <strong>Imposto de Renda Regressivo</strong>.</p>
+                        </div>
+                        <div style={{ background: 'rgba(0, 163, 255, 0.05)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(0, 163, 255, 0.1)' }}>
+                          <strong style={{ color: '#00A3FF', fontSize: '0.85rem' }}>LCI & LCA</strong>
+                          <p style={{ fontSize: '0.75rem', color: '#aaa', marginTop: '5px' }}>Taxas ligeiramente menores, mas são <strong>Totalmente Isentas de IR</strong>. Excelente para curto prazo.</p>
+                        </div>
                       </div>
-                    </section>
+                    </div>
+                  </section>
 
-                    {/* SEÇÃO 4: SISTEMA DE NÍVEIS */}
-                    <section>
-                      <h3 style={{ fontSize: '1.1rem', color: '#FFD700', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', marginBottom: '15px' }}>
-                        👑 TABELA DE NÍVEIS (XP)
-                      </h3>
-                      <p style={{ fontSize: '0.85rem', color: '#ccc', marginBottom: '15px' }}>
-                        Seu XP é idêntico ao seu Patrimônio Líquido atual. Sacar dinheiro reduz seu XP. Investir aumenta.
+                  {/* MERCADO DE CAPITAIS (DETALHADO) */}
+                  <section style={{ marginBottom: '35px' }}>
+                    <h2 style={{ fontSize: '1rem', color: '#fff', borderLeft: '4px solid #9B5DE5', paddingLeft: '12px', marginBottom: '15px', fontWeight: 900 }}>📈 MERCADO DE CAPITAIS (BOLSA)</h2>
+                    <div style={{ background: 'rgba(155, 93, 229, 0.05)', padding: '20px', borderRadius: '15px', border: '1px solid rgba(155, 93, 229, 0.2)' }}>
+                      <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6', marginBottom: '15px' }}>
+                        A Bolsa de Valores é desbloqueada no <strong>Nível 3</strong>. Aqui, as informações são <strong>REAIS E NÃO ALEATÓRIAS</strong>:
                       </p>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', color: '#ccc' }}>
+                      <ul style={{ fontSize: '0.8rem', color: '#eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <li><strong>🤖 Cotações via IA:</strong> Utilizamos dados reais de mercado (Yahoo Finance/B3). Ao clicar em atualizar, a IA processa o valor exato no momento para garantir realismo absoluto.</li>
+                        <li><strong>💰 Dividend Yield (DY):</strong> Diferente do CDB, aqui você ganha pela valorização do papel e pelos dividendos pagos (aluguéis virtuais no caso de FIIs).</li>
+                        <li><strong>📉 Risco de Mercado:</strong> Diferente da renda fixa, você pode ter um patrimônio negativo se o preço da ação cair drasticamente.</li>
+                        <li><strong>🔄 Venda Inteligente:</strong> O lucro só é realizado (vai para o saldo líquido) quando você vende a cota.</li>
+                      </ul>
+                    </div>
+                  </section>
+
+                  {/* TRIBUTAÇÃO */}
+                  <section style={{ marginBottom: '35px' }}>
+                    <h2 style={{ fontSize: '1rem', color: '#fff', borderLeft: '4px solid #FF4D4D', paddingLeft: '12px', marginBottom: '15px', fontWeight: 900 }}>⚖️ TRIBUTAÇÃO & RESGATES</h2>
+                    <div style={{ background: 'rgba(255, 77, 77, 0.05)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255, 77, 77, 0.1)' }}>
+                      <table style={{ width: '100%', fontSize: '0.8rem', color: '#ccc', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                            <th style={{ textAlign: 'left', padding: '8px' }}>Tempo</th>
+                            <th style={{ textAlign: 'right', padding: '8px' }}>Alíquota IR</th>
+                          </tr>
+                        </thead>
                         <tbody>
-                          <tr style={{ borderBottom: '1px solid #333' }}>
-                            <td style={{ padding: '8px', color: '#CD7F32', fontWeight: 'bold' }}>NÍVEL 1</td>
-                            <td style={{ padding: '8px' }}>R$ 0 - R$ 10.000</td>
-                            <td style={{ padding: '8px', color: '#888' }}>Iniciante. Acesso a CDB/LCI.</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid #333' }}>
-                            <td style={{ padding: '8px', color: '#C0C0C0', fontWeight: 'bold' }}>NÍVEL 2</td>
-                            <td style={{ padding: '8px' }}>R$ 10.001 - R$ 100.000</td>
-                            <td style={{ padding: '8px', color: '#888' }}>Intermediário. Desbloqueia Câmbio e Gráficos Avançados.</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid #333' }}>
-                            <td style={{ padding: '8px', color: '#FFD700', fontWeight: 'bold' }}>NÍVEL 3</td>
-                            <td style={{ padding: '8px' }}>R$ 100.001+</td>
-                            <td style={{ padding: '8px', color: '#888' }}>Magnata. Desbloqueia Bolsa de Valores e Skins Épicas.</td>
-                          </tr>
+                          <tr><td style={{ padding: '8px' }}>Até 180 dias</td><td style={{ textAlign: 'right', padding: '8px', color: '#fff' }}>22,5%</td></tr>
+                          <tr><td style={{ padding: '8px' }}>181 a 360 dias</td><td style={{ textAlign: 'right', padding: '8px', color: '#fff' }}>20,0%</td></tr>
+                          <tr><td style={{ padding: '8px' }}>361 a 720 dias</td><td style={{ textAlign: 'right', padding: '8px', color: '#fff' }}>17,5%</td></tr>
+                          <tr><td style={{ padding: '8px' }}>Acima de 720 dias</td><td style={{ textAlign: 'right', padding: '8px', color: '#fff' }}>15,0%</td></tr>
                         </tbody>
                       </table>
-                    </section>
+                      <div style={{ marginTop: '15px', fontSize: '0.75rem' }}>
+                        <p>🔴 <strong>IOF:</strong> Cobrado nos primeiros 30 dias de resgate. Se resgatar hoje o que aplicou ontem, perde Quase Todo o lucro (96%). Espere 30 dias para ficar isento.</p>
+                      </div>
+                    </div>
+                  </section>
 
-                    {/* SEÇÃO 5: FERRAMENTAS MATEMÁTICAS */}
-                    <section>
-                      <h3 style={{ fontSize: '1.1rem', color: '#FF8C00', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', marginBottom: '15px' }}>
-                        🛠️ SUAS FERRAMENTAS
-                      </h3>
-                      <ul style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.8', paddingLeft: '20px' }}>
-                        <li><strong>Simulador de Dívidas:</strong> Compara o CET (Custo Efetivo Total) da sua dívida com o rendimento líquido (pós-impostos) dos seus investimentos. Se Juros Dívida {'>'} Juros Investimento, o app recomenda quitar.</li>
-                        <li><strong>Calculadora de Juros Compostos:</strong> Projeta linearmente seu patrimônio considerando aportes mensais constantes. Ótimo para saber quando você ficará milionário.</li>
-                        <li><strong>Backup .TXT:</strong> Gera uma string base64 codificada com todo seu save state. Guarde em local seguro.</li>
-                      </ul>
-                    </section>
-                  </div>
+                  {/* FERRAMENTAS */}
+                  <section style={{ marginBottom: '35px' }}>
+                    <h2 style={{ fontSize: '1rem', color: '#fff', borderLeft: '4px solid #FFD700', paddingLeft: '12px', marginBottom: '15px', fontWeight: 900 }}>🛠️ FERRAMENTAS DE MESTRE</h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '10px' }}>
+                      <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px' }}>
+                        <strong style={{ fontSize: '0.8rem', color: '#fff' }}>🧠 Skills Shop:</strong> Invista no seu conhecimento para desbloquear monitores de IF, gráficos de projeção e bônus de rendimento.
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px' }}>
+                        <strong style={{ fontSize: '0.8rem', color: '#fff' }}>🧘 Modo Zen:</strong> Esconda a complexidades e foque apenas no crescimento visual de seus ativos.
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px' }}>
+                        <strong style={{ fontSize: '0.8rem', color: '#fff' }}>💾 Backup Seguro:</strong> Gere um código TXT no menu para nunca perder seu progresso. O jogo salva no Supabase (Cloud) e LocalStorage.
+                      </div>
+                    </div>
+                  </section>
 
-                  {/* TERMOS DE USO (MANTIDO) */}
-                  <div style={{ marginTop: '30px', padding: '15px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px' }}>
-                    <h3 style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '10px' }}>⚖️ TERMOS DE USO & DISCLAIMER</h3>
-                    <p style={{ fontSize: '0.75rem', color: '#666', lineHeight: '1.5', margin: 0 }}>
-                      1. <strong>Educacional:</strong> Este software é um simulador. Nenhum valor financeiro aqui é real ou resgatável.<br />
-                      2. <strong>Dados:</strong> Seus dados vivem no seu navegador (IndexedDB) e na nuvem (Supabase) atrelados ao seu login.<br />
-                      3. <strong>Open Source:</strong> O código é livre. Contribua no GitHub para melhorar o ecossistema.<br />
-                      4. <strong>Autoria:</strong> Design e lógica originais. Skins e conquistas são propriedade intelectual do projeto.
+                  {/* FOOTER */}
+                  <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '15px' }}>
+                      <button onClick={() => setShowTermsModal(true)} style={{ background: 'none', border: 'none', color: '#00A3FF', fontSize: '0.65rem', fontWeight: 900, cursor: 'pointer', textDecoration: 'underline' }}>TERMOS DE USO</button>
+                      <button onClick={() => setShowPrivacyModal(true)} style={{ background: 'none', border: 'none', color: '#00A3FF', fontSize: '0.65rem', fontWeight: 900, cursor: 'pointer', textDecoration: 'underline' }}>PRIVACIDADE</button>
+                    </div>
+                    <p style={{ fontSize: '0.6rem', color: '#555', margin: 0 }}>
+                      CDI Tycoon © 2026 - Desenvolvido para fins educacionais.<br />
+                      Nenhum dado financeiro aqui representa valores reais em espécie.
                     </p>
                   </div>
+                </div>
 
-                  <div style={{ marginTop: '20px' }}>
-                    <h3 style={{ fontSize: '1rem', color: '#FF4D4D', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>⚠️ SAVES E RESET</h3>
-                    <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.4' }}>
-                      Seu progresso é salvo <strong>automaticamente</strong> no seu navegador e na nuvem.<br />
-                      Você pode <strong>EXPORTAR BACKUP</strong> no menu para salvar um arquivo .txt seguro.<br />
-                      O jogo roda 24/7, seus juros continuam rendendo mesmo com o app fechado!
-                    </p>
-                  </div>
-
-                  <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', textAlign: 'center' }}>
-                    <p style={{ fontSize: '0.85rem', color: '#666', margin: 0 }}>
-                      CDI Tycoon v0.43.0 (Alpha).<br />
-                      Se encontrar bugs, reporte no GitHub.
-                    </p>
-                  </div>
+                <div style={{ marginTop: '20px' }}>
+                  <button className="primary-btn" onClick={() => setShowHelpModal(false)} style={{ width: '100%', padding: '15px', fontSize: '0.9rem', fontWeight: 900 }}>ENTENDI TUDO, VAMOS ENRIQUECER!</button>
                 </div>
               </div>
             </div>
