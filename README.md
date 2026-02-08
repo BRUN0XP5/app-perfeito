@@ -18,12 +18,12 @@
 *   **Frequência de Proventos:** Configure se o papel paga Dividendos Mensais, Trimestrais ou Anuais para uma projeção de fluxo de caixa precisa.
 
 ### 💰 Sistema de Gestão de Ativos (Liquidez)
-*   **Venda de Ativos de Bolsa:** Realize lucro (ou prejuízo) instantaneamente. Ao vender um ativo de bolsa, o valor total (Preço Atual x Quantidade) volta para o seu saldo líquido.
+*   **Venda por Cotas Inteiras:** Realize lucro (ou prejuízo) instantaneamente. O sistema agora exige a venda de unidades inteiras de Ações e FIIs, refletindo o mercado real.
 *   **Resgate Inteligente de Renda Fixa:** Ao tentar resgatar CDBs ou LCIs, o sistema agora exibe um painel de impacto detalhando perdas de rendimento e impostos incidentes.
 
 ### 🧮 Hub de Investimento 2.0
-*   **Investimento por Cotas:** Não compre apenas por valor financeiro. Informe o preço do papel e a quantidade de cotas; o sistema faz o cálculo do aporte total e valida seu saldo.
-*   **Gráfico de Alocação 360°:** O novo gráfico de pizza (PieChart) agora segmenta sua carteira em: CDB, LCI, LCA, Tesouro IPCA+, Ações, FIIs, Dólar e Iene.
+*   **Investimento por Unidade:** Não compre apenas por valor financeiro. Informe o preço do papel e a quantidade de cotas; o sistema faz o cálculo do aporte total, valida seu saldo e trava para números inteiros.
+*   **Projeção Reativa em Tempo Real:** Ao digitar o valor de resgate ou aporte, o painel de projeção atualiza instantaneamente para mostrar como seu lucro diário será afetado.
 
 ### 💎 Projeção de Dividendos Separada
 *   **Dashboard de Bolsa:** Uma nova métrica no painel de projeções mostra quanto você ganha exclusivamente em dividendos, permitindo separar sua estratégia de acumulação (Renda Fixa) da estratégia de renda passiva (Bolsa).

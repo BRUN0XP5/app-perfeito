@@ -245,9 +245,11 @@ function App() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedMachine, setSelectedMachine] = useState<any>(null)
   const [aporteValue, setAporteValue] = useState('')
+  const [aporteQuantity, setAporteQuantity] = useState('')
   const [showAporteModal, setShowAporteModal] = useState(false)
   const [showConfirmResgate, setShowConfirmResgate] = useState<any>(null)
   const [resgateValue, setResgateValue] = useState('')
+  const [resgateQuantity, setResgateQuantity] = useState('')
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingMachine, setEditingMachine] = useState<any>(null)
   const [editName, setEditName] = useState('')
@@ -1385,24 +1387,51 @@ function App() {
   }
 
   const handleAporte = async () => {
-    const valor = parseFloat(aporteValue)
-    if (valor > balance) return setNotification('CAPITAL INSUFICIENTE')
-    const novoValor = selectedMachine.valor + valor
-    const { error } = await supabase.from('maquinas').update({ valor: novoValor }).eq('id', selectedMachine.id)
+    const isStock = selectedMachine.investment_type === 'ACAO' || selectedMachine.investment_type === 'FII';
+    let valor = 0;
+    let qtyToAdd = 0;
+
+    if (isStock) {
+      qtyToAdd = Math.floor(parseFloat(aporteQuantity) || 0);
+      if (qtyToAdd <= 0) return setNotification('QUANTIDADE INVÁLIDA');
+
+      const pricePerShare = selectedMachine.valor / (selectedMachine.stock_quantity || 1);
+      valor = qtyToAdd * pricePerShare;
+    } else {
+      valor = parseFloat(aporteValue);
+    }
+
+    if (isNaN(valor) || valor <= 0) return setNotification('VALOR INVÁLIDO');
+    if (valor > balance + 0.01) return setNotification('CAPITAL INSUFICIENTE');
+
+    const novoValor = selectedMachine.valor + valor;
+    const novaQty = isStock ? (selectedMachine.stock_quantity || 0) + qtyToAdd : selectedMachine.stock_quantity;
+
+    const updateData: any = { valor: novoValor };
+    if (isStock) updateData.stock_quantity = Math.round(novaQty);
+
+    const { error } = await supabase.from('maquinas').update(updateData).eq('id', selectedMachine.id)
     if (!error) {
-      setMachines(machines.map(m => m.id === selectedMachine.id ? { ...m, valor: novoValor } : m))
+      setMachines(machines.map(m => m.id === selectedMachine.id ? {
+        ...m,
+        valor: novoValor,
+        stock_quantity: novaQty
+      } : m))
       const newBalance = balance - valor
       setBalance(newBalance)
       await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance })
       setAporteValue('')
-      triggerSuccess('APORTE REALIZADO', `Capital aplicado com sucesso em ${selectedMachine.nome}`, '💵');
+      setAporteQuantity('')
+      triggerSuccess(isStock ? 'COMPRA REALIZADA' : 'APORTE REALIZADO', `Sucesso em ${selectedMachine.nome}`, isStock ? '📈' : '💵');
       addActivity({
         type: 'contribution',
-        label: 'APORTE REALIZADO',
+        label: isStock ? 'COMPRA DE COTAS' : 'APORTE REALIZADO',
         amount: valor,
-        icon: '💵',
-        details: `Investimento de R$ ${valor.toFixed(2)} em ${selectedMachine.nome}`
+        icon: isStock ? '📈' : '💵',
+        details: isStock ? `Comprou ${qtyToAdd} cotas de ${selectedMachine.nome}` : `Investimento de R$ ${valor.toFixed(2)} em ${selectedMachine.nome}`
       });
+    } else {
+      setNotification(`ERRO NO APORTE: ${error.message}`);
     }
   }
 
@@ -1420,9 +1449,22 @@ function App() {
   const handleResgate = async () => {
     if (!showConfirmResgate) return;
 
-    const amount = parseFloat(resgateValue) || showConfirmResgate.valor;
+    const isStock = showConfirmResgate.investment_type === 'ACAO' || showConfirmResgate.investment_type === 'FII';
+    let amount = 0;
+    let qtyToSell = 0;
 
-    if (amount > showConfirmResgate.valor + 0.0001) {
+    if (isStock) {
+      qtyToSell = Math.floor(parseFloat(resgateQuantity) || 0);
+      if (qtyToSell <= 0) return setNotification('QUANTIDADE INVÁLIDA');
+      if (qtyToSell > showConfirmResgate.stock_quantity + 0.0001) return setNotification('QUANTIDADE MAIOR QUE O DISPONÍVEL');
+
+      const pricePerShare = showConfirmResgate.valor / (showConfirmResgate.stock_quantity || 1);
+      amount = qtyToSell * pricePerShare;
+    } else {
+      amount = parseFloat(resgateValue) || showConfirmResgate.valor;
+    }
+
+    if (!isStock && amount > showConfirmResgate.valor + 0.0001) {
       return setNotification('VALOR MAIOR QUE O DISPONÍVEL');
     }
 
@@ -1430,11 +1472,15 @@ function App() {
       return setNotification('VALOR INVÁLIDO');
     }
 
-    const isTotal = Math.abs(amount - showConfirmResgate.valor) < 0.01;
-    const remainder = showConfirmResgate.valor - amount;
+    const isTotal = isStock
+      ? Math.abs(qtyToSell - showConfirmResgate.stock_quantity) < 0.001
+      : Math.abs(amount - showConfirmResgate.valor) < 0.01;
 
-    // Se não for total, precisa sobrar pelo menos 1 Real
-    if (!isTotal && remainder < 1.0) {
+    const remainderValue = showConfirmResgate.valor - amount;
+    const remainderQty = isStock ? showConfirmResgate.stock_quantity - qtyToSell : 0;
+
+    // Se não for total e não for bolsa, precisa sobrar pelo menos 1 Real
+    if (!isTotal && !isStock && remainderValue < 1.0) {
       return setNotification('DEVE SOBRAR PELO MENOS R$ 1,00 NO ATIVO');
     }
 
@@ -1447,13 +1493,14 @@ function App() {
         await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance })
         setShowConfirmResgate(null)
         setResgateValue('')
-        triggerSuccess('RESGATE CONCLUÍDO', 'O capital retornou ao saldo líquido.', '💰');
+        setResgateQuantity('')
+        triggerSuccess(isStock ? 'VENDA CONCLUÍDA' : 'RESGATE CONCLUÍDO', isStock ? 'As cotas foram vendidas com sucesso.' : 'O capital retornou ao saldo líquido.', '💰');
         addActivity({
           type: 'sell_machine',
-          label: 'ATIVO VENDIDO',
+          label: isStock ? 'ATIVO VENDIDO' : 'RESGATE TOTAL',
           amount: amount,
           icon: '💰',
-          details: `Venda de ${showConfirmResgate.nome} por R$ ${amount.toFixed(2)}`
+          details: isStock ? `Venda de ${qtyToSell} cotas de ${showConfirmResgate.nome}` : `Resgate de ${showConfirmResgate.nome} por R$ ${amount.toFixed(2)}`
         });
 
         // Revelação de Conquistas Pendentes
@@ -1474,21 +1521,31 @@ function App() {
       }
     } else {
       // Resgate Parcial
-      const { error } = await supabase.from('maquinas').update({ valor: remainder }).eq('id', showConfirmResgate.id)
+      const updateData: any = { valor: remainderValue };
+      if (isStock) {
+        updateData.stock_quantity = remainderQty;
+      }
+
+      const { error } = await supabase.from('maquinas').update(updateData).eq('id', showConfirmResgate.id)
       if (!error) {
         const newBalance = balance + amount
         setBalance(newBalance)
-        setMachines(machines.map(m => m.id === showConfirmResgate.id ? { ...m, valor: remainder } : m))
+        setMachines(machines.map(m => m.id === showConfirmResgate.id ? {
+          ...m,
+          valor: remainderValue,
+          stock_quantity: isStock ? remainderQty : m.stock_quantity
+        } : m))
         await supabase.from('user_stats').upsert({ user_id: session.id, balance: newBalance })
         setShowConfirmResgate(null)
         setResgateValue('')
-        triggerSuccess('RESGATE PARCIAL', 'Capital parcial resgatado com sucesso.', '💸');
+        setResgateQuantity('')
+        triggerSuccess(isStock ? 'VENDA PARCIAL' : 'RESGATE PARCIAL', isStock ? 'Cotas vendidas com sucesso.' : 'Capital parcial resgatado com sucesso.', '💸');
         addActivity({
           type: 'partial_resgate',
-          label: 'RESGATE PARCIAL',
+          label: isStock ? 'VENDA PARCIAL' : 'RESGATE PARCIAL',
           amount: amount,
           icon: '💸',
-          details: `Resgate de R$ ${amount.toFixed(2)} de ${showConfirmResgate.nome}`
+          details: isStock ? `Venda de ${qtyToSell} cotas de ${showConfirmResgate.nome}` : `Resgate de R$ ${amount.toFixed(2)} de ${showConfirmResgate.nome}`
         });
       } else {
         setNotification(`ERRO NO RESGATE: ${error.message}`);
@@ -2157,26 +2214,90 @@ function App() {
   const renderContent = () => {
     if (!session) {
       return (
-        <div className="login-screen">
-          <div className="glass-panel login-card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '2rem' }}>
-              <h1 className="title" style={{ marginTop: 0 }}>CDI_TYCOON</h1>
+        <div className={`login-screen ${isRegistering ? 'registration-mode-active' : ''}`}>
+          <div className="glass-panel login-card">
+            {/* AMBIENT LIGHTING */}
+            <div style={{ position: 'absolute', top: '-150px', left: '-150px', width: '400px', height: '400px', background: isRegistering ? 'radial-gradient(circle, rgba(0, 230, 118, 0.15) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(0, 163, 255, 0.15) 0%, transparent 70%)', pointerEvents: 'none', transition: 'all 1.5s ease' }} />
+
+            {/* DATA STREAM DECORATION (Subtle) */}
+            <div style={{ position: 'absolute', top: 0, right: 0, padding: '10px', fontFamily: 'JetBrains Mono', fontSize: '0.5rem', color: isRegistering ? '#00e676' : '#00a3ff', opacity: 0.3, pointerEvents: 'none' }}>
+              {isRegistering ? 'REGISTRO_SISTEMA_v0.42_ATIVO' : 'CONEXÃO_SEGURA_ESTÁVEL'}
+            </div>
+
+            <div className="login-header-section">
+              <div style={{ fontSize: '0.65rem', color: isRegistering ? '#00E676' : '#00A3FF', fontWeight: 900, letterSpacing: '6px', marginBottom: '15px', opacity: 0.8, transition: 'all 0.5s' }}>
+                {isRegistering ? 'INICIALIZANDO ESCANEAMENTO DE DNA' : 'IDENTIFICAÇÃO DO SISTEMA'}
+              </div>
+              <h1 className="title" style={{ margin: 0, textAlign: 'center', fontSize: '2.8rem', letterSpacing: '-3px', textShadow: isRegistering ? '0 0 40px rgba(0, 230, 118, 0.6)' : '0 0 40px rgba(0, 163, 255, 0.6)', transition: 'all 0.5s' }}>
+                {isRegistering ? 'NOVO PLAYER' : 'CDI_TYCOON'}
+              </h1>
+            </div>
+
+            <div className="login-form-section">
               <form onSubmit={handleAuth}>
-                <div className="input-group">
-                  <label htmlFor="login-user">NOME_PLAYER</label>
-                  <input id="login-user" title="Nome do Jogador" placeholder="Seu apelido" type="text" value={username} onChange={e => setUsername(e.target.value)} required />
+                <div className="premium-input-wrapper">
+                  <label htmlFor="login-user" style={{ color: isRegistering ? '#00E676' : '#00A3FF', transition: 'all 0.5s' }}>IDENTIDADE_PLAYER</label>
+                  <input
+                    id="login-user"
+                    placeholder={isRegistering ? "ESCOLHA SEU APELIDO" : "SUA IDENTIDADE"}
+                    type="text"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    required
+                  />
                 </div>
-                <div className="input-group" style={{ marginTop: '1rem' }}>
-                  <label htmlFor="login-pass">SENHA</label>
-                  <input id="login-pass" title="Senha de Acesso" placeholder="Sua senha" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+                <div className="premium-input-wrapper" style={{ marginTop: '1.5rem' }}>
+                  <label htmlFor="login-pass" style={{ color: isRegistering ? '#00E676' : '#00A3FF', transition: 'all 0.5s' }}>CHAVE_DE_ACESSO</label>
+                  <input
+                    id="login-pass"
+                    placeholder="••••••••"
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                  />
                 </div>
-                {error && <div style={{ color: '#FF4D4D', fontSize: '0.7rem', marginTop: '1rem' }}>{error}</div>}
-                <button type="submit" className="primary-btn" style={{ marginTop: '2rem' }}>ENTRAR</button>
+
+                {error && (
+                  <div style={{
+                    color: '#FF4D4D',
+                    fontSize: '0.7rem',
+                    marginBottom: '1.5rem',
+                    background: 'rgba(255, 77, 77, 0.1)',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 77, 77, 0.3)',
+                    textAlign: 'center',
+                    fontWeight: 900,
+                    animation: 'shake 0.5s ease'
+                  }}>
+                    {error.toUpperCase()}
+                  </div>
+                )}
+
+                <div className="foda-btn-container" onClick={() => (document.querySelector('.submit-hidden') as any)?.click()}>
+                  <div className="foda-btn-inner">
+                    {isRegistering ? 'CRIAR PERSONAGEM' : 'ENTRAR NO SISTEMA'}
+                  </div>
+                  <button type="submit" className="submit-hidden" style={{ display: 'none' }} />
+                </div>
               </form>
-              <button className="text-link" style={{ background: 'none', border: 'none', color: '#fff', marginTop: '1rem', width: '100%', cursor: 'pointer', opacity: 0.6 }} onClick={() => setIsRegistering(!isRegistering)}>
-                {isRegistering ? 'VOLTAR' : 'CRIAR PERSONAGEM'}
+
+              <button
+                className="login-back-btn"
+                onClick={() => {
+                  setIsRegistering(!isRegistering);
+                  setError('');
+                }}
+              >
+                {isRegistering ? '← JÁ POSSUO CADASTRO' : 'SOLICITAR NOVO ACESSO'}
               </button>
             </div>
+
+            {/* SCANLINE DECORATION */}
+            {isRegistering && (
+              <div style={{ height: '3px', background: '#00E676', width: '100%', position: 'absolute', top: '0', left: '0', opacity: 0.2, animation: 'scanlineMove 3s linear infinite', boxShadow: '0 0 15px #00E676' }} />
+            )}
           </div>
         </div>
       )
@@ -2527,6 +2648,9 @@ function App() {
                   <div className="menu-item" onClick={() => { setShowHelpModal(true); setShowMenu(false); }}>❓ CENTRAL DE AJUDA</div>
                   <div className="menu-item" onClick={() => { setShowPixConfig(true); setShowMenu(false); }}>⚙️ AJUSTES DO SISTEMA</div>
                   <div className="menu-item danger" onClick={() => { setSession(null); setShowMenu(false); }}>DESCONECTAR</div>
+                  <div style={{ marginTop: 'auto', padding: '15px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                    <span style={{ fontSize: '0.45rem', opacity: 0.3, fontWeight: 900, letterSpacing: '2px' }}>CDI_TYCOON v0.43.0</span>
+                  </div>
                 </div>
               </>
             )}
@@ -2959,7 +3083,7 @@ function App() {
                           background: (m.investment_type === 'ACAO' || m.investment_type === 'FII') ? 'rgba(155, 93, 229, 0.2)' : '',
                           borderColor: (m.investment_type === 'ACAO' || m.investment_type === 'FII') ? '#9B5DE5' : ''
                         }}
-                        onClick={() => { setShowConfirmResgate(m); setResgateValue(''); }}
+                        onClick={() => { setShowConfirmResgate(m); setResgateValue(''); setResgateQuantity(''); }}
                       >
                         {(m.investment_type === 'ACAO' || m.investment_type === 'FII') ? 'VENDER' : 'RESGATAR'}
                       </button>
@@ -3025,20 +3149,30 @@ function App() {
 
                 <div style={{ padding: '1.5rem' }}>
                   <div className="input-group">
-                    <label htmlFor="resgate-input" style={{ fontSize: '0.55rem', color: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? '#9B5DE5' : '#FF4D4D', fontWeight: 900, marginBottom: '8px', display: 'block', letterSpacing: '1px' }}>{(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'VALOR DA VENDA (R$)' : 'VALOR PARA RESGATE (R$)'}</label>
+                    <label htmlFor="resgate-input" style={{ fontSize: '0.55rem', color: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? '#9B5DE5' : '#FF4D4D', fontWeight: 900, marginBottom: '8px', display: 'block', letterSpacing: '1px' }}>
+                      {(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'QUANTIDADE PARA VENDA' : 'VALOR PARA RESGATE (R$)'}
+                    </label>
                     <div style={{ position: 'relative' }}>
                       <input
                         id="resgate-input"
-                        title="Valor do Resgate"
+                        title={(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? "Quantidade de Cotas" : "Valor do Resgate"}
                         autoFocus
                         type="number"
-                        placeholder={showConfirmResgate.valor.toFixed(2)}
-                        value={resgateValue}
-                        onChange={e => setResgateValue(e.target.value)}
-                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255, 77, 77, 0.2)', color: '#fff', padding: '15px', borderRadius: '14px', width: '100%', fontSize: '1.3rem', fontWeight: 800, outline: 'none' }}
+                        step={(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? "1" : "0.01"}
+                        placeholder={(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? showConfirmResgate.stock_quantity.toString() : showConfirmResgate.valor.toFixed(2)}
+                        value={(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? resgateQuantity : resgateValue}
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') {
+                            setResgateQuantity(val ? Math.floor(parseFloat(val)).toString() : '');
+                          } else {
+                            setResgateValue(val);
+                          }
+                        }}
+                        style={{ background: 'rgba(255,255,255,0.05)', border: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? '1px solid rgba(155, 93, 229, 0.4)' : '1px solid rgba(255, 77, 77, 0.2)', color: '#fff', padding: '15px', borderRadius: '14px', width: '100%', fontSize: '1.3rem', fontWeight: 800, outline: 'none' }}
                       />
                       <button
-                        onClick={() => setResgateValue(showConfirmResgate.valor.toString())}
+                        onClick={() => (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? setResgateQuantity(showConfirmResgate.stock_quantity.toString()) : setResgateValue(showConfirmResgate.valor.toString())}
                         style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'rgba(155, 93, 229, 0.2)' : 'rgba(255, 77, 77, 0.2)', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.55rem', fontWeight: 900, cursor: 'pointer' }}
                       >
                         TUDO
@@ -3047,10 +3181,21 @@ function App() {
                   </div>
 
                   <div style={{ marginTop: '1.2rem', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', fontSize: '0.6rem', opacity: 0.6, textAlign: 'center' }}>
-                    Saldo disponível para resgate: <span style={{ color: '#fff', fontWeight: 800 }}>{formatBRLWithPrecision(showConfirmResgate.valor)}</span>
+                    {(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? (
+                      <>
+                        Total em carteira: <span style={{ color: '#fff', fontWeight: 800 }}>{showConfirmResgate.stock_quantity} cotas</span>
+                        {resgateQuantity && !isNaN(parseFloat(resgateQuantity)) && (
+                          <div style={{ marginTop: '5px', color: '#9B5DE5', fontWeight: 900, fontSize: '0.7rem' }}>
+                            ESTIMATIVA DE VENDA: {formatBRLWithPrecision(parseFloat(resgateQuantity) * (showConfirmResgate.valor / showConfirmResgate.stock_quantity))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>Saldo disponível para resgate: <span style={{ color: '#fff', fontWeight: 800 }}>{formatBRLWithPrecision(showConfirmResgate.valor)}</span></>
+                    )}
                   </div>
 
-                  {resgateValue && !isNaN(parseFloat(resgateValue)) && parseFloat(resgateValue) > 0 && (
+                  {((resgateValue && !isNaN(parseFloat(resgateValue))) || (resgateQuantity && !isNaN(parseFloat(resgateQuantity)))) && (
                     <div style={{ marginTop: '1.5rem' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                         {/* ATUAL */}
@@ -3071,7 +3216,12 @@ function App() {
                         <div style={{ background: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'rgba(155, 93, 229, 0.05)' : 'rgba(255, 77, 77, 0.05)', padding: '12px', borderRadius: '16px', border: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? '1px solid rgba(155, 93, 229, 0.2)' : '1px solid rgba(255, 77, 77, 0.2)' }}>
                           <div style={{ fontSize: '0.45rem', color: (showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? '#9B5DE5' : '#FF4D4D', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>{(showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII') ? 'PROJEÇÃO PÓS-VENDA' : 'PROJEÇÃO PÓS-RESGATE'}</div>
                           {(() => {
-                            const next = calculateProjection(showConfirmResgate?.valor || 0, `- ${resgateValue} `, showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode);
+                            const isStock = showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII';
+                            const valToMinus = isStock
+                              ? ((parseFloat(resgateQuantity) || 0) * (showConfirmResgate.valor / (showConfirmResgate.stock_quantity || 1)))
+                              : (parseFloat(resgateValue) || 0);
+
+                            const next = calculateProjection(showConfirmResgate?.valor || 0, `-${valToMinus}`, showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode);
                             return (
                               <>
                                 <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#FF4D4D' }}>R$ {next.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.7 }}>/dia</span></div>
@@ -3084,7 +3234,16 @@ function App() {
 
                       <div style={{ marginTop: '12px', textAlign: 'center' }}>
                         <span style={{ fontSize: '0.55rem', color: '#FF4D4D', fontWeight: 900, background: 'rgba(255,77,77,0.1)', padding: '6px 14px', borderRadius: '20px', letterSpacing: '0.5px' }}>
-                          📉 -{((1 - calculateProjection(showConfirmResgate?.valor || 0, `- ${resgateValue} `, showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode).day / (calculateProjection(showConfirmResgate?.valor || 0, '0', showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode).day || 0.00000001)) * 100).toFixed(1)}% DE PERDA NO RENDIMENTO
+                          {(() => {
+                            const isStock = showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII';
+                            const valToMinus = isStock
+                              ? (parseFloat(resgateQuantity || '0') * (showConfirmResgate.valor / (showConfirmResgate.stock_quantity || 1)))
+                              : parseFloat(resgateValue || '0');
+                            const currentDay = calculateProjection(showConfirmResgate?.valor || 0, '0', showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode).day;
+                            const nextDay = calculateProjection(showConfirmResgate?.valor || 0, `-${valToMinus}`, showConfirmResgate?.cdi_quota || 0, cdiAnual, showConfirmResgate?.created_at, currentDate, showConfirmResgate?.investment_type, showConfirmResgate?.yield_mode).day;
+                            const loss = ((1 - (nextDay / (currentDay || 0.00000001))) * 100).toFixed(1);
+                            return `📉 -${loss}% DE PERDA NO RENDIMENTO`;
+                          })()}
                         </span>
                       </div>
 
@@ -3100,14 +3259,35 @@ function App() {
                           </div>
                         )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                          <span style={{ fontSize: '0.55rem', fontWeight: 800, opacity: 0.6 }}>REMANESCENTE NO ATIVO:</span>
-                          <span style={{ fontSize: '0.55rem', fontWeight: 900, color: (showConfirmResgate.valor - parseFloat(resgateValue)) >= 1 ? '#00E676' : '#FF4D4D' }}>
-                            {formatBRLWithPrecision(Math.max(0, showConfirmResgate.valor - parseFloat(resgateValue)))}
-                          </span>
+                          {(() => {
+                            const isStock = showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII';
+                            const valToMinus = isStock
+                              ? (parseFloat(resgateQuantity) * (showConfirmResgate.valor / (showConfirmResgate.stock_quantity || 1)))
+                              : parseFloat(resgateValue);
+                            const remaining = showConfirmResgate.valor - (valToMinus || 0);
+
+                            return (
+                              <>
+                                <span style={{ fontSize: '0.55rem', fontWeight: 800, opacity: 0.6 }}>REMANESCENTE NO ATIVO:</span>
+                                <span style={{ fontSize: '0.55rem', fontWeight: 900, color: remaining >= 1 ? '#00E676' : '#FF4D4D' }}>
+                                  {formatBRLWithPrecision(Math.max(0, remaining))}
+                                </span>
+                              </>
+                            );
+                          })()}
                         </div>
-                        {(showConfirmResgate.valor - parseFloat(resgateValue)) < 1 && Math.abs(showConfirmResgate.valor - parseFloat(resgateValue)) > 0.001 && (
-                          <div style={{ fontSize: '0.5rem', color: '#FF4D4D', fontWeight: 800, marginTop: '6px', textAlign: 'center' }}>⚠️ MÍNIMO DE R$ 1,00 PARA MANTER O ATIVO.</div>
-                        )}
+                        {(() => {
+                          const isStock = showConfirmResgate?.investment_type === 'ACAO' || showConfirmResgate?.investment_type === 'FII';
+                          const valToMinus = isStock
+                            ? (parseFloat(resgateQuantity) * (showConfirmResgate.valor / (showConfirmResgate.stock_quantity || 1)))
+                            : parseFloat(resgateValue);
+                          const remaining = showConfirmResgate.valor - (valToMinus || 0);
+
+                          if (!isStock && remaining < 1 && Math.abs(remaining) > 0.001) {
+                            return <div style={{ fontSize: '0.5rem', color: '#FF4D4D', fontWeight: 800, marginTop: '6px', textAlign: 'center' }}>⚠️ MÍNIMO DE R$ 1,00 PARA MANTER O ATIVO.</div>;
+                          }
+                          return null;
+                        })()}
                       </div>
                     </div>
                   )}
@@ -3139,95 +3319,129 @@ function App() {
         }
 
         {
-          showAporteModal && (
-            <div className="modal-overlay" onClick={() => setShowAporteModal(false)}>
-              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden', borderRadius: '24px', border: 'none', position: 'relative' }}>
-                <button onClick={() => setShowAporteModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
-                <div style={{ background: 'linear-gradient(135deg, #00A3FF 0%, #0066FF 100%)', padding: '1.5rem', textAlign: 'center' }}>
-                  <h3 style={{ margin: 0, fontSize: '0.9rem', letterSpacing: '2px', fontWeight: 900, color: '#fff' }}>APORTE_ESTRATÉGICO</h3>
-                  <p style={{ margin: '5px 0 0 0', fontSize: '0.65rem', opacity: 0.8, color: '#fff', fontWeight: 700 }}>{selectedMachine?.nome.toUpperCase()}</p>
-                </div>
-
-                <div style={{ padding: '1.5rem' }}>
-                  <div className="input-group">
-                    <label htmlFor="aporte-input" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 900, marginBottom: '8px', display: 'block', letterSpacing: '1px' }}>VALOR DO INVESTIMENTO ADICIONAL (R$)</label>
-                    <input
-                      id="aporte-input"
-                      title="Valor do Aporte"
-                      autoFocus
-                      type="number"
-                      placeholder="0,00"
-                      value={aporteValue}
-                      onChange={e => setAporteValue(e.target.value)}
-                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,163,255,0.2)', color: '#fff', padding: '15px', borderRadius: '14px', width: '100%', fontSize: '1.3rem', fontWeight: 800, outline: 'none' }}
-                    />
+          showAporteModal && (() => {
+            const isStock = selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII';
+            return (
+              <div className="modal-overlay" onClick={() => setShowAporteModal(false)}>
+                <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden', borderRadius: '24px', border: 'none', position: 'relative' }}>
+                  <button onClick={() => setShowAporteModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✖</button>
+                  <div style={{ background: 'linear-gradient(135deg, #00A3FF 0%, #0066FF 100%)', padding: '1.5rem', textAlign: 'center' }}>
+                    <h3 style={{ margin: 0, fontSize: '0.9rem', letterSpacing: '2px', fontWeight: 900, color: '#fff' }}>APORTE_ESTRATÉGICO</h3>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '0.65rem', opacity: 0.8, color: '#fff', fontWeight: 700 }}>{selectedMachine?.nome.toUpperCase()}</p>
                   </div>
 
-                  <div style={{ marginTop: '1.5rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                      {/* ATUAL */}
-                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ fontSize: '0.45rem', color: '#aaa', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>RENDIMENTO ATUAL</div>
-                        {(() => {
-                          const current = calculateProjection(selectedMachine?.valor || 0, '0', selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode);
-                          return (
-                            <>
-                              <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#fff' }}>R$ {current.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.5 }}>/dia</span></div>
-                              <div style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 700, marginTop: '2px' }}>R$ {current.week.toFixed(2)}/semana</div>
-                              <div style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 700, marginTop: '2px' }}>R$ {current.month.toFixed(2)}/mês</div>
-                            </>
-                          );
-                        })()}
+                  <div style={{ padding: '1.5rem' }}>
+                    <div className="input-group">
+                      <label htmlFor="aporte-input" style={{ fontSize: '0.55rem', color: isStock ? '#9B5DE5' : '#00A3FF', fontWeight: 900, marginBottom: '8px', display: 'block', letterSpacing: '1px' }}>
+                        {isStock ? 'QUANTIDADE DE COTAS PARA COMPRAR' : 'VALOR DO INVESTIMENTO ADICIONAL (R$)'}
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          id="aporte-input"
+                          title={isStock ? "Quantidade de Cotas" : "Valor do Aporte"}
+                          autoFocus
+                          type="number"
+                          step={isStock ? "1" : "0.01"}
+                          placeholder="0,00"
+                          value={isStock ? aporteQuantity : aporteValue}
+                          onChange={e => {
+                            const val = e.target.value;
+                            if (isStock) {
+                              setAporteQuantity(val ? Math.floor(parseFloat(val)).toString() : '');
+                            } else {
+                              setAporteValue(val);
+                            }
+                          }}
+                          style={{ background: 'rgba(255,255,255,0.05)', border: isStock ? '1px solid rgba(155, 93, 229, 0.4)' : '1px solid rgba(0,163,255,0.2)', color: '#fff', padding: '15px', borderRadius: '14px', width: '100%', fontSize: '1.3rem', fontWeight: 800, outline: 'none' }}
+                        />
                       </div>
-
-                      {/* ESTIMADO (DEPOIS) */}
-                      <div style={{ background: 'rgba(0, 230, 118, 0.05)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(0, 230, 118, 0.2)' }}>
-                        <div style={{ fontSize: '0.45rem', color: '#00E676', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>PROJEÇÃO PÓS-APORTE</div>
-                        {(() => {
-                          const next = calculateProjection(selectedMachine?.valor || 0, aporteValue, selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode);
-                          return (
-                            <>
-                              <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#00E676' }}>R$ {next.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.7 }}>/dia</span></div>
-                              <div style={{ fontSize: '0.65rem', color: '#00E676', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>R$ {next.week.toFixed(2)}/semana</div>
-                              <div style={{ fontSize: '0.65rem', color: '#00E676', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>R$ {next.month.toFixed(2)}/mês</div>
-                            </>
-                          );
-                        })()}
-                      </div>
+                      {isStock && aporteQuantity && !isNaN(parseFloat(aporteQuantity)) && (
+                        <div style={{ marginTop: '10px', fontSize: '0.7rem', color: '#9B5DE5', fontWeight: 900, textAlign: 'center', background: 'rgba(155, 93, 229, 0.1)', padding: '8px', borderRadius: '10px' }}>
+                          CUSTO ESTIMADO: {formatBRLWithPrecision(parseFloat(aporteQuantity) * (selectedMachine.valor / (selectedMachine.stock_quantity || 1)))}
+                        </div>
+                      )}
                     </div>
 
-                    {aporteValue && !isNaN(parseFloat(aporteValue)) && parseFloat(aporteValue) > 0 && (
-                      <div style={{ marginTop: '18px', textAlign: 'center', animation: 'fadeIn 0.3s ease-out' }}>
-                        <span style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, background: 'rgba(0,230,118,0.1)', padding: '6px 14px', borderRadius: '20px', letterSpacing: '0.5px' }}>
-                          🚀 +{((calculateProjection(selectedMachine?.valor || 0, aporteValue, selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode).day / (calculateProjection(selectedMachine?.valor || 0, '0', selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode).day || 0.00000001) - 1) * 100).toFixed(1)}% DE AUMENTO NO LUCRO LÍQUIDO
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                    <div style={{ marginTop: '1.5rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                        {/* ATUAL */}
+                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div style={{ fontSize: '0.45rem', color: '#aaa', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>RENDIMENTO ATUAL</div>
+                          {(() => {
+                            const current = calculateProjection(selectedMachine?.valor || 0, '0', selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode);
+                            return (
+                              <>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#fff' }}>R$ {current.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.5 }}>/dia</span></div>
+                                <div style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 700, marginTop: '2px' }}>R$ {current.week.toFixed(2)}/semana</div>
+                                <div style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 700, marginTop: '2px' }}>R$ {current.month.toFixed(2)}/mês</div>
+                              </>
+                            );
+                          })()}
+                        </div>
 
-                  <div style={{ display: 'flex', gap: '12px', marginTop: '2rem' }}>
-                    <button className="action-btn" style={{ flex: 1, padding: '15px', borderRadius: '14px', fontSize: '0.7rem', fontWeight: 800 }} onClick={() => setShowAporteModal(false)}>VOLTAR</button>
-                    <button
-                      className="primary-btn"
-                      style={{
-                        flex: 1.5,
-                        background: '#00E676',
-                        color: '#000',
-                        padding: '15px',
-                        borderRadius: '14px',
-                        fontSize: '0.7rem',
-                        fontWeight: 900,
-                        boxShadow: '0 8px 20px rgba(0, 230, 118, 0.2)'
-                      }}
-                      onClick={handleAporte}
-                    >
-                      CONFIRMAR APORTE
-                    </button>
+                        {/* ESTIMADO (DEPOIS) */}
+                        <div style={{ background: 'rgba(0, 230, 118, 0.05)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(0, 230, 118, 0.2)' }}>
+                          <div style={{ fontSize: '0.45rem', color: '#00E676', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>PROJEÇÃO PÓS-APORTE</div>
+                          {(() => {
+                            const isStock = selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII';
+                            const valToAdd = isStock
+                              ? ((parseFloat(aporteQuantity) || 0) * (selectedMachine.valor / (selectedMachine.stock_quantity || 1)))
+                              : (parseFloat(aporteValue) || 0);
+
+                            const next = calculateProjection(selectedMachine?.valor || 0, valToAdd.toString(), selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode);
+                            return (
+                              <>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#00E676' }}>R$ {next.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.7 }}>/dia</span></div>
+                                <div style={{ fontSize: '0.65rem', color: '#00E676', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>R$ {next.week.toFixed(2)}/semana</div>
+                                <div style={{ fontSize: '0.65rem', color: '#00E676', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>R$ {next.month.toFixed(2)}/mês</div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+
+                      {((aporteValue && !isNaN(parseFloat(aporteValue))) || (aporteQuantity && !isNaN(parseFloat(aporteQuantity)))) && (
+                        <div style={{ marginTop: '18px', textAlign: 'center', animation: 'fadeIn 0.3s ease-out' }}>
+                          <span style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, background: 'rgba(0,230,118,0.1)', padding: '6px 14px', borderRadius: '20px', letterSpacing: '0.5px' }}>
+                            {(() => {
+                              const isStock = selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII';
+                              const valToAdd = isStock
+                                ? ((parseFloat(aporteQuantity) || 0) * (selectedMachine.valor / (selectedMachine.stock_quantity || 1)))
+                                : (parseFloat(aporteValue) || 0);
+                              const nextDay = calculateProjection(selectedMachine?.valor || 0, valToAdd.toString(), selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode).day;
+                              const currentDay = calculateProjection(selectedMachine?.valor || 0, '0', selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode).day;
+                              const increase = ((nextDay / (currentDay || 0.00000001) - 1) * 100).toFixed(1);
+                              return `🚀 +${increase}% DE AUMENTO NO LUCRO LÍQUIDO`;
+                            })()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '2rem' }}>
+                      <button className="action-btn" style={{ flex: 1, padding: '15px', borderRadius: '14px', fontSize: '0.7rem', fontWeight: 800 }} onClick={() => setShowAporteModal(false)}>VOLTAR</button>
+                      <button
+                        className="primary-btn"
+                        style={{
+                          flex: 1.5,
+                          background: '#00E676',
+                          color: '#000',
+                          padding: '15px',
+                          borderRadius: '14px',
+                          fontSize: '0.7rem',
+                          fontWeight: 900,
+                          boxShadow: '0 8px 20px rgba(0, 230, 118, 0.2)'
+                        }}
+                        onClick={handleAporte}
+                      >
+                        CONFIRMAR APORTE
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )
+            )
+          })()
         }
 
 
@@ -4030,9 +4244,9 @@ function App() {
                     <h4 style={{ color: '#E0AAFF', fontSize: '0.8rem', marginBottom: '10px' }}>⭐ NOVIDADES DA VERSÃO v0.43.0</h4>
                     <ul style={{ fontSize: '0.7rem', opacity: 0.9, paddingLeft: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <li><strong>📈 Bolsa Real-Time:</strong> Compre Ações e FIIs com cotações reais via IA (Yahoo Finance).</li>
-                      <li><strong>💰 Venda de Ativos:</strong> Agora você pode vender seus papéis e realizar lucro no saldo líquido.</li>
-                      <li><strong>🧮 Aporte por Cotas:</strong> Invista informando Preço e Quantidade com cálculo automático de total.</li>
-                      <li><strong>📦 Carteira Detalhada:</strong> Veja suas cotas e frequência de dividendos (Mensal, Trimestral) nos cards.</li>
+                      <li><strong>💰 Venda por Cotas:</strong> Realize lucro vendendo unidades inteiras de suas ações.</li>
+                      <li><strong>🧮 Aporte por Unidade:</strong> Invista informando Preço e Quantidade com trava para números inteiros.</li>
+                      <li><strong>📊 Projeção Reativa:</strong> Veja o impacto exato no rendimento ao simular vendas ou aportes em tempo real.</li>
                     </ul>
                   </div>
 

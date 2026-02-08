@@ -3359,3 +3359,137 @@ input:focus {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   margin-top: 5px;
 }
+
+/* ========================================
+   ULTRA-PREMIUM OVAL LOGIN UI
+   ======================================== */
+
+.login-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at center, #020617 0%, #000 100%) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  overflow: hidden;
+  perspective: 1200px;
+}
+
+.login-card {
+  width: 440px;
+  max-width: 92%;
+  border-radius: 40px !important;
+  padding: 0 !important;
+  border: 1px solid rgba(0, 163, 255, 0.4) !important;
+  background: rgba(15, 23, 42, 0.8) !important;
+  backdrop-filter: blur(40px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8), inset 0 0 40px rgba(0, 163, 255, 0.1) !important;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+}
+
+.login-header-section {
+  padding: 3.5rem 2rem 2.5rem 2rem !important;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  background: linear-gradient(180deg, rgba(0, 163, 255, 0.1) 0%, transparent 100%);
+}
+
+.login-form-section {
+  padding: 3rem !important;
+}
+
+/* PREMIUM OVAL BUTTONS */
+.foda-btn-container {
+  background: #000 !important;
+  padding: 3px !important;
+  border-radius: 60px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  margin-top: 2rem !important;
+  border: none !important;
+  cursor: pointer;
+  width: 100%;
+}
+
+.foda-btn-inner {
+  background: linear-gradient(180deg, #00A3FF 0%, #0055CC 100%) !important;
+  color: #000 !important;
+  border-radius: 56px !important;
+  padding: 1.2rem 2.5rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 4px !important;
+  font-size: 0.95rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.4) !important;
+}
+
+.foda-btn-container:hover {
+  transform: translateY(-5px) scale(1.02) !important;
+  box-shadow: 0 15px 40px rgba(0, 163, 255, 0.4), 0 0 0 2px #000 !important;
+}
+
+.foda-btn-container:active {
+  transform: translateY(2px) scale(0.98) !important;
+}
+
+.login-back-btn {
+  all: unset;
+  display: block !important;
+  width: fit-content !important;
+  margin: 2.5rem auto 0 auto !important;
+  padding: 0.9rem 2.8rem !important;
+  text-align: center !important;
+  background: #000 !important;
+  color: #00A3FF !important;
+  border: 1px solid #00A3FF !important;
+  border-radius: 60px !important;
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 2px !important;
+  cursor: pointer !important;
+  transition: all 0.3s !important;
+  text-transform: uppercase !important;
+}
+
+.login-back-btn:hover {
+  background: #00A3FF !important;
+  color: #000 !important;
+  box-shadow: 0 0 30px rgba(0, 163, 255, 0.5) !important;
+}
+
+/* PREMIUM INPUTS */
+.premium-input-wrapper {
+  margin-bottom: 2rem;
+}
+
+.premium-input-wrapper label {
+  display: block;
+  font-size: 0.65rem;
+  color: #00A3FF;
+  font-weight: 900;
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+}
+
+.premium-input-wrapper input {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 20px !important;
+  padding: 1.3rem 1.8rem !important;
+  color: #fff !important;
+  width: 100%;
+}
+
+.registration-mode-active .foda-btn-inner {
+  background: linear-gradient(180deg, #00E676 0%, #008855 100%) !important;
+}
