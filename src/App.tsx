@@ -2370,7 +2370,7 @@ function App() {
                 fontWeight: 900, letterSpacing: '10px', opacity: 0.9, marginBottom: '1rem',
                 animation: 'textPulse 3s ease-in-out infinite'
               }}>
-                • ARCHIVE SYNCING •
+                • SINCRONIZANDO DADOS •
               </div>
 
               <h1 className="zen-main-value" style={{
@@ -2387,16 +2387,16 @@ function App() {
               border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)'
             }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, letterSpacing: '2px', opacity: 0.5, marginBottom: '4px' }}>HRLY_YIELD</div>
+                <div style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, letterSpacing: '2px', opacity: 0.5, marginBottom: '4px' }}>RENDIMENTO_HORA</div>
                 <div style={{ fontSize: '1.8rem', color: '#00E676', fontWeight: 900, textShadow: '0 0 20px rgba(0, 230, 118, 0.2)' }}>
-                  {formatBRLWithMicroCents(yields.hourlyYield || 0)}
+                  R$ {(yields.hourlyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
               <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} className="zen-divider"></div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 900, letterSpacing: '2px', opacity: 0.5, marginBottom: '4px' }}>DAY_YIELD</div>
+                <div style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 900, letterSpacing: '2px', opacity: 0.5, marginBottom: '4px' }}>RENDIMENTO_DIA</div>
                 <div style={{ fontSize: '1.8rem', color: '#00A3FF', fontWeight: 900, textShadow: '0 0 20px rgba(0, 163, 255, 0.2)' }}>
-                  {formatBRLWithMicroCents(yields.dailyYield || 0)}
+                  R$ {(yields.dailyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
             </div>
@@ -2410,7 +2410,7 @@ function App() {
                   }} />
                 </div>
                 <div style={{ marginTop: '10px', fontSize: '0.5rem', color: '#888', fontWeight: 900, letterSpacing: '2px' }}>
-                  FINANCIAL FREEDOM: <span style={{ color: '#fff' }}>{freedomProgress.toFixed(2)}%</span>
+                  LIBERDADE FINANCEIRA: <span style={{ color: '#fff' }}>{freedomProgress.toFixed(2)}%</span>
                 </div>
               </div>
             )}
@@ -2428,7 +2428,7 @@ function App() {
             onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
             onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.background = 'transparent' }}
           >
-            RETURN_TO_DASHBOARD
+            VOLTAR AO PAINEL
           </button>
 
           <style>{`
