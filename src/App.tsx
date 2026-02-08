@@ -45,12 +45,15 @@ interface Activity {
   type: string;
   label: string;
   amount?: number;
+  amountRemoved?: number;
+  amountAdded?: number;
   currency?: string;
   target?: string;
   details?: string;
   timestamp: string;
   icon: string;
 }
+
 
 const AnimatedNumber = ({ value, format }: { value: number, format: (n: number) => ReactNode }) => {
   const [displayValue, setDisplayValue] = useState(value);
@@ -368,6 +371,13 @@ function App() {
     setActionPopup({ title, msg, icon });
     setTimeout(() => setActionPopup(null), 3000);
   }
+
+  // TRANSFER/EXPENSE MODAL STATE
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferValue, setTransferValue] = useState('');
+  const [transferDescription, setTransferDescription] = useState('');
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'gains' | 'expenses' | 'investments'>('all');
+
 
   const achievementStats = useMemo(() => {
     const totalYieldToday = historyData.find(h => new Date(h.date).toDateString() === new Date().toDateString())?.total || 0;
@@ -2082,6 +2092,44 @@ function App() {
     }
   }
 
+  const handleTransfer = async () => {
+    const val = parseFloat(transferValue);
+    if (!val || val <= 0) {
+      setNotification('VALOR INVÁLIDO');
+      return;
+    }
+
+    if (balance < val) {
+      setNotification('SALDO INSUFICIENTE');
+      return;
+    }
+
+    const newBalance = balance - val;
+    const description = transferDescription.trim() || 'Gasto não especificado';
+
+    const { error } = await supabase.from('user_stats').update({
+      balance: newBalance
+    }).eq('user_id', session.id);
+
+    if (!error) {
+      setBalance(newBalance);
+      triggerSuccess('TRANSFERÊNCIA REALIZADA', `R$ ${val.toFixed(2)} debitado da conta.`, '💸');
+      addActivity({
+        type: 'transfer',
+        label: 'GASTO REGISTRADO',
+        amount: val,
+        icon: '💸',
+        details: description
+      });
+      setShowTransferModal(false);
+      setTransferValue('');
+      setTransferDescription('');
+    } else {
+      setNotification('ERRO AO PROCESSAR TRANSFERÊNCIA');
+    }
+  }
+
+
   const handleExportBackup = () => {
     const backupData = {
       meta: {
@@ -2167,7 +2215,8 @@ function App() {
       addActivity({
         type: 'exchange',
         label: 'CÂMBIO REALIZADO',
-        amount: fromAmount,
+        amountRemoved: fromAmount,
+        amountAdded: toAmount,
         currency: direction === 'BRL_TO_FOREIGN' ? 'BRL' : target,
         target: direction === 'BRL_TO_FOREIGN' ? target : 'BRL',
         icon: '💱',
@@ -2178,6 +2227,7 @@ function App() {
       setNotification('ERRO AO PROCESSAR CÂMBIO');
     }
   }
+
 
   // const chartData = useMemo(() => {
   //   const usdVal = usdBalance * apiRates.USD;
@@ -2751,6 +2801,45 @@ function App() {
             </div>
           </div>
 
+          {/* BOTÃO TRANSFERIR/REGISTRAR GASTOS */}
+          <div style={{ marginTop: '0.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'flex-start' }}>
+            <button
+              onClick={() => setShowTransferModal(true)}
+              style={{
+                padding: '6px 12px',
+                background: 'linear-gradient(135deg, rgba(255, 77, 77, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%)',
+                border: '1px solid rgba(255, 77, 77, 0.25)',
+                borderRadius: '8px',
+                color: '#FF4D4D',
+                fontSize: '0.55rem',
+                fontWeight: 800,
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                transition: 'all 0.3s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 77, 77, 0.2) 0%, rgba(255, 140, 0, 0.2) 100%)';
+                e.currentTarget.style.borderColor = 'rgba(255, 77, 77, 0.4)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 77, 77, 0.15)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 77, 77, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%)';
+                e.currentTarget.style.borderColor = 'rgba(255, 77, 77, 0.25)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <span style={{ fontSize: '0.85rem' }}>💸</span>
+              TRANSFERIR
+            </button>
+          </div>
+
           <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
             <div style={{
               background: 'linear-gradient(160deg, rgba(30, 20, 50, 0.6) 0%, rgba(10, 10, 10, 0.8) 100%)',
@@ -3099,7 +3188,57 @@ function App() {
         <div className="glass-panel" style={{ marginTop: '1rem', padding: '1.2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ fontSize: '0.7rem', color: '#00A3FF', margin: 0 }}>HISTÓRICO_DE_ATIVIDADES</h3>
-            <span style={{ fontSize: '0.5rem', opacity: 0.4, fontWeight: 800 }}>ÚLTIMAS 50 OPERAÇÕES</span>
+            {/* FILTROS DE HISTÓRICO */}
+            <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.2)', padding: '2px', borderRadius: '8px' }}>
+              <button
+                onClick={() => setHistoryFilter('all')}
+                style={{
+                  background: historyFilter === 'all' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  color: historyFilter === 'all' ? '#fff' : '#aaa',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  fontSize: '0.5rem',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}>TODOS</button>
+              <button
+                onClick={() => setHistoryFilter('gains')}
+                style={{
+                  background: historyFilter === 'gains' ? 'rgba(0, 230, 118, 0.1)' : 'transparent',
+                  color: historyFilter === 'gains' ? '#00E676' : '#aaa',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  fontSize: '0.5rem',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}>GANHOS</button>
+              <button
+                onClick={() => setHistoryFilter('expenses')}
+                style={{
+                  background: historyFilter === 'expenses' ? 'rgba(255, 77, 77, 0.1)' : 'transparent',
+                  color: historyFilter === 'expenses' ? '#FF4D4D' : '#aaa',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  fontSize: '0.5rem',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}>GASTOS</button>
+              <button
+                onClick={() => setHistoryFilter('investments')}
+                style={{
+                  background: historyFilter === 'investments' ? 'rgba(0, 163, 255, 0.1)' : 'transparent',
+                  color: historyFilter === 'investments' ? '#00A3FF' : '#aaa',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  fontSize: '0.5rem',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}>INVEST.</button>
+            </div>
           </div>
 
           <div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'scroll', paddingRight: '4px' }}>
@@ -3108,7 +3247,22 @@ function App() {
                 <p style={{ fontSize: '0.65rem', opacity: 0.5, margin: 0, fontWeight: 700 }}>NENHUMA ATIVIDADE REGISTRADA AINDA.</p>
               </div>
             ) : (
-              activities.map((act) => (
+              activities.filter(act => {
+                if (historyFilter === 'all') return true;
+                if (historyFilter === 'gains') return ['deposit', 'impulse', 'dividend'].includes(act.type);
+                if (historyFilter === 'expenses') return ['transfer', 'pay_debt', 'reset_balance'].includes(act.type);
+                if (historyFilter === 'investments') return ['create_machine', 'contribution', 'stock_purchase', 'resgate', 'partial_resgate', 'stock_sale', 'exchange'].includes(act.type);
+                return true;
+              }).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#aaa', fontSize: '0.6rem' }}>Nenhuma atividade encontrada neste filtro.</div>
+              ) : activities.filter(act => {
+                if (historyFilter === 'all') return true;
+                if (historyFilter === 'gains') return ['deposit', 'impulse', 'dividend'].includes(act.type);
+                if (historyFilter === 'expenses') return ['transfer', 'pay_debt', 'reset_balance'].includes(act.type);
+                if (historyFilter === 'investments') return ['create_machine', 'contribution', 'stock_purchase', 'resgate', 'partial_resgate', 'stock_sale', 'exchange'].includes(act.type);
+                return true;
+              }).map((act) => (
+
                 <div key={act.id} style={{
                   background: 'rgba(255,255,255,0.03)',
                   padding: '10px 12px',
@@ -3127,10 +3281,55 @@ function App() {
                         {new Date(act.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <div style={{ fontSize: '0.6rem', opacity: 0.6, marginTop: '2px', fontWeight: 700 }}>{act.details}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '2px', gap: '8px' }}>
+                      <div style={{ fontSize: '0.6rem', opacity: 0.6, fontWeight: 700, flex: 1, marginTop: '2px' }}>{act.details}</div>
+
+                      {/* LÓGICA DE EXIBIÇÃO DE VALORES (CÂMBIO OU SIMPLES) */}
+                      {(act.amountRemoved || act.amountAdded) ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                          {act.amountRemoved && (
+                            <div style={{ fontSize: '0.6rem', color: '#FF4D4D', fontWeight: 900, fontFamily: 'JetBrains Mono' }}>
+                              - {act.currency === 'USD' ? '$' : act.currency === 'JPY' ? '¥' : 'R$'} {act.amountRemoved.toLocaleString('pt-BR', { minimumFractionDigits: act.currency === 'JPY' ? 0 : 2, maximumFractionDigits: 2 })}
+                            </div>
+                          )}
+                          {act.amountAdded && (
+                            <div style={{ fontSize: '0.6rem', color: '#00E676', fontWeight: 900, fontFamily: 'JetBrains Mono' }}>
+                              + {act.target === 'USD' ? '$' : act.target === 'JPY' ? '¥' : 'R$'} {act.amountAdded.toLocaleString('pt-BR', { minimumFractionDigits: act.target === 'JPY' ? 0 : 2, maximumFractionDigits: 2 })}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        act.amount && (
+                          <div style={{
+                            fontSize: '0.65rem',
+                            fontWeight: 900,
+                            color: (() => {
+                              // GANHOS REAIS (Entrada de dinheiro)
+                              if (['deposit', 'impulse', 'dividend'].includes(act.type)) return '#00E676';
+                              // GASTOS / SAÍDAS (Perda de dinheiro)
+                              if (['transfer', 'pay_debt', 'reset_balance'].includes(act.type)) return '#FF4D4D';
+                              // MOVIMENTAÇÕES (Alocação/Desalocação - Saldo <-> Investimento)
+                              return '#00A3FF';
+                            })(),
+                            fontFamily: 'JetBrains Mono',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {(() => {
+                              if (['deposit', 'impulse', 'dividend'].includes(act.type)) return '+';
+                              if (['transfer', 'pay_debt', 'reset_balance'].includes(act.type)) return '-';
+                              if (['create_machine', 'contribution'].includes(act.type)) return '➡️'; // Indo para investimento
+                              if (['resgate', 'partial_resgate', 'stock_sale'].includes(act.type)) return '⬅️'; // Voltando para saldo
+                              return '';
+                            })()} R$ {act.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        )
+                      )}
+                    </div>
+
                   </div>
                 </div>
               ))
+
             )}
           </div>
         </div>
@@ -5797,7 +5996,154 @@ function App() {
           )
         }
 
+        {/* MODAL DE TRANSFERÊNCIA/GASTOS */}
+        {
+          showTransferModal && (
+            <div className="modal-overlay" onClick={() => setShowTransferModal(false)} style={{ zIndex: 10000 }}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h2 style={{ color: '#FF4D4D', margin: 0, fontSize: '1.1rem' }}>💸 REGISTRAR GASTO</h2>
+                  <button className="action-btn" onClick={() => setShowTransferModal(false)} style={{ padding: '4px 8px' }}>X</button>
+                </div>
+
+                <div style={{ marginBottom: '1.5rem', padding: '12px', background: 'rgba(255, 77, 77, 0.05)', borderRadius: '12px', border: '1px solid rgba(255, 77, 77, 0.2)' }}>
+                  <p style={{ fontSize: '0.65rem', color: '#aaa', margin: 0, lineHeight: '1.4' }}>
+                    💡 <strong>Dica:</strong> Registre seus gastos para manter controle total do seu capital líquido. Exemplos: compras, PIX, transferências, etc.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  <div className="input-group">
+                    <label style={{ fontSize: '0.65rem', color: '#FF4D4D', fontWeight: 900, marginBottom: '5px', display: 'block' }}>VALOR DO GASTO (R$)</label>
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      value={transferValue}
+                      onChange={e => setTransferValue(e.target.value)}
+                      style={{
+                        width: '100%',
+                        background: 'rgba(0,0,0,0.5)',
+                        border: '1px solid rgba(255, 77, 77, 0.3)',
+                        padding: '12px',
+                        color: '#fff',
+                        borderRadius: '12px',
+                        fontSize: '1rem',
+                        fontWeight: 700
+                      }}
+                    />
+                  </div>
+
+                  <div className="input-group">
+                    <label style={{ fontSize: '0.65rem', color: '#FF8C00', fontWeight: 900, marginBottom: '5px', display: 'block' }}>DESCRIÇÃO DO GASTO</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Comprei um biscoito, PIX para João, etc."
+                      value={transferDescription}
+                      onChange={e => setTransferDescription(e.target.value)}
+                      style={{
+                        width: '100%',
+                        background: 'rgba(0,0,0,0.5)',
+                        border: '1px solid rgba(255, 140, 0, 0.3)',
+                        padding: '12px',
+                        color: '#fff',
+                        borderRadius: '12px',
+                        fontSize: '0.85rem'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.6rem', color: '#aaa', fontWeight: 800 }}>SALDO ATUAL:</span>
+                      <span style={{ fontSize: '0.8rem', color: '#00E676', fontWeight: 900 }}>
+                        R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.6rem', color: '#aaa', fontWeight: 800 }}>SALDO APÓS GASTO:</span>
+                      <span style={{ fontSize: '0.8rem', color: '#FF4D4D', fontWeight: 900 }}>
+                        R$ {(balance - (parseFloat(transferValue) || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  className="primary-btn"
+                  onClick={handleTransfer}
+                  style={{
+                    marginTop: '20px',
+                    background: 'linear-gradient(135deg, #FF4D4D 0%, #FF8C00 100%)',
+                    color: '#fff',
+                    fontWeight: 900
+                  }}
+                >
+                  CONFIRMAR TRANSFERÊNCIA
+                </button>
+              </div>
+            </div>
+          )
+        }
+
+        {/* CENTRAL DE AJUDA MODAL */}
+        {
+          showHelpModal && (
+            <div className="modal-overlay" onClick={() => setShowHelpModal(false)} style={{ zIndex: 10000 }}>
+              <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h2 style={{ color: '#00A3FF', margin: 0, fontSize: '1.1rem' }}>❓ CENTRAL DE AJUDA v0.43.0</h2>
+                  <button className="action-btn" onClick={() => setShowHelpModal(false)} style={{ padding: '4px 8px' }}>X</button>
+                </div>
+
+                <div className="custom-scrollbar" style={{ paddingRight: '10px' }}>
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '0.8rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>🚀 O QUE HÁ DE NOVO</h3>
+                    <ul style={{ fontSize: '0.65rem', color: '#ccc', lineHeight: '1.6', paddingLeft: '20px' }}>
+                      <li><strong>Registro de Gastos:</strong> Agora você pode registrar despesas (compras, PIX, contas) que são deduzidas diretamente do seu Capital Líquido. Use o botão vermelho "TRANSFERIR" na tela principal.</li>
+                      <li><strong>Filtros de Histórico:</strong> O histórico de atividades agora possui abas para filtrar por GANHOS (Verde), GASTOS (Vermelho) e INVESTIMENTOS (Azul), facilitando a auditoria.</li>
+                      <li><strong>Visualização de Câmbio:</strong> Operações de câmbio agora mostram claramente o valor de entrada e saída em suas respectivas moedas.</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '0.8rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>💰 COMO FUNCIONA O CAPÍTAL</h3>
+                    <p style={{ fontSize: '0.65rem', color: '#aaa', lineHeight: '1.4' }}>
+                      <strong>Capital Líquido (Disponível):</strong> É o seu dinheiro em conta corrente, pronto para uso ou investimento. Não rende juros.<br />
+                      <strong>Investimentos (Máquinas/Ações):</strong> Dinheiro alocado que rende juros (CDI, Dividendos). Para usar este dinheiro, você deve fazer um RESGATE.<br />
+                      <strong>Patrimônio Total:</strong> A soma de todo o seu dinheiro (Líquido + Investido + Câmbio).
+                    </p>
+                  </div>
+
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '0.8rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>🌐 CÂMBIO E MOEDAS</h3>
+                    <p style={{ fontSize: '0.65rem', color: '#aaa', lineHeight: '1.4' }}>
+                      A partir do Nível 2, você pode converter Real (BRL) para Dólar (USD) e Iene (JPY).<br />
+                      Isso protege seu capital contra a desvalorização cambial. As taxas são atualizadas em tempo real via API oficial.
+                    </p>
+                  </div>
+
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '0.8rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>📈 BOLSA DE VALORES</h3>
+                    <p style={{ fontSize: '0.65rem', color: '#aaa', lineHeight: '1.4' }}>
+                      No Nível 3, você desbloqueia a Bolsa. Você pode cadastrar ativos reais (PETR4, VALE3) e usar a IA para atualizar os preços automaticamente, simulando uma carteira real.
+                    </p>
+                  </div>
+
+                  <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.6rem', color: '#666', margin: 0 }}>
+                      Desenvolvido com ❤️ por Antigravity. Versão 0.43.0 (Alpha).<br />
+                      Se encontrar bugs, reporte ao desenvolvedor.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+
         {notification && <div className="notification-toast"><div className="toast-content">{notification}</div></div>}
+
 
         {/* CSS INJECTION FOR EQUIPPED ITEMS & CUSTOM UI */}
         <style>{`

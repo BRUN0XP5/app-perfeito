@@ -10,7 +10,23 @@
 
 ---
 
-## 🆕 O que chegou na v0.43.0? (Mercado de Capitais & Realismo)
+## 🆕 O que chegou na v0.43.0? (Controle Financeiro Total)
+
+### 💸 Registro de Gastos & Despesas
+*   **Gestão de Fluxo de Caixa:** Agora é possível registrar saídas financeiras (compras, pagamentos, transferências) que debitam diretamente do seu Capital Líquido.
+*   **Identidade Visual de Perda:** Gastos são destacados em vermelho no histórico e nos modais, criando consciência sobre a redução do patrimônio.
+
+### 🕵️‍♂️ Filtros de Histórico Avançados
+*   **Auditoria Simples:** O histórico de atividades agora conta com filtros inteligentes.
+*   **Categorias:** Alterne entre **TODOS**, **GANHOS** (Verde), **GASTOS** (Vermelho) e **INVESTIMENTOS** (Azul) para entender exatamente para onde seu dinheiro está indo.
+
+### 📊 Clareza em Movimentações
+*   **Câmbio Detalhado:** Operações de compra e venda de moeda estrangeira agora mostram explicitamente o valor de origem (saída) e o valor de destino (entrada).
+*   **Alocação vs. Gasto:** O sistema agora diferencia visualmente o que é um gasto real (perda de patrimônio) do que é apenas uma alocação em investimentos (troca de carteira), usando cores neutras e setas indicativas.
+
+---
+
+## 🆕 O que chegou na v0.42.5? (Mercado de Capitais & Realismo)
 
 ### 📈 Integração Real-Time com a B3 (Powered by IA)
 *   **Dados Reais em Tempo de Execução:** O simulador agora se conecta a metadados do **Yahoo Finance** para buscar cotações de Ações e FIIs brasileiros.
