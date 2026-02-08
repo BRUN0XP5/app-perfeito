@@ -6,7 +6,7 @@
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-Ready-orange?style=for-the-badge)
 
-** 🎮 CDI Tycoon** não é apenas um simulador financeiro; é a sua jornada de Bronze a Magnata Lendário. Misturando matemática real de investimentos com mecânicas de RPG e Tycoon, aqui seu patrimônio gera XP, desbloqueia tecnologias e define seu status no mercado.
+**🎮 CDI Tycoon** não é apenas um simulador financeiro; é a sua jornada de Bronze a Magnata Lendário. Misturando matemática real de investimentos com mecânicas de RPG e Tycoon, aqui seu patrimônio gera XP, desbloqueia tecnologias e define seu status no mercado.
 
 ---
 
