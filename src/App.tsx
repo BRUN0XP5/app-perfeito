@@ -93,6 +93,7 @@ function App() {
   const [isRegistering, setIsRegistering] = useState(false)
   const [error, setError] = useState('')
   const [notification, setNotification] = useState<string | null>(null)
+  const [pixCopied, setPixCopied] = useState(false)
   const [viewMode, setViewMode] = useState<'mobile' | 'pc'>('mobile')
 
   const [balance, setBalance] = useState(0)
@@ -6107,20 +6108,23 @@ function App() {
                       onClick={() => {
                         navigator.clipboard.writeText('1945ea61-c012-4de6-aedf-ad99bb39f457');
                         setNotification('✅ Chave PIX copiada!');
+                        setPixCopied(true);
+                        setTimeout(() => setPixCopied(false), 3000);
                       }}
                       style={{
-                        background: 'linear-gradient(135deg, #FFD700 0%, #FF8C00 100%)',
+                        background: pixCopied ? '#00E676' : 'linear-gradient(135deg, #FFD700 0%, #FF8C00 100%)',
                         border: 'none',
                         padding: '8px 16px',
                         borderRadius: '8px',
-                        color: '#000',
+                        color: pixCopied ? '#fff' : '#000',
                         fontWeight: 900,
                         cursor: 'pointer',
                         fontSize: '0.75rem',
-                        boxShadow: '0 4px 15px rgba(255, 215, 0, 0.3)'
+                        boxShadow: pixCopied ? '0 0 15px rgba(0, 230, 118, 0.5)' : '0 4px 15px rgba(255, 215, 0, 0.3)',
+                        transition: 'all 0.3s ease'
                       }}
                     >
-                      ☕ COPIAR PIX
+                      {pixCopied ? '✅ COPIADO!' : '☕ COPIAR PIX'}
                     </button>
                   </div>
 
