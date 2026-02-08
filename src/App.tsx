@@ -6129,61 +6129,136 @@ function App() {
                   </div>
 
                   {/* NOVIDADES V0.43.0 */}
-                  <div style={{ marginBottom: '20px', background: 'rgba(0, 163, 255, 0.1)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(0, 163, 255, 0.2)' }}>
-                    <h3 style={{ fontSize: '1rem', color: '#00A3FF', borderBottom: '1px solid rgba(0, 163, 255, 0.2)', paddingBottom: '5px', marginTop: 0 }}>🚀 NOVIDADES v0.43.0</h3>
-                    <ul style={{ fontSize: '0.85rem', color: '#fff', lineHeight: '1.6', paddingLeft: '20px', margin: '5px 0' }}>
-                      <li><strong>Registro de Gastos:</strong> Use o botão vermelho "TRANSFERIR" para registrar despesas. Elas saem do seu saldo!</li>
-                      <li><strong>Filtros de Histórico:</strong> Agora você pode filtrar por GANHOS (Verde), GASTOS (Vermelho) e INVESTIMENTOS (Azul).</li>
-                      <li><strong>Detector de Câmbio:</strong> Veja quanto saiu (em BRL) e quanto entrou (em USD/JPY) claramente.</li>
+                  <div style={{ marginBottom: '25px', background: 'rgba(0, 163, 255, 0.08)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(0, 163, 255, 0.2)' }}>
+                    <h3 style={{ fontSize: '1rem', color: '#00A3FF', borderBottom: '1px solid rgba(0, 163, 255, 0.2)', paddingBottom: '8px', marginTop: 0 }}>🚀 NOVIDADES DA VERSÃO 0.43.0</h3>
+                    <ul style={{ fontSize: '0.85rem', color: '#e0e0e0', lineHeight: '1.6', paddingLeft: '20px', margin: '10px 0' }}>
+                      <li style={{ marginBottom: '8px' }}><strong>Fluxo de Caixa Real (Prejuízo):</strong> Agora você pode registrar gastos da vida real (contas, lanches) usando o botão vermelho <span style={{ color: '#ff4d4d' }}>TRANSFERIR</span>. Isso reduz seu patrimônio, tornando o desafio de enriquecer mais realista.</li>
+                      <li style={{ marginBottom: '8px' }}><strong>Cores de Histórico:</strong>
+                        <br /><span style={{ color: '#00E676' }}>● Verde:</span> Ganhos passivos e aportes.
+                        <br /><span style={{ color: '#ff4d4d' }}>● Vermelho:</span> Gastos e impostos pagos.
+                        <br /><span style={{ color: '#00A3FF' }}>● Azul:</span> Rebalanceamento de carteira (não altera patrimônio).
+                      </li>
+                      <li><strong>Detector de Câmbio:</strong> Transações internacionais agora mostram explicitamente: "Saiu R$ 1.000,00 ➔ Entrou $ 185,00".</li>
                     </ul>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-                    <div>
-                      <h3 style={{ fontSize: '1rem', color: '#00E676', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>💸 COMO GANHAR DINHEIRO</h3>
-                      <p style={{ fontSize: '0.85rem', color: '#aaa', lineHeight: '1.4' }}>
-                        <strong>1. Investimentos (CDI):</strong> Crie máquinas (CDB, LCI) que rendem juros automáticos a cada 10 segundos.<br /><br />
-                        <strong>2. Aportes via PIX:</strong> Injete dinheiro simulado na sua conta para aumentar seu capital inicial.<br /><br />
-                        <strong>3. Câmbio (Nível 2+):</strong> Compre Dólar (USD) ou Iene (JPY) e lucre com a valorização cambial.<br /><br />
-                        <strong>4. Bolsa (Nível 3+):</strong> Compre Ações e FIIs e receba dividendos periódicos.
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '35px' }}>
+
+                    {/* SEÇÃO 1: RENDA FIXA & MATEMÁTICA */}
+                    <section>
+                      <h3 style={{ fontSize: '1.1rem', color: '#00E676', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', marginBottom: '15px' }}>
+                        📊 MECÂNICA DE RENDA FIXA
+                      </h3>
+                      <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6', marginBottom: '15px' }}>
+                        O core do jogo. Seus investimentos rendem a cada <strong>10 segundos</strong> baseados na taxa SELIC (100% CDI). O cálculo utiliza juros compostos diários.
                       </p>
-                    </div>
 
-                    <div>
-                      <h3 style={{ fontSize: '1rem', color: '#FFD700', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>👑 RATING & NÍVEIS</h3>
-                      <p style={{ fontSize: '0.85rem', color: '#aaa', lineHeight: '1.4' }}>
-                        Seu <strong>NÍVEL (TYCOON)</strong> é baseado no seu Patrimônio Total (1 XP = R$ 1,00).<br /><br />
-                        <strong>Nível 1 (Bronze):</strong> Acesso básico.<br />
-                        <strong>Nível 2 (Prata):</strong> Desbloqueia Câmbio (Dólar/Iene) e Gráficos.<br />
-                        <strong>Nível 3 (Ouro):</strong> Desbloqueia Bolsa de Valores, Skins e Calculadoras Pro.<br /><br />
-                        Suba de nível acumulando patrimônio!
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px' }}>
+                          <strong style={{ color: '#00E676', fontSize: '0.9rem' }}>CDB & LCI</strong>
+                          <p style={{ fontSize: '0.8rem', color: '#aaa', margin: '5px 0 0' }}>Segurança total. O CDB sofre IR, a LCI é isenta (mas rende menos % CDI bruto).</p>
+                        </div>
+                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px' }}>
+                          <strong style={{ color: '#FFD700', fontSize: '0.9rem' }}>IPCA+</strong>
+                          <p style={{ fontSize: '0.8rem', color: '#aaa', margin: '5px 0 0' }}>Proteção contra inflação. Rende uma taxa fixa + variação da inflação.</p>
+                        </div>
+                      </div>
+
+                      <div style={{ background: 'rgba(255, 77, 77, 0.1)', padding: '15px', borderRadius: '8px', borderLeft: '4px solid #ff4d4d' }}>
+                        <strong style={{ color: '#ff4d4d', fontSize: '0.9rem' }}>☠️ TRIBUTAÇÃO (O INIMIGO)</strong>
+                        <ul style={{ fontSize: '0.8rem', color: '#ccc', margin: '8px 0 0', paddingLeft: '20px' }}>
+                          <li><strong>IOF:</strong> Imposto regressivo nos primeiros 30 dias. Se sacar no dia 1, perde 96% do lucro. No dia 30, paga 0%. <em style={{ color: '#fff' }}>Dica: Não gire a carteira toda hora!</em></li>
+                          <li><strong>Imposto de Renda (IR):</strong>
+                            <br />Até 180 dias: 22.5%
+                            <br />181 a 360 dias: 20.0%
+                            <br />361 a 720 dias: 17.5%
+                            <br />720+ dias: 15.0% (Alíquota mínima)
+                          </li>
+                        </ul>
+                      </div>
+                    </section>
+
+                    {/* SEÇÃO 2: BOLSA DE VALORES */}
+                    <section>
+                      <h3 style={{ fontSize: '1.1rem', color: '#9B5DE5', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', marginBottom: '15px' }}>
+                        📈 BOLSA DE VALORES (NÍVEL 3)
+                      </h3>
+                      <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6' }}>
+                        Investimento de Risco Variável. Ao contrário da Renda Fixa, você pode <strong>perder dinheiro</strong> se a cotação cair.
                       </p>
-                    </div>
+                      <ul style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6', paddingLeft: '20px' }}>
+                        <li style={{ marginBottom: '8px' }}><strong>Ações (Stocks):</strong> Alta volatilidade. Focadas em valorização de preço. Pagam dividendos ocasionais.</li>
+                        <li style={{ marginBottom: '8px' }}><strong>FIIs (Fundos Imobiliários):</strong> Menor volatilidade. Focados em renda passiva recorrente (aluguéis virtuais).</li>
+                        <li><strong>Volatilidade:</strong> Os preços variam a cada 5 segundos. Use a análise gráfica para comprar na baixa e vender na alta.</li>
+                      </ul>
+                    </section>
+
+                    {/* SEÇÃO 3: CÂMBIO & DOLARIZAÇÃO */}
+                    <section>
+                      <h3 style={{ fontSize: '1.1rem', color: '#00E676', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', marginBottom: '15px' }}>
+                        🌍 CÂMBIO & PROTEÇÃO (HEGE)
+                      </h3>
+                      <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6' }}>
+                        Disponível no Nível 2. Comprar Moeda Estrangeira (USD/JPY) não gera juros automáticos, mas protege seu patrimônio se o Real desvalorizar.
+                      </p>
+                      <div style={{ marginTop: '10px', padding: '10px', border: '1px dashed #444', borderRadius: '8px' }}>
+                        <strong style={{ color: '#aaa', fontSize: '0.8rem' }}>⚠️ CUSTOS DE OPERAÇÃO (SPREAD)</strong>
+                        <p style={{ fontSize: '0.8rem', color: '#666', margin: '5px 0 0' }}>
+                          Toda compra de dólar tem um custo (IOF + Spread bancário). Você já começa "perdendo" uns 2%. Só compre se acreditar que o dólar vai subir mais que isso a longo prazo.
+                        </p>
+                      </div>
+                    </section>
+
+                    {/* SEÇÃO 4: SISTEMA DE NÍVEIS */}
+                    <section>
+                      <h3 style={{ fontSize: '1.1rem', color: '#FFD700', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', marginBottom: '15px' }}>
+                        👑 TABELA DE NÍVEIS (XP)
+                      </h3>
+                      <p style={{ fontSize: '0.85rem', color: '#ccc', marginBottom: '15px' }}>
+                        Seu XP é idêntico ao seu Patrimônio Líquido atual. Sacar dinheiro reduz seu XP. Investir aumenta.
+                      </p>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', color: '#ccc' }}>
+                        <tbody>
+                          <tr style={{ borderBottom: '1px solid #333' }}>
+                            <td style={{ padding: '8px', color: '#CD7F32', fontWeight: 'bold' }}>NÍVEL 1</td>
+                            <td style={{ padding: '8px' }}>R$ 0 - R$ 10.000</td>
+                            <td style={{ padding: '8px', color: '#888' }}>Iniciante. Acesso a CDB/LCI.</td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #333' }}>
+                            <td style={{ padding: '8px', color: '#C0C0C0', fontWeight: 'bold' }}>NÍVEL 2</td>
+                            <td style={{ padding: '8px' }}>R$ 10.001 - R$ 100.000</td>
+                            <td style={{ padding: '8px', color: '#888' }}>Intermediário. Desbloqueia Câmbio e Gráficos Avançados.</td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #333' }}>
+                            <td style={{ padding: '8px', color: '#FFD700', fontWeight: 'bold' }}>NÍVEL 3</td>
+                            <td style={{ padding: '8px' }}>R$ 100.001+</td>
+                            <td style={{ padding: '8px', color: '#888' }}>Magnata. Desbloqueia Bolsa de Valores e Skins Épicas.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </section>
+
+                    {/* SEÇÃO 5: FERRAMENTAS MATEMÁTICAS */}
+                    <section>
+                      <h3 style={{ fontSize: '1.1rem', color: '#FF8C00', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', marginBottom: '15px' }}>
+                        🛠️ SUAS FERRAMENTAS
+                      </h3>
+                      <ul style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.8', paddingLeft: '20px' }}>
+                        <li><strong>Simulador de Dívidas:</strong> Compara o CET (Custo Efetivo Total) da sua dívida com o rendimento líquido (pós-impostos) dos seus investimentos. Se Juros Dívida {'>'} Juros Investimento, o app recomenda quitar.</li>
+                        <li><strong>Calculadora de Juros Compostos:</strong> Projeta linearmente seu patrimônio considerando aportes mensais constantes. Ótimo para saber quando você ficará milionário.</li>
+                        <li><strong>Backup .TXT:</strong> Gera uma string base64 codificada com todo seu save state. Guarde em local seguro.</li>
+                      </ul>
+                    </section>
                   </div>
 
-                  <div style={{ marginTop: '20px' }}>
-                    <h3 style={{ fontSize: '1rem', color: '#9B5DE5', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>📱 SISTEMA DE PIX & APORTES</h3>
-                    <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.4' }}>
-                      Para adicionar dinheiro, vá no Menu ☰ e clique em <strong>NOVO APORTE</strong>. Digite o valor que deseja "depositar" na sua conta virtual. Use isso para simular seu salário real ou testar estratégias com valores altos.
-                    </p>
-                  </div>
-
-                  <div style={{ marginTop: '20px' }}>
-                    <h3 style={{ fontSize: '1rem', color: '#FF8C00', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '5px' }}>🛠️ FERRAMENTAS & GAMIFICAÇÃO</h3>
-                    <ul style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.8', paddingLeft: '20px' }}>
-                      <li><strong>Simulador de Dívidas:</strong> Descubra matematicamente se vale a pena quitar uma dívida ou investir.</li>
-                      <li><strong>Calculadora de Juros:</strong> Projete sua riqueza para daqui a 10 anos.</li>
-                      <li><strong>Modo Zen:</strong> Interface limpa para foco total no crescimento patrimonial.</li>
-                      <li><strong>Skins & Customização:</strong> Desbloqueie visuais únicos para o app baseados no seu nível de riqueza.</li>
-                    </ul>
-                  </div>
-
-                  <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px' }}>
-                    <h3 style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '10px' }}>⚖️ TERMOS DE USO</h3>
+                  {/* TERMOS DE USO (MANTIDO) */}
+                  <div style={{ marginTop: '30px', padding: '15px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px' }}>
+                    <h3 style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '10px' }}>⚖️ TERMOS DE USO & DISCLAIMER</h3>
                     <p style={{ fontSize: '0.75rem', color: '#666', lineHeight: '1.5', margin: 0 }}>
-                      1. <strong>Natureza Educacional:</strong> O Tycoon é um simulador. Lucros e perdas são virtuais.<br />
-                      2. <strong>Dados:</strong> Seus dados são salvos localmente e na nuvem para sincronização.<br />
-                      3. <strong>Open Source:</strong> Projeto de código aberto. Contribua no GitHub!
+                      1. <strong>Educacional:</strong> Este software é um simulador. Nenhum valor financeiro aqui é real ou resgatável.<br />
+                      2. <strong>Dados:</strong> Seus dados vivem no seu navegador (IndexedDB) e na nuvem (Supabase) atrelados ao seu login.<br />
+                      3. <strong>Open Source:</strong> O código é livre. Contribua no GitHub para melhorar o ecossistema.<br />
+                      4. <strong>Autoria:</strong> Design e lógica originais. Skins e conquistas são propriedade intelectual do projeto.
                     </p>
                   </div>
 
