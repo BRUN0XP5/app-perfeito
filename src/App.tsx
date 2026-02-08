@@ -6184,12 +6184,12 @@ function App() {
                         📈 BOLSA DE VALORES (NÍVEL 3)
                       </h3>
                       <p style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6' }}>
-                        Investimento de Risco Variável. Ao contrário da Renda Fixa, você pode <strong>perder dinheiro</strong> se a cotação cair.
+                        Investimento de Risco Variável. Aqui, a brincadeira fica séria. Cotações reais e perdas reais (de XP).
                       </p>
                       <ul style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6', paddingLeft: '20px' }}>
-                        <li style={{ marginBottom: '8px' }}><strong>Ações (Stocks):</strong> Alta volatilidade. Focadas em valorização de preço. Pagam dividendos ocasionais.</li>
-                        <li style={{ marginBottom: '8px' }}><strong>FIIs (Fundos Imobiliários):</strong> Menor volatilidade. Focados em renda passiva recorrente (aluguéis virtuais).</li>
-                        <li><strong>Volatilidade:</strong> Os preços variam a cada 5 segundos. Use a análise gráfica para comprar na baixa e vender na alta.</li>
+                        <li style={{ marginBottom: '8px' }}><strong>🤖 Cotações Reais (IA):</strong> Os preços das <strong>Ações e FIIs</strong> seguem o mercado real (B3), processados por Inteligência Artificial para garantir realismo absoluto. Não é aleatório!</li>
+                        <li style={{ marginBottom: '8px' }}><strong>💰 Dividendos:</strong> Ao segurar FIIs (como HGLG11), você recebe "aluguéis virtuais" periodicamente na sua conta.</li>
+                        <li><strong>Volatilidade:</strong> O mercado reage a notícias mundo afora. Use a análise gráfica para comprar na baixa e vender na alta.</li>
                       </ul>
                     </section>
 
