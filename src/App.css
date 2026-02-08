@@ -179,8 +179,8 @@
 /* Luxury Game Panels */
 .glass-panel {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(10, 15, 25, 0.98) 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(0, 163, 255, 0.15);
   padding: 1.2rem;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
@@ -1732,8 +1732,8 @@ input:focus {
   right: 0;
   width: 220px;
   background: rgba(18, 18, 20, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 8px;
@@ -3488,6 +3488,35 @@ input:focus {
   padding: 1.3rem 1.8rem !important;
   color: #fff !important;
   width: 100%;
+}
+
+.ambient-light {
+  position: absolute;
+  top: -150px;
+  left: -150px;
+  width: 400px;
+  height: 400px;
+  pointer-events: none;
+  transition: all 1.5s ease;
+}
+
+.ambient-light.green {
+  background: radial-gradient(circle, rgba(0, 230, 118, 0.15) 0%, transparent 70%);
+}
+
+.ambient-light.blue {
+  background: radial-gradient(circle, rgba(0, 163, 255, 0.15) 0%, transparent 70%);
+}
+
+.data-stream-decoration {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 10px;
+  font-family: 'JetBrains Mono';
+  font-size: 0.5rem;
+  opacity: 0.3;
+  pointer-events: none;
 }
 
 .registration-mode-active .foda-btn-inner {

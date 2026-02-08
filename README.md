@@ -10,6 +10,21 @@
 
 ---
 
+## 🆕 O que chegou na v0.44.0? (Experiência Mobile & Vertical)
+
+### 📱 Calculadora de Juros Pro (Redesign Vertical)
+*   **Layout Mobile First:** A calculadora foi redesenhada do zero para fluir verticalmente, eliminando a grade apertada que quebrava em telas menores.
+*   **Inputs Inteligentes:** Campos de entrada maiores, mais legíveis e com tratamento de dados robusto (prevenindo travamentos com valores gigantes).
+*   **Reset Automático:** Ao abrir a ferramenta pelo menu, os valores iniciam zerados, permitindo simulações limpas sem poluição visual.
+
+### 📜 Menu Principal Fluido
+*   **Zero Scrollbars:** Otimização profunda no CSS do menu lateral, removendo barras de rolagem internas desnecessárias para uma estética 100% clean.
+
+### 📉 Otimização de Tabelas
+*   **Fluxo de Caixa Compacto:** A tabela de projeção mensal foi reestilizada para caber confortavelmente em telas de smartphones, com espaçamento reduzido e fontes ajustadas.
+
+---
+
 ## 🆕 O que chegou na v0.43.0? (Controle Financeiro Total)
 
 ### 💸 Registro de Gastos & Despesas
