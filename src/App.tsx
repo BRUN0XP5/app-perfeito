@@ -6104,7 +6104,10 @@ function App() {
                       <p style={{ fontSize: '0.75rem', color: '#ccc', margin: '4px 0 0 0' }}>Ajude a manter o servidor ligado e o café quente.</p>
                     </div>
                     <button
-                      onClick={() => window.open('https://github.com/BRUN0XP5/app-perfeito', '_blank')}
+                      onClick={() => {
+                        navigator.clipboard.writeText('1945ea61-c012-4de6-aedf-ad99bb39f457');
+                        setNotification('✅ Chave PIX copiada!');
+                      }}
                       style={{
                         background: 'linear-gradient(135deg, #FFD700 0%, #FF8C00 100%)',
                         border: 'none',
@@ -6117,7 +6120,7 @@ function App() {
                         boxShadow: '0 4px 15px rgba(255, 215, 0, 0.3)'
                       }}
                     >
-                      ☕ APOIAR
+                      ☕ COPIAR PIX
                     </button>
                   </div>
 
@@ -6191,8 +6194,8 @@ function App() {
 
                   <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', textAlign: 'center' }}>
                     <p style={{ fontSize: '0.85rem', color: '#666', margin: 0 }}>
-                      Desenvolvido com ❤️ por Antigravity. Versão 0.43.0 (Alpha).<br />
-                      Se encontrar bugs, reporte ao desenvolvedor.
+                      CDI Tycoon v0.43.0 (Alpha).<br />
+                      Se encontrar bugs, reporte no GitHub.
                     </p>
                   </div>
                 </div>
