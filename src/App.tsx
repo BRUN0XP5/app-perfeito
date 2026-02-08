@@ -2375,9 +2375,7 @@ function App() {
 
               <h1 className="zen-main-value" style={{
                 fontSize: '6rem', fontWeight: 900, color: '#fff', margin: 0,
-                letterSpacing: '-4px', textShadow: '0 0 50px rgba(255,255,255,0.2)',
-                background: 'linear-gradient(to bottom, #fff, #999)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
+                letterSpacing: '-4px', textShadow: '0 0 50px rgba(255,255,255,0.2)'
               }}>
                 <AnimatedNumber value={totalPatrimony} format={(v) => formatBRLWithMicroCents(v)} />
               </h1>
