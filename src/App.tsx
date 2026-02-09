@@ -426,10 +426,22 @@ const YieldCountdown = memo(({ onCycleEnd }: { onCycleEnd: () => void }) => {
     return () => clearInterval(timer);
   }, [onCycleEnd]);
 
+  const progress = ((10 - countdown) / 10) * 100;
+
   return (
-    <span style={{ fontSize: '0.65rem', color: '#FFD700', fontWeight: 900, fontFamily: 'JetBrains Mono', letterSpacing: '1px' }}>
-      00:00:{countdown.toString().padStart(2, '0')}
-    </span>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+      <span style={{ fontSize: '0.65rem', color: '#FFD700', fontWeight: 900, fontFamily: 'JetBrains Mono', letterSpacing: '1px' }}>
+        00:00:{countdown.toString().padStart(2, '0')}
+      </span>
+      <div style={{ width: '120px', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 1, ease: 'linear' }}
+          style={{ height: '100%', background: '#00E676', boxShadow: '0 0 10px #00E676' }}
+        />
+      </div>
+    </div>
   );
 });
 
@@ -2835,13 +2847,16 @@ function App() {
 
                 {/* DETALHES MINIMALISTAS (SEM CARDS) */}
                 <div className="zen-stats-row" style={{
-                  marginTop: '1rem',
+                  marginTop: '1.5rem',
                   display: 'flex',
-                  gap: '5rem',
-                  flexWrap: 'wrap', // Mobile wrap
+                  gap: '2.5rem',
+                  flexWrap: 'wrap',
                   justifyContent: 'center',
+                  alignItems: 'center',
                   opacity: 0.9,
-                  position: 'relative'
+                  width: '100%',
+                  maxWidth: '800px',
+                  margin: '0 auto'
                 }}>
                   {/* Linha decorativa vertical REMOVIDA */}
 
@@ -2924,12 +2939,7 @@ function App() {
                   100% { transform: rotate3d(var(--axis-x), var(--axis-y), var(--axis-z), calc(360deg * var(--direction))); }
                 }
                 
-                /* STATIC LAYOUT */
-                @media (orientation: landscape) {
-                  .zen-main-value { font-size: 3.5rem !important; }
-                  .zen-stats-row { gap: 3rem !important; margin-top: 0.5rem !important; }
-                  .floating-content { transform: scale(0.9); }
-                }
+
 
                 /* SPACE DRIFT (DEEP CALM) */
                 .drift-star {
@@ -2961,10 +2971,8 @@ function App() {
                 to { opacity: 0.7; transform: scale(1.1); }
               }
               @media (max-width: 600px) {
-                .zen-main-value { font-size: 3.5rem !important; }
-                .zen-stats-row { gap: 20px !important; padding: 15px 25px !important; }
-                .zen-stats-row > div > div:nth-child(2) { font-size: 1.3rem !important; }
-                .zen-divider { height: 30px !important; }
+                .zen-main-value { font-size: 3rem !important; }
+                .zen-stats-row { gap: 15px !important; }
               }
             `}</style>
             </motion.div>
