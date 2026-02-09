@@ -2737,7 +2737,7 @@ function App() {
                 zIndex: 10000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 padding: '20px',
                 boxSizing: 'border-box',
-                overflow: 'hidden', // Keep overflow hidden to contain stars
+                overflow: 'auto',
                 fontFamily: "'Outfit', sans-serif"
               }}
             >
@@ -2819,16 +2819,14 @@ function App() {
               </div>
 
               <motion.div
-                initial={{ opacity: 0 }}
+                initial={{ opacity: 1 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
                 style={{ textAlign: 'center', zIndex: 10, position: 'relative' }}
               >
                 <div style={{ marginBottom: '2rem' }}>
                   <motion.div
-                    initial={{ letterSpacing: '2px', opacity: 0 }}
                     animate={{ letterSpacing: '10px', opacity: 0.9 }}
-                    transition={{ duration: 2, repeat: Infinity, repeatType: 'reverse' }}
+                    transition={{ duration: 2, repeat: Infinity, repeatType: 'reverse', ease: 'linear' }}
                     style={{
                       fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: '#00A3FF',
                       fontWeight: 900, marginBottom: '1rem'
@@ -2850,7 +2848,7 @@ function App() {
                   marginTop: '1.5rem',
                   display: 'flex',
                   gap: '2.5rem',
-                  flexWrap: 'wrap',
+                  flexWrap: 'nowrap',
                   justifyContent: 'center',
                   alignItems: 'center',
                   opacity: 0.9,
@@ -2862,12 +2860,12 @@ function App() {
 
                   <div style={{ textAlign: 'center' }}>
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+                      animate={{ opacity: 1, y: 0 }}
                       style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 900, letterSpacing: '3px', marginBottom: '8px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                       <Zap size={10} /> Provisão Diária
                     </motion.div>
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6 }}
+                      animate={{ opacity: 1, scale: 1 }}
                       style={{ fontSize: '1.5rem', fontFamily: 'JetBrains Mono', fontWeight: 500, color: '#fff', textShadow: '0 0 20px rgba(0,163,255,0.4)' }}>
                       +R$ {(yields.dailyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </motion.div>
@@ -2875,12 +2873,12 @@ function App() {
 
                   <div style={{ textAlign: 'center' }}>
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+                      animate={{ opacity: 1, y: 0 }}
                       style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, letterSpacing: '3px', marginBottom: '8px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                       <TrendingUp size={10} /> Projetado Mês
                     </motion.div>
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
                       style={{ fontSize: '1.5rem', fontFamily: 'JetBrains Mono', fontWeight: 500, color: '#fff', textShadow: '0 0 20px rgba(0,230,118,0.4)' }}>
                       +R$ {(yields.monthlyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </motion.div>
@@ -2889,7 +2887,7 @@ function App() {
 
                 {/* CONTADOR DE RENDIMENTO (10s) */}
                 <motion.div
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
+                  animate={{ opacity: 1 }}
                   style={{ marginTop: '5rem', textAlign: 'center' }}>
 
                   <div style={{
@@ -2970,11 +2968,7 @@ function App() {
                 from { opacity: 0.2; transform: scale(0.8); }
                 to { opacity: 0.7; transform: scale(1.1); }
               }
-              @media (max-width: 600px) {
-                .zen-main-value { font-size: 3rem !important; }
-                .zen-stats-row { gap: 15px !important; }
-              }
-            `}</style>
+             `}</style>
             </motion.div>
           ) : (
             <motion.div
