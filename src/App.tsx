@@ -553,6 +553,8 @@ function App() {
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   const [isAchievementSystemReady, setIsAchievementSystemReady] = useState(false);
   const lastClosedNotifyTime = useRef(0)
+  const lastYieldNotifyTime = useRef(0)
+  const accumulatedYieldRef = useRef(0)
   const [selicRate] = useState(DEFAULT_SELIC)
 
   useEffect(() => {
@@ -1734,6 +1736,17 @@ function App() {
       }));
       setCoins((prev: any) => [...prev, ...newCoins]);
       setTimeout(() => setCoins((prev: any) => prev.filter((c: any) => !newCoins.includes(c))), 2000);
+
+      // Acumula o rendimento para a notificação de 1 minuto
+      accumulatedYieldRef.current += cycleTotalProfit;
+
+      // Notificação de rendimento para o usuário - Throttle: 1 em 1 minuto (Mostra o valor SOMADO)
+      const now = Date.now();
+      if (now - lastYieldNotifyTime.current >= 60000) {
+        setNotification(`RENDIMENTO ACUMULADO (1m): +R$ ${accumulatedYieldRef.current.toFixed(6).replace('.', ',')}`);
+        lastYieldNotifyTime.current = now;
+        accumulatedYieldRef.current = 0; // Reseta para o próximo ciclo de 1m
+      }
     }
 
     // Otimização: Consolida as atualizações das máquinas em um único comando Supabase
@@ -2898,61 +2911,68 @@ function App() {
 
                 {/* DETALHES MINIMALISTAS (SEM CARDS) */}
                 <div className="zen-stats-row" style={{
-                  marginTop: '0.8rem',
+                  marginTop: '1.5rem',
                   display: 'flex',
                   gap: '2.5rem',
                   flexWrap: 'nowrap',
                   justifyContent: 'center',
-                  alignItems: 'baseline',
+                  alignItems: 'center',
                   opacity: 0.9,
                   width: '100%',
-                  maxWidth: '850px',
+                  maxWidth: '800px',
                   margin: '0 auto'
                 }}>
+                  {/* Linha decorativa vertical REMOVIDA */}
+
                   <div style={{ textAlign: 'center' }}>
                     <motion.div
                       animate={{ opacity: 1, y: 0 }}
-                      style={{ fontSize: '0.5rem', color: '#00A3FF', fontWeight: 900, letterSpacing: '2px', marginBottom: '4px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                      <Zap size={10} /> DIÁRIA
+                      style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 900, letterSpacing: '3px', marginBottom: '8px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                      <Zap size={10} /> Provisão Diária
                     </motion.div>
                     <motion.div
                       animate={{ opacity: 1, scale: 1 }}
-                      style={{ fontSize: '1.3rem', fontFamily: 'JetBrains Mono', fontWeight: 500, color: '#fff', textShadow: '0 0 20px rgba(0,163,255,0.4)' }}>
-                      +R${(yields.dailyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      style={{ fontSize: '1.5rem', fontFamily: 'JetBrains Mono', fontWeight: 500, color: '#fff', textShadow: '0 0 20px rgba(0,163,255,0.4)' }}>
+                      +R$ {(yields.dailyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </motion.div>
-                  </div>
-
-                  {/* CONTADOR DE RENDIMENTO (INTEGRADO) */}
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: '0.5rem', color: '#888', letterSpacing: '2px', fontWeight: 900,
-                      marginBottom: '4px', textTransform: 'uppercase',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
-                    }}>
-                      <TrendingUp size={10} /> PRÓXIMO PAGAMENTO
-                    </div>
-                    <div style={{
-                      fontSize: '1.8rem', fontFamily: 'JetBrains Mono', fontWeight: 900, color: '#fff',
-                      textShadow: '0 0 20px rgba(0, 230, 118, 0.4)'
-                    }}>
-                      <YieldCountdown onCycleEnd={processYieldCycle} />
-                    </div>
                   </div>
 
                   <div style={{ textAlign: 'center' }}>
                     <motion.div
                       animate={{ opacity: 1, y: 0 }}
-                      style={{ fontSize: '0.5rem', color: '#00E676', fontWeight: 900, letterSpacing: '2px', marginBottom: '4px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                      <TrendingUp size={10} /> PROJETADO MÊS
+                      style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, letterSpacing: '3px', marginBottom: '8px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                      <TrendingUp size={10} /> Projetado Mês
                     </motion.div>
                     <motion.div
                       animate={{ opacity: 1, scale: 1 }}
-                      style={{ fontSize: '1.3rem', fontFamily: 'JetBrains Mono', fontWeight: 500, color: '#fff', textShadow: '0 0 20px rgba(0,230,118,0.4)' }}>
-                      +R${(yields.monthlyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      style={{ fontSize: '1.5rem', fontFamily: 'JetBrains Mono', fontWeight: 500, color: '#fff', textShadow: '0 0 20px rgba(0,230,118,0.4)' }}>
+                      +R$ {(yields.monthlyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </motion.div>
                   </div>
                 </div>
 
+                {/* CONTADOR DE RENDIMENTO (10s) */}
+                <motion.div
+                  animate={{ opacity: 1 }}
+                  style={{ marginTop: '5rem', textAlign: 'center' }}>
+
+                  <div style={{
+                    fontSize: '0.6rem', color: '#888', letterSpacing: '4px', fontWeight: 900,
+                    marginBottom: '10px', textTransform: 'uppercase',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                  }}>
+                    <TrendingUp size={12} /> PRÓXIMO PAGAMENTO
+                  </div>
+
+                  {/* Visualização de Cronômetro (Timer) */}
+                  <div style={{
+                    fontSize: '2.5rem', fontFamily: 'JetBrains Mono', fontWeight: 900, color: '#fff',
+                    textShadow: '0 0 20px rgba(0, 230, 118, 0.4)', letterSpacing: '2px'
+                  }}>
+                    <YieldCountdown onCycleEnd={processYieldCycle} />
+                  </div>
+
+                </motion.div>
 
               </motion.div>
 
