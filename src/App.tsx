@@ -3202,7 +3202,7 @@ function App() {
                           </div>
 
                           <div style={{ marginTop: 'auto', padding: '15px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
-                            <span style={{ fontSize: '0.45rem', opacity: 0.3, fontWeight: 900, letterSpacing: '2px' }}>CDI_TYCOON MODO_ALPHA v0.43.0</span>
+                            <span style={{ fontSize: '0.45rem', opacity: 0.3, fontWeight: 900, letterSpacing: '2px' }}>CDI_TYCOON MODO_ALPHA v0.45.0</span>
                           </div>
                         </motion.div>
                       </div>
@@ -6303,7 +6303,7 @@ function App() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(0, 163, 255, 0.2)', paddingBottom: '1rem' }}>
                         <div>
                           <h2 style={{ color: '#00A3FF', margin: 0, fontSize: '1.3rem', fontWeight: 900 }}>❓ CENTRAL DE AJUDA & GUIA</h2>
-                          <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, letterSpacing: '1px', fontWeight: 800 }}>SISTEMA VERSÃO v0.44.0 | MODO ESPECIALISTA</p>
+                          <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, letterSpacing: '1px', fontWeight: 800 }}>SISTEMA VERSÃO v0.45.0 | MODO ESPECIALISTA</p>
                         </div>
                         <button title="Fechar Central de Ajuda" className="icon-btn-small" onClick={() => setShowHelpModal(false)} style={{ padding: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }}><X size={18} /></button>
                       </div>

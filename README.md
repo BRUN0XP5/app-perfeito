@@ -1,6 +1,6 @@
-# 🚀 CDI Tycoon v0.43.0 - O Simulador Definitivo de Magnata
+# 🚀 CDI Tycoon v0.45.0 - O Simulador Definitivo de Magnata
 
-![Version](https://img.shields.io/badge/version-0.43.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.45.0-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-Proprietary-red?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19.2.0-61dafb?style=for-the-badge&logo=react)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
