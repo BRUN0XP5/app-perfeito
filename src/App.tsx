@@ -432,6 +432,8 @@ const YieldCountdown = memo(({ onCycleEnd }: { onCycleEnd: () => void }) => {
     </span>
   );
 });
+
+
 function App() {
   const [session, setSession] = useState<any>(null)
   const [username, setUsername] = useState('')
@@ -2805,10 +2807,9 @@ function App() {
               </div>
 
               <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="floating-content" // Added floating animation class
                 style={{ textAlign: 'center', zIndex: 10, position: 'relative' }}
               >
                 <div style={{ marginBottom: '2rem' }}>
@@ -2889,12 +2890,28 @@ function App() {
                     fontSize: '2.5rem', fontFamily: 'JetBrains Mono', fontWeight: 900, color: '#fff',
                     textShadow: '0 0 20px rgba(0, 230, 118, 0.4)', letterSpacing: '2px'
                   }}>
-                    <YieldCountdown onCycleEnd={() => { }} />
+                    <YieldCountdown onCycleEnd={processYieldCycle} />
                   </div>
 
                 </motion.div>
 
               </motion.div>
+
+              <motion.button
+                whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                whileTap={{ scale: 0.95 }}
+                className="zen-back-btn"
+                onClick={() => setIsZenMode(false)}
+                style={{
+                  position: 'absolute', top: '20px', right: '20px', border: '1px solid rgba(255,255,255,0.1)',
+                  background: 'rgba(0,0,0,0.4)', color: 'rgba(255,255,255,0.6)', padding: '10px 20px',
+                  borderRadius: '10px', cursor: 'pointer', fontSize: '0.55rem', fontWeight: 900,
+                  letterSpacing: '2px', transition: 'all 0.4s', backdropFilter: 'blur(10px)',
+                  zIndex: 20000
+                }}
+              >
+                VOLTAR AO TERMINAL
+              </motion.button>
 
               <style>{`
                 /* ZEN RINGS 3D ANIMATION */
@@ -2907,13 +2924,11 @@ function App() {
                   100% { transform: rotate3d(var(--axis-x), var(--axis-y), var(--axis-z), calc(360deg * var(--direction))); }
                 }
                 
-                /* FLOATING TEXT ANIMATION */
-                .floating-content {
-                  animation: float-text 6s ease-in-out infinite;
-                }
-                @keyframes float-text {
-                  0%, 100% { transform: translateY(0px); }
-                  50% { transform: translateY(-15px); }
+                /* STATIC LAYOUT */
+                @media (orientation: landscape) {
+                  .zen-main-value { font-size: 3.5rem !important; }
+                  .zen-stats-row { gap: 3rem !important; margin-top: 0.5rem !important; }
+                  .floating-content { transform: scale(0.9); }
                 }
 
                 /* SPACE DRIFT (DEEP CALM) */
@@ -2934,20 +2949,7 @@ function App() {
                 }
               `}</style>
 
-              <motion.button
-                whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.1)' }}
-                whileTap={{ scale: 0.95 }}
-                className="zen-back-btn"
-                onClick={() => setIsZenMode(false)}
-                style={{
-                  position: 'absolute', bottom: '8%', border: '1px solid rgba(255,255,255,0.1)',
-                  background: 'transparent', color: 'rgba(255,255,255,0.4)', padding: '12px 30px',
-                  borderRadius: '10px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 900,
-                  letterSpacing: '3px', transition: 'all 0.4s', backdropFilter: 'blur(5px)'
-                }}
-              >
-                VOLTAR AO TERMINAL
-              </motion.button>
+
 
               <style>{`
               @keyframes pulseNebula {
