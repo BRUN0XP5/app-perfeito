@@ -10,6 +10,18 @@
 
 ---
 
+## 🆕 O que chegou na v0.45.0? (Zen Mode 2.0 - Deep Calm)
+
+### 🧘 Experiência Visual Imersiva (Deep Calm)
+*   **Atmosfera Espacial Realista:** O Modo Zen foi reconstruído. Saem as partículas rápidas e entra um universo calmo, com estrelas cintilantes e poeira cósmica em deriva suave.
+*   **Anéis Giroscópicos 3D:** Adicionamos megaestruturas de anéis orbitais que giram em eixos tridimensionais (X, Y, Z) aleatórios e caóticos, dando profundidade e vida à cena.
+*   **Iluminação Dinâmica:** Brilho suave e sombras sutis para criar um ambiente de foco perfeito para telas OLED.
+
+### 📱 Otimização Mobile Total (Zen)
+*   **Layout Responsivo:** O painel de números flutua e se adapta a qualquer tamanho de tela, sem cortes.
+*   **Cronômetro de Dividendos:** Substituímos a barra de progresso por um timer digital de precisão (`00:00:10`), para você saber o segundo exato do seu próximo rendimento.
+*   **Fontes Ajustadas:** Tipografia refinada para leitura instantânea do patrimônio, com micro-centavos discretos.
+
 ## 🆕 O que chegou na v0.44.0? (Experiência Mobile & Vertical)
 
 ### 📱 Calculadora de Juros Pro (Redesign Vertical)

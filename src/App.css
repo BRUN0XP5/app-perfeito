@@ -201,17 +201,7 @@
   }
 }
 
-.glass-panel::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -200%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
-  transform: skewX(-25deg);
-  animation: none;
-}
+
 
 @keyframes shimmer {
   0% {
@@ -227,17 +217,7 @@
   }
 }
 
-.glass-panel::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-  transform: skewX(-25deg);
-  animation: none;
-}
+
 
 @keyframes shimmer {
   0% {
@@ -368,21 +348,31 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-sizing: border-box;
   position: relative;
+  min-height: 180px;
 }
 
 .machine-card:hover {
-  background: rgba(0, 163, 255, 0.05);
-  border-color: rgba(0, 163, 255, 0.4);
+  border-color: rgba(0, 163, 255, 0.5) !important;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(0, 163, 255, 0.1);
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  /* Feedback visual */
 }
 
-.machine-card.active-working .fan-frame {
-  /* Animation removed */
+/* Ensure buttons are clickable */
+.machine-card button,
+.machine-card .action-btn {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
+
+.action-btn-new {
+  position: relative;
+  overflow: hidden;
+}
+
 
 /* High-Tech Fan UI Element Case */
 .engine-core {
@@ -1277,24 +1267,7 @@ input:focus {
 }
 
 /* Holographic Overlays */
-.glass-panel::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -150%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg,
-      transparent,
-      rgba(255, 255, 255, 0.05),
-      transparent);
-  transform: skewX(-25deg);
-  transition: 0.75s;
-}
 
-.glass-panel:hover::after {
-  left: 150%;
-}
 
 /* Heartbeat Visualizer */
 .heartbeat-container {
@@ -3521,4 +3494,140 @@ input:focus {
 
 .registration-mode-active .foda-btn-inner {
   background: linear-gradient(180deg, #00E676 0%, #008855 100%) !important;
+}
+
+/* --- SKINS DE ATIVOS (BASEADAS NO TIPO) --- */
+
+/* FII - AZUL ESCURO SÓLIDO */
+.machine-card.fii-skin {
+  border: 1px solid rgba(0, 100, 255, 0.4);
+  background: linear-gradient(135deg, rgba(5, 10, 30, 0.98) 0%, rgba(10, 20, 50, 0.95) 100%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(0, 100, 255, 0.1);
+}
+
+.machine-card.fii-skin:hover {
+  border-color: rgba(0, 160, 255, 0.8);
+  box-shadow: 0 8px 30px rgba(0, 100, 255, 0.2), inset 0 0 20px rgba(0, 100, 255, 0.15);
+}
+
+.machine-card.fii-skin .engine-core {
+  border: 1px solid rgba(0, 100, 255, 0.3);
+  background: rgba(0, 15, 40, 0.8);
+}
+
+.machine-card.fii-skin .fan-frame {
+  border: 1px solid rgba(0, 100, 255, 0.4);
+  box-shadow: inset 0 0 10px rgba(0, 50, 200, 0.3);
+}
+
+.machine-card.fii-skin .status-leds .active {
+  background: #0088FF !important;
+  box-shadow: 0 0 8px #0088FF !important;
+}
+
+/* AÇÃO - ROXO SÓLIDO */
+.machine-card.acao-skin {
+  border: 1px solid rgba(155, 93, 229, 0.3);
+  background: linear-gradient(135deg, rgba(20, 20, 20, 0.95) 0%, rgba(30, 10, 40, 0.95) 100%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 0 15px rgba(155, 93, 229, 0.05);
+}
+
+.machine-card.acao-skin:hover {
+  border-color: rgba(155, 93, 229, 0.8);
+  box-shadow: 0 8px 30px rgba(155, 93, 229, 0.2), inset 0 0 20px rgba(155, 93, 229, 0.15);
+}
+
+.machine-card.acao-skin .engine-core {
+  border: 1px solid rgba(155, 93, 229, 0.2);
+  background: rgba(30, 0, 40, 0.6);
+}
+
+.machine-card.acao-skin .fan-frame {
+  border: 1px solid rgba(155, 93, 229, 0.3);
+  box-shadow: inset 0 0 10px rgba(155, 93, 229, 0.2);
+}
+
+/* CRYPTO - NEON CYAN/VERDE */
+.machine-card.crypto-skin {
+  border: 1px solid rgba(0, 245, 212, 0.4);
+  background: linear-gradient(135deg, rgba(5, 20, 20, 0.95) 0%, rgba(0, 10, 10, 0.98) 100%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(0, 245, 212, 0.05);
+}
+
+.machine-card.crypto-skin .engine-core {
+  border: 1px solid rgba(0, 245, 212, 0.3);
+  background: rgba(0, 20, 20, 0.6);
+}
+
+/* Ensure buttons are clickable */
+.machine-card button,
+.machine-card .action-btn {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+/* --- SKINS REMOVIDAS --- */
+
+/* --- ZEN MODE ANIMATIONS --- */
+@keyframes pulseNebula {
+  0% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.3;
+  }
+
+  25% {
+    transform: scale(1.1) translate(2%, 2%);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: scale(1.2) translate(0, 4%);
+    opacity: 0.4;
+  }
+
+  75% {
+    transform: scale(1.1) translate(-2%, 2%);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.3;
+  }
+}
+
+@keyframes twinkle {
+
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.5);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+    box-shadow: 0 0 4px #fff;
+  }
+}
+
+@keyframes scanlineMove {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0.5;
+  }
+
+  90% {
+    opacity: 0.5;
+  }
+
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
 }

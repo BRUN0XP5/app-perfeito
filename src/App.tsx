@@ -20,7 +20,7 @@ import {
   TrendingDown,
   ShieldCheck,
   LogOut,
-  Sparkles,
+  // Sparkles,
   Save,
   Trash2
 } from 'lucide-react'
@@ -96,8 +96,8 @@ const formatBRLWithMicroCents = (value: number) => {
   const mainCents = allDecimals.substring(0, 2);
   const microCents = allDecimals.substring(2);
   return (
-    <span style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-      R$ {integerPart},{mainCents}
+    <span style={{ fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-1px' }}>
+      <span style={{ marginRight: '4px' }}>R$</span>{integerPart},{mainCents}
       <span style={{ fontSize: '0.7em', opacity: 0.5, marginLeft: '1px' }}>{microCents}</span>
     </span>
   );
@@ -149,131 +149,264 @@ const AnimatedNumber = ({ value, format }: { value: number, format: (n: number) 
   return <>{format(displayValue)}</>;
 };
 
-const MachineCard = memo(({ m, i, isBusinessDay, currentDateDayOnly, equippedItems, onEdit, onAporte, onResgate }: any) => {
+const MachineCard = memo(({ m, i: _i, isBusinessDay, currentDateDayOnly, equippedItems: _equippedItems, onEdit, onAporte, onResgate }: any) => {
   const multipliers = getTaxMultipliers(m.created_at, false, new Date(currentDateDayOnly), m.investment_type);
   const isMatured = m.vencimento && new Date(m.vencimento) <= new Date(currentDateDayOnly);
+  const isBolsa = m.investment_type === 'ACAO' || m.investment_type === 'FII' || m.investment_type === 'ETF' || m.investment_type === 'CRYPTO';
+
+  // SKIN PADRÃO BASEADA NO TIPO
+  let typeSkin = '';
+  if (m.investment_type === 'FII') typeSkin = 'fii-skin';
+  else if (m.investment_type === 'ACAO' || m.investment_type === 'ETF') typeSkin = 'acao-skin';
+  else if (m.investment_type === 'CRYPTO') typeSkin = 'crypto-skin';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: i * 0.05 }}
-      whileHover={{ scale: 1.02 }}
-      className={`machine-card ${isBusinessDay ? 'active-working' : ''} ${m.skin === 'none' ? '' : (m.skin || equippedItems.machineSkin || '')}`}
+    <div
+      className={`machine-card ${isBusinessDay ? 'active-working' : ''} ${typeSkin}`}
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+      }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-        <div className="engine-core" style={{ transform: 'scale(0.8)', margin: '-5px' }}>
-          <div className="fan-frame"><div className="fan-blades"></div></div>
-          <div className="status-leds">
-            <div className={`led green ${isBusinessDay ? 'active' : ''} `}></div>
-            <div className={`led blue ${isBusinessDay ? 'active' : ''} `} style={{ animationDelay: '0.2s' }}></div>
-            <div className={`led amber ${isBusinessDay ? 'active' : ''} `} style={{ animationDelay: '0.4s' }}></div>
+      {/* Decorative accent for Bolsa assets */}
+      {isBolsa && <div style={{ position: 'absolute', top: 0, right: 0, width: '40px', height: '40px', background: 'radial-gradient(circle at top right, rgba(155, 93, 229, 0.2), transparent)', pointerEvents: 'none' }} />}
+
+      <div style={{ display: 'flex', gap: '15px' }}>
+        {/* Core Engine - Preservation of user's request: DO NOT TOUCH ANIM/LEDS */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+          <div className="engine-core" style={{ padding: '10px', borderRadius: '12px', background: 'rgba(0,0,0,0.5)' }}>
+            <div className="fan-frame" style={{ width: '40px', height: '40px' }}>
+              <div className="fan-blades" style={{ width: '28px', height: '28px' }}></div>
+            </div>
+            <div className="status-leds" style={{ marginTop: '8px' }}>
+              <div className={`led green ${isBusinessDay ? 'active' : ''} `}></div>
+              <div className={`led blue ${isBusinessDay ? 'active' : ''} `} style={{ animationDelay: '0.2s' }}></div>
+              <div className={`led amber ${isBusinessDay ? 'active' : ''} `} style={{ animationDelay: '0.4s' }}></div>
+            </div>
+          </div>
+          <div style={{ fontSize: '0.45rem', fontWeight: 900, color: isBusinessDay ? '#00E676' : '#FF4D4D', letterSpacing: '1px' }}>
+            {isBusinessDay ? 'ACTIVE' : 'STANDBY'}
           </div>
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h4 style={{ margin: 0, fontSize: '0.75rem', color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{(m.nome || 'ATIVO SEM NOME').toUpperCase()}</h4>
-              <button
-                style={{ all: 'unset', cursor: 'pointer', opacity: 0.5, display: 'flex', transition: 'all 0.2s' }}
-                onMouseOver={e => e.currentTarget.style.opacity = '1'}
-                onMouseOut={e => e.currentTarget.style.opacity = '0.5'}
-                onClick={() => onEdit(m)}
-                title="Editar Ativo"
-              >
-                <Settings size={12} />
-              </button>
+
+        {/* Content Section */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <h4 style={{
+                  margin: 0,
+                  fontSize: '0.85rem',
+                  color: '#fff',
+                  fontWeight: 900,
+                  letterSpacing: '0.5px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {(m.nome || 'ATIVO').toUpperCase()}
+                </h4>
+                <button
+                  onClick={() => onEdit(m)}
+                  style={{ all: 'unset', cursor: 'pointer', opacity: 0.4, color: '#fff', display: 'flex', transition: 'all 0.2s' }}
+                  onMouseOver={e => e.currentTarget.style.opacity = '1'}
+                  onMouseOut={e => e.currentTarget.style.opacity = '0.4'}
+                >
+                  <Settings size={12} />
+                </button>
+              </div>
+              <div style={{ fontSize: '0.55rem', color: isBolsa ? '#9B5DE5' : '#00A3FF', fontWeight: 800, letterSpacing: '1px', opacity: 0.8 }}>
+                {m.investment_type} | {m.cdi_quota}% {isBolsa ? 'DY' : 'CDI'}
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-              <span style={{ fontSize: '0.6rem', color: (m.investment_type === 'ACAO' || m.investment_type === 'FII') ? '#9B5DE5' : '#00E676', fontWeight: 900, textShadow: '0 1px 3px rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <TrendingUp size={10} />
-                {m.cdi_quota}% {(m.investment_type === 'ACAO' || m.investment_type === 'FII') ? 'DY' : 'CDI'}
-              </span>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {multipliers.iofApplied && (
-                  <span style={{ fontSize: '0.45rem', padding: '1px 3px', background: 'rgba(255, 77, 77, 0.2)', color: '#FF4D4D', borderRadius: '3px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '2px' }}>
-                    <Info size={8} /> IOF ({multipliers.daysUntilIofZero}d)
+
+            <div style={{ textAlign: 'right' }}>
+              <div style={{
+                fontSize: '0.5rem',
+                fontWeight: 900,
+                padding: '2px 6px',
+                borderRadius: '4px',
+                background: isBolsa ? 'rgba(155, 93, 229, 0.15)' : 'rgba(0, 230, 118, 0.15)',
+                color: isBolsa ? '#E0AAFF' : '#00E676',
+                border: `1px solid ${isBolsa ? 'rgba(155, 93, 229, 0.2)' : 'rgba(0, 230, 118, 0.2)'}`
+              }}>
+                {isBolsa ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <TrendingUp size={10} /> RENDIMENTO
+                  </span>
+                ) : (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    {multipliers.irRateLabel} IR
                   </span>
                 )}
-                <span style={{ fontSize: '0.45rem', padding: '1px 3px', background: (m.investment_type === 'ACAO' || m.investment_type === 'FII') ? 'rgba(155, 93, 229, 0.2)' : 'rgba(0, 163, 255, 0.2)', color: (m.investment_type === 'ACAO' || m.investment_type === 'FII') ? '#E0AAFF' : '#00A3FF', borderRadius: '3px', fontWeight: 900 }}>
-                  {m.investment_type}: {multipliers.irRateLabel}
-                </span>
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-            {(m.investment_type === 'ACAO' || m.investment_type === 'FII') ? (
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <span style={{ fontSize: '0.5rem', background: 'rgba(155, 93, 229, 0.2)', color: '#E0AAFF', padding: '2px 6px', borderRadius: '4px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <RefreshCw size={8} /> {
-                    m.payment_frequency === 'daily' ? 'DIÁRIO' :
-                      m.payment_frequency === 'monthly' ? 'MENSAL' :
-                        m.payment_frequency === 'quarterly' ? 'TRIMESTRAL' :
-                          m.payment_frequency === 'semiannual' ? 'SEMESTRAL' :
-                            m.payment_frequency === 'annual' ? 'ANUAL' : 'MENSAL'
-                  }
-                </span>
-                <span style={{ fontSize: '0.5rem', background: 'rgba(255, 255, 255, 0.1)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <PieIcon size={8} /> {m.stock_quantity?.toFixed(2)} COTAS
-                </span>
-              </div>
+
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '2px' }}>
+            <span style={{ fontSize: '0.8rem', color: '#666', fontWeight: 900 }}>BRL</span>
+            <p style={{
+              margin: 0,
+              fontSize: '1.4rem',
+              color: '#fff',
+              fontWeight: 900,
+              fontFamily: 'JetBrains Mono',
+              letterSpacing: '-1px'
+            }}>
+              {(m.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+
+          {/* Quick Stats Row */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+            {(m.investment_type === 'ACAO' || m.investment_type === 'FII' || m.investment_type === 'ETF') ? (
+              <span style={{ fontSize: '0.5rem', background: 'rgba(255, 255, 255, 0.05)', color: '#aaa', padding: '2px 6px', borderRadius: '4px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <PieIcon size={10} /> {m.stock_quantity?.toFixed(2)} UNID.
+              </span>
             ) : (
-              <>
-                {m.liquidity_type === 'locked_30' && <span style={{ fontSize: '0.5rem', background: 'rgba(255, 215, 0, 0.2)', color: '#FFD700', padding: '2px 6px', borderRadius: '4px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '3px' }}><Zap size={8} /> TURBO D+30</span>}
-                {m.liquidity_type === 'locked_365' && <span style={{ fontSize: '0.5rem', background: 'rgba(255, 77, 77, 0.2)', color: '#FF4D4D', padding: '2px 6px', borderRadius: '4px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '3px' }}><ShieldCheck size={8} /> FGC MAX</span>}
-                {(!m.liquidity_type || m.liquidity_type === 'daily') && <span style={{ fontSize: '0.5rem', background: 'rgba(0, 230, 118, 0.2)', color: '#00E676', padding: '2px 6px', borderRadius: '4px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '3px' }}><ArrowRightLeft size={8} /> D+0</span>}
-              </>
+              <span style={{
+                fontSize: '0.5rem',
+                background: multipliers.iofApplied ? 'rgba(255, 77, 77, 0.1)' : 'rgba(0, 230, 118, 0.1)',
+                color: multipliers.iofApplied ? '#FF4D4D' : '#00E676',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                border: `1px solid ${multipliers.iofApplied ? 'rgba(255, 77, 77, 0.1)' : 'rgba(0, 230, 118, 0.1)'}`
+              }}>
+                {multipliers.iofApplied ? <Info size={10} /> : <ShieldCheck size={10} />}
+                {multipliers.iofApplied ? `IOF: ${multipliers.daysUntilIofZero}d` : 'ISENTO IOF'}
+              </span>
+            )}
+
+            <span style={{
+              fontSize: '0.5rem',
+              background: 'rgba(255, 255, 255, 0.05)',
+              color: '#aaa',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '3px'
+            }}>
+              <Moon size={10} /> {
+                m.payment_frequency === 'daily' ? 'D+0' :
+                  m.payment_frequency === 'monthly' ? 'M+1' : 'PERIOD.'
+              }
+            </span>
+
+            {m.vencimento && (
+              <span style={{
+                fontSize: '0.5rem',
+                background: isMatured ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 215, 0, 0.1)',
+                color: isMatured ? '#00E676' : '#FFD700',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                fontWeight: 800,
+                border: `1px solid ${isMatured ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 215, 0, 0.1)'}`
+              }}>
+                {isMatured ? 'LIQUIDEZ IMEDIATA' : `VENC: ${new Date(m.vencimento).toLocaleDateString('pt-BR')}`}
+              </span>
             )}
           </div>
-          <p style={{ margin: '2px 0', fontSize: '1.2rem', color: isBusinessDay ? '#00E676' : '#FF4D4D', fontWeight: 900, fontFamily: 'JetBrains Mono', textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>
-            {(m.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          </p>
-          {m.vencimento && (
-            <div style={{ fontSize: '0.5rem', color: isMatured ? '#00E676' : '#FFD700', fontWeight: 900, marginTop: '4px' }}>
-              {isMatured ? 'DISPONÍVEL' : `LIBERA: ${new Date(m.vencimento).toLocaleDateString('pt-BR')} `}
-            </div>
-          )}
+
+          {/* Progress Bar for Goals */}
           {m.max_capacity && m.max_capacity > 0 && (
-            <div style={{ marginTop: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.45rem', fontWeight: 900, marginBottom: '3px' }}>
-                <span style={{ color: '#00A3FF', letterSpacing: '0.5px' }}>PROGRESSO DA META</span>
-                <span style={{ color: (m.valor / m.max_capacity) >= 1 ? '#00E676' : '#aaa' }}>{Math.min(100, (m.valor / m.max_capacity) * 100).toFixed(0)}%</span>
+            <div style={{ marginTop: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.45rem', fontWeight: 900, marginBottom: '4px' }}>
+                <span style={{ color: '#00A3FF', letterSpacing: '1px' }}>META DE PATRIMÔNIO</span>
+                <span style={{ color: (m.valor / m.max_capacity) >= 1 ? '#00E676' : '#888' }}>
+                  {Math.min(100, (m.valor / m.max_capacity) * 100).toFixed(0)}%
+                </span>
               </div>
-              <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.02)' }}>
+              <div style={{ height: '3px', background: 'rgba(255,255,255,0.03)', borderRadius: '2px', overflow: 'hidden' }}>
                 <div style={{
                   height: '100%',
                   width: `${Math.min(100, (m.valor / m.max_capacity) * 100)}% `,
-                  background: (m.valor / m.max_capacity) >= 1 ? 'linear-gradient(90deg, #00E676, #00ff80)' : 'linear-gradient(90deg, #00A3FF, #00E676)',
+                  background: (m.valor / m.max_capacity) >= 1 ? '#00E676' : 'linear-gradient(90deg, #00A3FF, #00E676)',
                   boxShadow: (m.valor / m.max_capacity) >= 1 ? '0 0 10px rgba(0, 230, 118, 0.4)' : 'none',
-                  transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                  transition: 'width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
                 }}></div>
               </div>
-              <div style={{ fontSize: '0.4rem', opacity: 0.4, textAlign: 'right', marginTop: '2px', fontWeight: 700 }}>META: R$ {m.max_capacity.toLocaleString('pt-BR')}</div>
             </div>
           )}
         </div>
       </div>
-      <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
-        <button className="action-btn aporte" style={{ flex: 2, padding: '10px 8px', fontSize: '0.7rem' }} onClick={() => onAporte(m)}>APORTE</button>
-        {((m.investment_type === 'ACAO' || m.investment_type === 'FII') || !m.vencimento || isMatured) ? (
+
+      <div style={{ display: 'flex', gap: '10px', marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px' }}>
+        <button
+          className="action-btn-new"
+          style={{
+            flex: 1.5,
+            padding: '8px',
+            background: 'rgba(0, 230, 118, 0.1)',
+            color: '#00E676',
+            border: '1px solid rgba(0, 230, 118, 0.2)',
+            borderRadius: '8px',
+            fontSize: '0.65rem',
+            fontWeight: 900,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px'
+          }}
+          onClick={() => onAporte(m)}
+        >
+          <Wallet size={12} /> APORTE
+        </button>
+
+        {((m.investment_type === 'ACAO' || m.investment_type === 'FII' || m.investment_type === 'ETF' || m.investment_type === 'CRYPTO') || !m.vencimento || isMatured) ? (
           <button
-            className="action-btn vender-solid"
+            className="action-btn-new"
             style={{
               flex: 1,
-              padding: '10px 8px',
+              padding: '8px',
+              background: 'rgba(255, 255, 255, 0.03)',
+              color: '#fff',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
               fontSize: '0.65rem',
-              background: (m.investment_type === 'ACAO' || m.investment_type === 'FII') ? 'rgba(155, 93, 229, 0.2)' : '',
-              borderColor: (m.investment_type === 'ACAO' || m.investment_type === 'FII') ? '#9B5DE5' : ''
+              fontWeight: 900,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
             }}
             onClick={() => onResgate(m)}
           >
-            {(m.investment_type === 'ACAO' || m.investment_type === 'FII') ? 'VENDER' : 'RESGATAR'}
+            <ArrowRightLeft size={12} /> {isBolsa ? 'VENDER' : 'RESGATAR'}
           </button>
         ) : (
-          <button className="action-btn" disabled style={{ flex: 1, padding: '10px 8px', fontSize: '0.55rem', opacity: 0.5, cursor: 'not-allowed', background: '#333' }}>BLOQUEADO</button>
+          <button
+            disabled
+            style={{
+              flex: 1,
+              padding: '8px',
+              background: 'rgba(0,0,0,0.2)',
+              color: '#555',
+              border: '1px solid rgba(255, 255, 255, 0.02)',
+              borderRadius: '8px',
+              fontSize: '0.6rem',
+              fontWeight: 900,
+              cursor: 'not-allowed',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
+            }}
+          >
+            <X size={12} /> BLOQUEADO
+          </button>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 });
 
@@ -1658,6 +1791,7 @@ function App() {
         icon: isStock ? '📈' : '💵',
         details: isStock ? `Comprou ${qtyToAdd} cotas de ${selectedMachine.nome}` : `Investimento de R$ ${valor.toFixed(2)} em ${selectedMachine.nome}`
       });
+      setShowAporteModal(false);
     } else {
       setNotification(`ERRO NO APORTE: ${error.message}`);
     }
@@ -2001,6 +2135,7 @@ function App() {
   }
 
 
+  /*
   const handleDeleteSkin = async (skinKey: string) => {
     if (!skinCounts[skinKey] || skinCounts[skinKey] <= 0) return;
 
@@ -2022,6 +2157,7 @@ function App() {
       setNotification(`ERRO AO DELETAR: ${error.message}`);
     }
   }
+  */
 
   const savePixKey = async () => {
     if (!session) return;
@@ -2149,72 +2285,71 @@ function App() {
       // Persistir o valor do último depósito para controle diário
       await supabase.from('user_stats').update({ last_deposit_value: value }).eq('user_id', session.id);
 
+      // Lógica de Skins removida
+      /* 
       const totalAcc = cumulativeDeposits + value;
       const skinsToAward = Math.floor(totalAcc / 1000);
       const remainder = totalAcc % 1000;
-      setCumulativeDeposits(remainder);
+      setCumulativeDeposits(remainder); 
+      */
+      const skinsToAward = 0; // Força zero para não entrar no if
+      const remainder = 0; // Previne erro de referência no else
 
       if (skinsToAward > 0) {
-
         const newCounts = { ...skinCounts };
+        const availableSkins = ['skin_neon', 'skin_stealth', 'skin_gold', 'skin_aurora', 'skin_cyber'];
         let awardedList: string[] = [];
 
         for (let i = 0; i < skinsToAward; i++) {
-          const rand = Math.random();
-          let picked = 'carbon';
+          // Sorteio aleatório entre as 5 skins
+          const randomSkin = availableSkins[Math.floor(Math.random() * availableSkins.length)];
 
-          if (rand > 0.99) picked = 'quantum';
-          else if (rand > 0.98) picked = 'hacker';
-          else if (rand > 0.96) picked = 'obsidian';
-          else if (rand > 0.94) picked = 'ghost';
-          else if (rand > 0.92) picked = 'aurora';
-          else if (rand > 0.90) picked = 'space';
-          else if (rand > 0.86) picked = 'royal';
-          else if (rand > 0.82) picked = 'emerald';
-          else if (rand > 0.78) picked = 'magma';
-          else if (rand > 0.74) picked = 'cyber';
-          else if (rand > 0.70) picked = 'glitch';
-          else if (rand > 0.65) picked = 'plasma';
-          else if (rand > 0.60) picked = 'neon_pink';
-          else if (rand > 0.55) picked = 'pixel_art';
-          else if (rand > 0.50) picked = 'gold_black';
-          else if (rand > 0.40) picked = 'sunset';
-          else if (rand > 0.30) picked = 'ice';
-          else if (rand > 0.15) picked = 'vaporwave';
-          else picked = Math.random() > 0.5 ? 'carbon' : 'forest';
+          // Remove o prefixo 'skin_' para salvar no contador se necessário, ou adapta conforme seu estado
+          // Assumindo que o estado usa chaves como 'skin_neon', 'skin_gold' etc.
+          // Se o estado usa apenas 'neon', 'gold', ajustar aqui. 
+          // Olhando o código anterior, parecia usar 'skin_gold_black'. Vamos padronizar.
 
-          newCounts[picked] = (newCounts[picked] || 0) + 1;
-          awardedList.push(picked.toUpperCase());
+          // Vamos usar os nomes exatos das colunas do banco se possível, ou mapear.
+          // Simplificação: vou usar os nomes das chaves do objeto newCounts.
+          // Se o objeto newCounts tem chaves antigas, vamos adicionar as novas ou reutilizar.
+
+          // Como estamos "refazendo do zero", vou assumir que vamos salvar nessas chaves novas:
+          // Mas o banco de dados tem colunas fixas. Vou ter que reusar colunas ou você teria que criar novas.
+          // Para não quebrar o banco agora, vou mapear as Novas Skins para as colunas existentes mais próximas:
+
+          // Neon -> skin_neon_pink
+          // Stealth -> skin_obsidian
+          // Gold -> skin_gold_black
+          // Aurora -> skin_aurora
+          // Cyber -> skin_cyber
+
+          let dbKey = '';
+          let displayName = '';
+
+          if (randomSkin === 'skin_neon') { dbKey = 'skin_neon_pink'; displayName = 'NEON'; }
+          else if (randomSkin === 'skin_stealth') { dbKey = 'skin_obsidian'; displayName = 'STEALTH'; }
+          else if (randomSkin === 'skin_gold') { dbKey = 'skin_gold_black'; displayName = 'GOLD'; }
+          else if (randomSkin === 'skin_aurora') { dbKey = 'skin_aurora'; displayName = 'AURORA'; }
+          else if (randomSkin === 'skin_cyber') { dbKey = 'skin_cyber'; displayName = 'CYBER'; }
+
+          newCounts[dbKey] = (newCounts[dbKey] || 0) + 1;
+          awardedList.push(displayName);
         }
 
         setSkinCounts(newCounts);
 
+        // Atualizar no Supabase
         await supabase.from('user_stats').upsert({
           user_id: session.id,
           cumulative_deposits: remainder,
-          skin_carbon: newCounts.carbon,
-          skin_vaporwave: newCounts.vaporwave,
-          skin_glitch: newCounts.glitch,
-          skin_royal: newCounts.royal,
-          skin_ghost: newCounts.ghost,
-          skin_cyber: newCounts.cyber,
-          skin_forest: newCounts.forest,
-          skin_magma: newCounts.magma,
-          skin_ice: newCounts.ice,
-          skin_neon_pink: newCounts.neon_pink,
-          skin_gold_black: newCounts.gold_black,
-          skin_sunset: newCounts.sunset,
-          skin_space: newCounts.space,
-          skin_emerald: newCounts.emerald,
-          skin_hacker: newCounts.hacker,
-          skin_plasma: newCounts.plasma,
-          skin_pixel_art: newCounts.pixel_art,
-          skin_aurora: newCounts.aurora,
-          skin_obsidian: newCounts.obsidian,
-          skin_quantum: newCounts.quantum
+          skin_neon_pink: newCounts.skin_neon_pink,
+          skin_obsidian: newCounts.skin_obsidian,
+          skin_gold_black: newCounts.skin_gold_black,
+          skin_aurora: newCounts.skin_aurora,
+          skin_cyber: newCounts.skin_cyber
         });
 
-        triggerSuccess('DEPÓSITO CONFIRMADO', `Recebido: R$ ${value.toFixed(2)}. +${skinsToAward} Skins desbloqueadas!`, '✨');
+        triggerSuccess('DEPÓSITO CONFIRMADO', `Recebido: R$ ${value.toFixed(2)}. Ganhou skins: ${awardedList.join(', ')}`, '🎁');
       } else {
         await supabase.from('user_stats').upsert({
           user_id: session.id,
@@ -2547,7 +2682,7 @@ function App() {
                   <div className="foda-btn-inner">
                     {isRegistering ? 'CRIAR PERSONAGEM' : 'ENTRAR NO SISTEMA'}
                   </div>
-                  <button type="submit" className="submit-hidden" style={{ display: 'none' }} />
+                  <button type="submit" className="submit-hidden" style={{ display: 'none' }} title="ENTRAR" aria-label="Entrar" />
                 </div>
               </form>
 
@@ -2588,10 +2723,12 @@ function App() {
                 zIndex: 10000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 padding: '20px',
                 boxSizing: 'border-box',
-                overflow: 'hidden',
+                overflow: 'hidden', // Keep overflow hidden to contain stars
                 fontFamily: "'Outfit', sans-serif"
               }}
             >
+              <div style={{ position: 'absolute', inset: -50, background: 'radial-gradient(circle at center, #02040a 0%, #000 100%)', zIndex: -1 }}></div>
+
               {/* DEPTH LAYERS: NEBULA & STARS */}
               <div style={{ position: 'absolute', width: '100%', height: '100%', overflow: 'hidden', pointerEvents: 'none' }}>
                 <div className="zen-nebula-blue" style={{
@@ -2605,8 +2742,9 @@ function App() {
                   filter: 'blur(60px)', animation: 'pulseNebula 25s ease-in-out infinite reverse'
                 }} />
 
-                <div className="stars-layer" style={{ position: 'absolute', inset: 0, opacity: 0.4 }}>
-                  {[...Array(60)].map((_, i) => (
+                {/* STARS LAYER - STATIC (REALISTIC) */}
+                <div className="stars-layer" style={{ position: 'absolute', inset: 0, opacity: 0.6 }}>
+                  {[...Array(100)].map((_, i) => ( // More static stars
                     <div key={i} style={{
                       position: 'absolute',
                       width: `${Math.random() * 2}px`,
@@ -2615,8 +2753,47 @@ function App() {
                       top: `${Math.random() * 100}%`,
                       left: `${Math.random() * 100}%`,
                       borderRadius: '50%',
-                      animation: `twinkle ${Math.random() * 4 + 2}s infinite alternate`
+                      animation: `twinkle ${Math.random() * 3 + 2}s infinite alternate`
                     }} />
+                  ))}
+                </div>
+
+                {/* ZEN RINGS (TRUE 3D CHAOS) */}
+                <div className="zen-rings-container" style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  pointerEvents: 'none', perspective: '1000px'
+                }}>
+                  {[...Array(6)].map((_, i) => ( // 6 Rings for density
+                    <div key={`ring-${i}`} className="zen-ring" style={{
+                      width: `${45 + (i * 10)}vmin`,
+                      height: `${45 + (i * 10)}vmin`,
+                      border: i % 2 === 0 ? '1px dashed rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.05)',
+                      position: 'absolute',
+                      borderRadius: '50%',
+                      '--duration': `${20 + (Math.random() * 40)}s`, // Random speed
+                      '--axis-x': Math.random(),
+                      '--axis-y': Math.random(),
+                      '--axis-z': Math.random(),
+                      '--direction': Math.random() > 0.5 ? 1 : -1,
+                    } as any} />
+                  ))}
+                </div>
+
+                {/* SPACE DRIFT (LINEAR DEPTH) */}
+                <div className="star-drift" style={{ position: 'absolute', inset: -50, overflow: 'hidden' }}>
+                  {[...Array(80)].map((_, i) => (
+                    <div key={`star-${i}`} className="drift-star" style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      width: `${Math.random() * 2 + 1}px`,
+                      height: `${Math.random() * 2 + 1}px`,
+                      background: '#fff',
+                      '--opacity': Math.random() * 0.5 + 0.1,
+                      borderRadius: '50%',
+                      animationDuration: `${Math.random() * 40 + 20}s`,
+                      animationDelay: `-${Math.random() * 50}s`
+                    } as any} />
                   ))}
                 </div>
 
@@ -2631,6 +2808,7 @@ function App() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
+                className="floating-content" // Added floating animation class
                 style={{ textAlign: 'center', zIndex: 10, position: 'relative' }}
               >
                 <div style={{ marginBottom: '2rem' }}>
@@ -2643,62 +2821,118 @@ function App() {
                       fontWeight: 900, marginBottom: '1rem'
                     }}
                   >
-                    <Sparkles size={12} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
                     SINCRONIZANDO DADOS
-                    <Sparkles size={12} style={{ verticalAlign: 'middle', marginLeft: '8px' }} />
                   </motion.div>
 
                   <h1 className="zen-main-value" style={{
-                    fontSize: '6.5rem', fontWeight: 900, color: '#fff', margin: 0,
-                    letterSpacing: '-4px', textShadow: '0 0 50px rgba(255,255,255,0.2)'
+                    fontSize: '4.5rem', fontWeight: 900, color: '#fff', margin: 0,
+                    letterSpacing: '-2px', textShadow: '0 0 50px rgba(255,255,255,0.2)'
                   }}>
                     <AnimatedNumber value={totalPatrimony} format={(v) => formatBRLWithMicroCents(v)} />
                   </h1>
                 </div>
 
+                {/* DETALHES MINIMALISTAS (SEM CARDS) */}
                 <div className="zen-stats-row" style={{
-                  display: 'flex', gap: '60px', justifyContent: 'center', alignItems: 'center',
-                  background: 'rgba(255,255,255,0.02)', padding: '20px 40px', borderRadius: '24px',
-                  border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)'
+                  marginTop: '1rem',
+                  display: 'flex',
+                  gap: '5rem',
+                  flexWrap: 'wrap', // Mobile wrap
+                  justifyContent: 'center',
+                  opacity: 0.9,
+                  position: 'relative'
                 }}>
-                  <div>
-                    <div style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, letterSpacing: '2px', opacity: 0.5, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <TrendingUp size={10} /> RENDIMENTO_HORA
-                    </div>
-                    <div style={{ fontSize: '1.8rem', color: '#00E676', fontWeight: 900, textShadow: '0 0 20px rgba(0, 230, 118, 0.2)' }}>
-                      R$ {(yields.hourlyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
+                  {/* Linha decorativa vertical REMOVIDA */}
+
+                  <div style={{ textAlign: 'center' }}>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+                      style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 900, letterSpacing: '3px', marginBottom: '8px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                      <Zap size={10} /> Provisão Diária
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6 }}
+                      style={{ fontSize: '1.5rem', fontFamily: 'JetBrains Mono', fontWeight: 500, color: '#fff', textShadow: '0 0 20px rgba(0,163,255,0.4)' }}>
+                      +R$ {(yields.dailyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </motion.div>
                   </div>
-                  <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} className="zen-divider"></div>
-                  <div>
-                    <div style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 900, letterSpacing: '2px', opacity: 0.5, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <Zap size={10} /> RENDIMENTO_DIA
-                    </div>
-                    <div style={{ fontSize: '1.8rem', color: '#00A3FF', fontWeight: 900, textShadow: '0 0 20px rgba(0, 163, 255, 0.2)' }}>
-                      R$ {(yields.dailyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
+
+                  <div style={{ textAlign: 'center' }}>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+                      style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, letterSpacing: '3px', marginBottom: '8px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                      <TrendingUp size={10} /> Projetado Mês
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8 }}
+                      style={{ fontSize: '1.5rem', fontFamily: 'JetBrains Mono', fontWeight: 500, color: '#fff', textShadow: '0 0 20px rgba(0,230,118,0.4)' }}>
+                      +R$ {(yields.monthlyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </motion.div>
                   </div>
                 </div>
 
-                {salary > 0 && (
-                  <div style={{ marginTop: '3rem', maxWidth: '250px', marginLeft: 'auto', marginRight: 'auto' }}>
-                    <div style={{ height: '2px', background: 'rgba(255,255,255,0.05)', width: '100%', position: 'relative' }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(freedomProgress, 100)}%` }}
-                        transition={{ duration: 2, ease: 'easeOut' }}
-                        style={{
-                          position: 'absolute', height: '100%', background: 'linear-gradient(90deg, #00A3FF, #00E676)',
-                          boxShadow: '0 0 15px rgba(0, 163, 255, 0.5)'
-                        }}
-                      />
-                    </div>
-                    <div style={{ marginTop: '10px', fontSize: '0.5rem', color: '#888', fontWeight: 900, letterSpacing: '2px' }}>
-                      LIBERDADE FINANCEIRA: <span style={{ color: '#fff' }}>{freedomProgress.toFixed(2)}%</span>
-                    </div>
+                {/* CONTADOR DE RENDIMENTO (10s) */}
+                <motion.div
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
+                  style={{ marginTop: '5rem', textAlign: 'center' }}>
+
+                  <div style={{
+                    fontSize: '0.6rem', color: '#888', letterSpacing: '4px', fontWeight: 900,
+                    marginBottom: '10px', textTransform: 'uppercase',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                  }}>
+                    <TrendingUp size={12} /> PRÓXIMO PAGAMENTO
                   </div>
-                )}
+
+                  {/* Visualização de Cronômetro (Timer) */}
+                  <div style={{
+                    fontSize: '2.5rem', fontFamily: 'JetBrains Mono', fontWeight: 900, color: '#fff',
+                    textShadow: '0 0 20px rgba(0, 230, 118, 0.4)', letterSpacing: '2px'
+                  }}>
+                    <YieldCountdown onCycleEnd={() => { }} />
+                  </div>
+
+                </motion.div>
+
               </motion.div>
+
+              <style>{`
+                /* ZEN RINGS 3D ANIMATION */
+                .zen-ring {
+                  animation: rotate-3d var(--duration) linear infinite;
+                  box-shadow: 0 0 15px rgba(0, 163, 255, 0.05); /* Faint glow */
+                }
+                @keyframes rotate-3d {
+                  0% { transform: rotate3d(var(--axis-x), var(--axis-y), var(--axis-z), 0deg); }
+                  100% { transform: rotate3d(var(--axis-x), var(--axis-y), var(--axis-z), calc(360deg * var(--direction))); }
+                }
+                
+                /* FLOATING TEXT ANIMATION */
+                .floating-content {
+                  animation: float-text 6s ease-in-out infinite;
+                }
+                @keyframes float-text {
+                  0%, 100% { transform: translateY(0px); }
+                  50% { transform: translateY(-15px); }
+                }
+
+                /* SPACE DRIFT (DEEP CALM) */
+                .drift-star {
+                  position: absolute;
+                  background: #fff;
+                  border-radius: 50%;
+                  box-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
+                  opacity: 0;
+                  animation: driftMove linear infinite;
+                }
+
+                @keyframes driftMove {
+                  0% { transform: translateY(0); opacity: 0; }
+                  20% { opacity: var(--opacity, 0.5); }
+                  80% { opacity: var(--opacity, 0.5); }
+                  100% { transform: translateY(-50px); opacity: 0; } /* Subtle upward float */
+                }
+              `}</style>
 
               <motion.button
                 whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.1)' }}
@@ -2887,6 +3121,9 @@ function App() {
                             <div className="menu-item" onClick={() => { setShowPixDeposit(true); setShowMenu(false); }}>
                               <Wallet size={16} style={{ marginRight: '10px', color: '#00E676' }} /> NOVO APORTE
                             </div>
+                            <div className="menu-item" onClick={() => { setShowTransferModal(true); setShowMenu(false); }}>
+                              <ArrowRightLeft size={16} style={{ marginRight: '10px', color: '#FF4D4D' }} /> TRANSFERIR CAPITAL
+                            </div>
                             <div className="menu-item" onClick={() => {
                               if (currentLevel < 2) {
                                 setNotification("🔒 REQUER NÍVEL 2!");
@@ -3000,105 +3237,69 @@ function App() {
                         transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
                       }}
                     />
-                    <div className="xp-shimmer" style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: '-100%',
-                      width: '50%',
-                      height: '100%',
-                      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                      animation: 'shimmer 2s infinite'
-                    }} />
                   </div>
                 </div>
 
-                <div style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div>
-                    <p className="balance-title" style={{ color: '#FFD700', fontSize: '0.65rem', marginBottom: '4px' }}>PATRIMÔNIO_TOTAL (BRUTO)</p>
-                    <h1 className="balance-value" style={{ fontSize: '2.2rem', color: '#fff', textShadow: '0 0 20px rgba(255,215,0,0.2)' }}>
+
+                <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                  {/* PATRIMÔNIO TOTAL */}
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <p className="balance-title" style={{ color: '#FFD700', fontSize: '0.6rem', marginBottom: '6px', letterSpacing: '1.5px' }}>PATRIMÔNIO TOTAL</p>
+                    <h1 className="balance-value" style={{ fontSize: '2.5rem', color: '#fff', textShadow: '0 0 20px rgba(255,215,0,0.2)', margin: 0 }}>
                       <AnimatedNumber value={totalPatrimony} format={(v) => formatBRLWithPrecision(v)} />
                     </h1>
                   </div>
-                  {/* BREAKDOWN UI FOR CLARITY */}
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', opacity: 0.6 }}>
-                    <span style={{ fontSize: '0.55rem', fontWeight: 900 }}>BRL: {formatBRLWithPrecision(balance + totalInvested)}</span>
-                    {usdBalance > 0 && <span style={{ fontSize: '0.55rem', fontWeight: 900 }}>USD: {formatBRLWithPrecision(usdBalance * apiRates.USD)}</span>}
-                    {jpyBalance > 0 && <span style={{ fontSize: '0.55rem', fontWeight: 900 }}>JPY: {formatBRLWithPrecision(jpyBalance * apiRates.JPY)}</span>}
-                  </div>
-                </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <p className="balance-title">Capital_Líquido (Disponível)</p>
-                    <h2 className="balance-value" style={{ fontSize: '1.6rem', opacity: 0.9 }}>
-                      <AnimatedNumber value={balance} format={(v) => formatBRLWithPrecision(v)} />
-                    </h2>
+                  {/* SALDOS DETALHADOS */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '1.5rem' }}>
+                    {/* CAPITAL DISPONÍVEL */}
+                    <div style={{ background: 'rgba(0, 230, 118, 0.05)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(0, 230, 118, 0.15)' }}>
+                      <p style={{ fontSize: '0.5rem', color: '#00E676', fontWeight: 900, marginBottom: '6px', letterSpacing: '1px' }}>DISPONÍVEL</p>
+                      <h3 style={{ fontSize: '1.1rem', color: '#00E676', margin: 0, fontWeight: 900 }}>
+                        <AnimatedNumber value={balance} format={(v) => formatBRLWithPrecision(v)} />
+                      </h3>
+                    </div>
+
+                    {/* TOTAL INVESTIDO */}
+                    <div style={{ background: 'rgba(0, 163, 255, 0.05)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(0, 163, 255, 0.15)' }}>
+                      <p style={{ fontSize: '0.5rem', color: '#00A3FF', fontWeight: 900, marginBottom: '6px', letterSpacing: '1px' }}>INVESTIDO</p>
+                      <h3 style={{ fontSize: '1.1rem', color: '#00A3FF', margin: 0, fontWeight: 900 }}>
+                        <AnimatedNumber value={totalInvested} format={(v) => formatBRLWithPrecision(v)} />
+                      </h3>
+                    </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'right' }}>
-                    {usdBalance > 0 && (
-                      <div>
-                        <p className="balance-title" style={{ color: '#00A3FF', opacity: 0.8 }}>Carteira_Dólar (USD)</p>
-                        <h3 style={{ fontSize: '1.6rem', color: '#00A3FF', margin: 0, fontWeight: 800 }}>
-                          $ {usdBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </h3>
-                        <div style={{ fontSize: '0.65rem', color: '#00A3FF', opacity: 0.8, fontWeight: 900 }}>
-                          R$ {(usdBalance * apiRates.USD).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {/* MOEDAS ESTRANGEIRAS (se houver) */}
+                  {(usdBalance > 0 || jpyBalance > 0) && (
+                    <div style={{ display: 'grid', gridTemplateColumns: usdBalance > 0 && jpyBalance > 0 ? '1fr 1fr' : '1fr', gap: '15px', marginTop: '15px' }}>
+                      {usdBalance > 0 && (
+                        <div style={{ background: 'rgba(0, 163, 255, 0.03)', padding: '10px', borderRadius: '10px', border: '1px solid rgba(0, 163, 255, 0.1)' }}>
+                          <p style={{ fontSize: '0.45rem', color: '#00A3FF', fontWeight: 900, marginBottom: '4px', letterSpacing: '1px' }}>USD</p>
+                          <h4 style={{ fontSize: '0.9rem', color: '#00A3FF', margin: 0, fontWeight: 800 }}>
+                            $ {usdBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </h4>
+                          <div style={{ fontSize: '0.5rem', color: '#00A3FF', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>
+                            ≈ {formatBRLWithPrecision(usdBalance * apiRates.USD)}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {jpyBalance > 0 && (
-                      <div>
-                        <p className="balance-title" style={{ color: '#FFD700', opacity: 0.8 }}>Carteira_Iene (JPY)</p>
-                        <h3 style={{ fontSize: '1.6rem', color: '#FFD700', margin: 0, fontWeight: 800 }}>
-                          ¥ {jpyBalance.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                        </h3>
-                        <div style={{ fontSize: '0.65rem', color: '#FFD700', opacity: 0.8, fontWeight: 900 }}>
-                          R$ {(jpyBalance * apiRates.JPY).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      )}
+                      {jpyBalance > 0 && (
+                        <div style={{ background: 'rgba(255, 215, 0, 0.03)', padding: '10px', borderRadius: '10px', border: '1px solid rgba(255, 215, 0, 0.1)' }}>
+                          <p style={{ fontSize: '0.45rem', color: '#FFD700', fontWeight: 900, marginBottom: '4px', letterSpacing: '1px' }}>JPY</p>
+                          <h4 style={{ fontSize: '0.9rem', color: '#FFD700', margin: 0, fontWeight: 800 }}>
+                            ¥ {jpyBalance.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          </h4>
+                          <div style={{ fontSize: '0.5rem', color: '#FFD700', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>
+                            ≈ {formatBRLWithPrecision(jpyBalance * apiRates.JPY)}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* BOTÃO TRANSFERIR/REGISTRAR GASTOS */}
-                <div style={{ marginTop: '0.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'flex-start' }}>
-                  <button
-                    onClick={() => setShowTransferModal(true)}
-                    style={{
-                      padding: '6px 12px',
-                      background: 'linear-gradient(135deg, rgba(255, 77, 77, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%)',
-                      border: '1px solid rgba(255, 77, 77, 0.25)',
-                      borderRadius: '8px',
-                      color: '#FF4D4D',
-                      fontSize: '0.55rem',
-                      fontWeight: 800,
-                      letterSpacing: '1px',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '5px',
-                      whiteSpace: 'nowrap'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 77, 77, 0.2) 0%, rgba(255, 140, 0, 0.2) 100%)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 77, 77, 0.4)';
-                      e.currentTarget.style.transform = 'translateY(-1px)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 77, 77, 0.15)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 77, 77, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 77, 77, 0.25)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  >
-                    <span style={{ fontSize: '0.85rem' }}>💸</span>
-                    TRANSFERIR
-                  </button>
-                </div>
+
 
                 <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
                   <div style={{
@@ -3188,14 +3389,48 @@ function App() {
                         </div>
                       )}
                     </div>
-                  </div>
-                </div>
 
-                <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
-                  <p className="balance-title" style={{ color: '#00E676', fontSize: '0.65rem', marginBottom: '4px' }}>TOTAL_INVESTIDO (APORTES)</p>
-                  <h2 className="balance-value" style={{ fontSize: '1.6rem', opacity: 0.9, color: '#00E676' }}>
-                    <AnimatedNumber value={totalInvested} format={(v) => formatBRLWithPrecision(v)} />
-                  </h2>
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowCreateModal(true); }}
+                        style={{
+                          flex: 1,
+                          background: 'linear-gradient(135deg, #00A3FF 0%, #0066FF 100%)',
+                          border: 'none',
+                          color: '#fff',
+                          padding: '12px',
+                          borderRadius: '12px',
+                          fontSize: '0.7rem',
+                          fontWeight: 900,
+                          cursor: 'pointer',
+                          letterSpacing: '1px',
+                          boxShadow: '0 4px 15px rgba(0, 163, 255, 0.3)',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        🏦 RENDA FIXA
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowStockMarketModal(true); }}
+                        style={{
+                          flex: 1,
+                          background: 'rgba(155, 93, 229, 0.15)',
+                          border: '1px solid rgba(155, 93, 229, 0.4)',
+                          color: '#E0AAFF',
+                          padding: '12px',
+                          borderRadius: '12px',
+                          fontSize: '0.7rem',
+                          fontWeight: 900,
+                          cursor: 'pointer',
+                          letterSpacing: '1px',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        📈 BOLSA
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '0.8rem' }}>
@@ -3247,79 +3482,17 @@ function App() {
                             <span style={{ color: '#aaa', fontWeight: 700 }}>📊 RENDA FIXA (MÊS)</span>
                             <span style={{ color: '#fff', fontWeight: 900 }}>R$ {yields.fixedMonthly.toFixed(2)}</span>
                           </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '0.75rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
                             <span style={{ color: '#E0AAFF', fontWeight: 700 }}>💰 DIVIDENDOS (MÊS)</span>
                             <span style={{ color: '#E0AAFF', fontWeight: 900 }}>R$ {yields.stockMonthly.toFixed(2)}</span>
                           </div>
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            paddingTop: '12px',
-                            borderTop: '1px solid rgba(255,255,255,0.1)',
-                            alignItems: 'baseline'
-                          }}>
-                            <span style={{ color: '#00E676', fontWeight: 900, fontSize: '0.8rem', letterSpacing: '1px' }}>RENDIMENTO TOTAL ESTIMADO</span>
-                            <span style={{
-                              color: '#00E676',
-                              fontWeight: 900,
-                              fontSize: '1.2rem',
-                              textShadow: '0 0 15px rgba(0, 230, 118, 0.4)'
-                            }}>
-                              R$ {(yields.fixedMonthly + yields.stockMonthly).toFixed(2)}
-                            </span>
-                          </div>
-                          <p style={{ margin: '8px 0 0 0', fontSize: '0.55rem', color: '#666', textAlign: 'right', fontStyle: 'italic' }}>
-                            * Projeção baseada em 21 dias úteis/mês e isenção de IR em Dividendos.
-                          </p>
                         </div>
                       </>
                     );
                   })()}
                 </div>
 
-                {salary > 0 && (
-                  <div className="freedom-day-panel" style={{
-                    background: freedomProgress >= 100 ? 'linear-gradient(135deg, rgba(0, 230, 118, 0.1) 0%, rgba(0, 163, 255, 0.1) 100%)' : 'linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(255, 163, 0, 0.05) 100%)',
-                    border: freedomProgress >= 100 ? '1px solid rgba(0, 230, 118, 0.3)' : '1px solid rgba(255, 215, 0, 0.15)',
-                    padding: '1rem',
-                    borderRadius: '20px',
-                    marginTop: '1rem',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    cursor: 'pointer'
-                  }} onClick={() => setShowSalaryProjectionModal(true)}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <h4 style={{ margin: 0, fontSize: '0.6rem', color: freedomProgress >= 100 ? '#00E676' : '#FFD700', fontWeight: 900, letterSpacing: '1px' }}>
-                          {freedomProgress >= 100 ? '⭐ LIBERDADE ALCANÇADA' : '⏳ DIA DA LIBERDADE'}
-                        </h4>
-                        <p style={{ margin: '2px 0 0 0', fontSize: '0.5rem', opacity: 0.6, fontWeight: 700 }}>
-                          {freedomProgress >= 100 ? 'Sua renda passiva já cobre seu salário!' : `Renda passiva cobre ${freedomProgress.toFixed(1)}% do seu custo de vida.`}
-                        </p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: freedomProgress >= 100 ? '#00E676' : '#fff' }}>{freedomProgress.toFixed(1)}%</span>
-                      </div>
-                    </div>
-                    <div style={{ height: '6px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '3px', marginTop: '10px', overflow: 'hidden' }}>
-                      <div style={{
-                        height: '100%',
-                        width: `${freedomProgress}% `,
-                        background: freedomProgress >= 100 ? 'linear-gradient(90deg, #00E676, #00A3FF)' : 'linear-gradient(90deg, #FFD700, #FFA300)',
-                        boxShadow: freedomProgress >= 100 ? '0 0 15px rgba(0, 230, 118, 0.4)' : '0 0 10px rgba(255, 215, 0, 0.3)',
-                        transition: 'width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
-                      }}></div>
-                    </div>
-                    {freedomProgress < 100 && (
-                      <div style={{ marginTop: '8px', fontSize: '0.45rem', opacity: 0.6, textAlign: 'center', fontWeight: 800, letterSpacing: '0.5px' }}>
-                        ⏳ LIBERDADE EM: {timeToFreedom.years > 0 && `${timeToFreedom.years} A `}{timeToFreedom.months > 0 && `${timeToFreedom.months} M `}{timeToFreedom.days}D {timeToFreedom.hours}H
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                  <button className="primary-btn" style={{ flex: 1 }} onClick={() => setShowCreateModal(true)}>+ INVESTIR</button>
-                </div>
+
               </div >
 
               <div className="glass-panel machine-panel-full">
@@ -3364,8 +3537,9 @@ function App() {
                       }}
                       onAporte={(machine: any) => {
                         setSelectedMachine(machine);
-                        setShowAporteModal(true);
                         setAporteValue('');
+                        setAporteQuantity('');
+                        setShowAporteModal(true);
                       }}
                       onResgate={(machine: any) => {
                         setShowConfirmResgate(machine);
@@ -3708,149 +3882,128 @@ function App() {
                 )
               }
 
-              <AnimatePresence>
-                {showAporteModal && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="modal-overlay"
-                    style={{ zIndex: 10000 }}
-                    onClick={() => setShowAporteModal(false)}
-                  >
-                    {(() => {
-                      const isStock = selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII';
-                      return (
-                        <motion.div
-                          key="aporte-content"
-                          initial={{ scale: 0.9, y: 20, opacity: 0 }}
-                          animate={{ scale: 1, y: 0, opacity: 1 }}
-                          exit={{ scale: 0.9, y: 20, opacity: 0 }}
-                          transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-                          className="glass-panel modal-content"
-                          onClick={e => e.stopPropagation()}
-                          style={{ maxWidth: '400px', padding: '0', overflow: 'hidden', borderRadius: '24px', border: 'none', position: 'relative' }}
-                        >
-                          <button onClick={() => setShowAporteModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}><X size={20} /></button>
-                          <div style={{ background: 'linear-gradient(135deg, #00A3FF 0%, #0066FF 100%)', padding: '1.5rem', textAlign: 'center' }}>
-                            <h3 style={{ margin: 0, fontSize: '0.9rem', letterSpacing: '2px', fontWeight: 900, color: '#fff' }}>APORTE_ESTRATÉGICO</h3>
-                            <p style={{ margin: '5px 0 0 0', fontSize: '0.65rem', opacity: 0.8, color: '#fff', fontWeight: 700 }}>{selectedMachine?.nome.toUpperCase()}</p>
+              {
+                showAporteModal && (
+                  <div className="modal-overlay" onClick={() => setShowAporteModal(false)}>
+                    <div className="glass-panel modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden', borderRadius: '24px', border: 'none', position: 'relative' }}>
+                      <button onClick={() => setShowAporteModal(false)} style={{ position: 'absolute', right: '15px', top: '15px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}><X size={20} /></button>
+                      <div style={{ background: 'linear-gradient(135deg, #00A3FF 0%, #0066FF 100%)', padding: '1.5rem', textAlign: 'center' }}>
+                        <h3 style={{ margin: 0, fontSize: '0.9rem', letterSpacing: '2px', fontWeight: 900, color: '#fff' }}>APORTE_ESTRATÉGICO</h3>
+                        <p style={{ margin: '5px 0 0 0', fontSize: '0.65rem', opacity: 0.8, color: '#fff', fontWeight: 700 }}>{selectedMachine?.nome.toUpperCase()}</p>
+                      </div>
+
+                      <div style={{ padding: '1.5rem' }}>
+                        <div className="input-group">
+                          <label htmlFor="aporte-input" style={{ fontSize: '0.55rem', color: (selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII') ? '#9B5DE5' : '#00A3FF', fontWeight: 900, marginBottom: '8px', display: 'block', letterSpacing: '1px' }}>
+                            {(selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII') ? 'QUANTIDADE DE COTAS PARA COMPRAR' : 'VALOR DO INVESTIMENTO ADICIONAL (R$)'}
+                          </label>
+                          <div style={{ position: 'relative' }}>
+                            <input
+                              id="aporte-input"
+                              title={(selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII') ? "Quantidade de Cotas" : "Valor do Aporte"}
+                              autoFocus
+                              type="number"
+                              step={(selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII') ? "1" : "0.01"}
+                              placeholder="0,00"
+                              value={(selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII') ? aporteQuantity : aporteValue}
+                              onChange={e => {
+                                const val = e.target.value;
+                                if (selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII') {
+                                  setAporteQuantity(val ? Math.floor(parseFloat(val)).toString() : '');
+                                } else {
+                                  setAporteValue(val);
+                                }
+                              }}
+                              style={{ background: 'rgba(255,255,255,0.05)', border: (selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII') ? '1px solid rgba(155, 93, 229, 0.4)' : '1px solid rgba(0,163,255,0.2)', color: '#fff', padding: '15px', borderRadius: '14px', width: '100%', fontSize: '1.3rem', fontWeight: 800, outline: 'none' }}
+                            />
+                          </div>
+                          {(selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII') && aporteQuantity && !isNaN(parseFloat(aporteQuantity)) && (
+                            <div style={{ marginTop: '10px', fontSize: '0.7rem', color: '#9B5DE5', fontWeight: 900, textAlign: 'center', background: 'rgba(155, 93, 229, 0.1)', padding: '8px', borderRadius: '10px' }}>
+                              CUSTO ESTIMADO: {formatBRLWithPrecision(parseFloat(aporteQuantity) * (selectedMachine.valor / (selectedMachine.stock_quantity || 1)))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ marginTop: '1.5rem' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                            {/* ATUAL */}
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ fontSize: '0.45rem', color: '#aaa', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>RENDIMENTO ATUAL</div>
+                              {(() => {
+                                const current = calculateProjection(selectedMachine?.valor || 0, '0', selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode);
+                                return (
+                                  <>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#fff' }}>R$ {current.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.5 }}>/dia</span></div>
+                                    <div style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 700, marginTop: '2px' }}>R$ {current.week.toFixed(2)}/semana</div>
+                                    <div style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 700, marginTop: '2px' }}>R$ {current.month.toFixed(2)}/mês</div>
+                                  </>
+                                );
+                              })()}
+                            </div>
+
+                            {/* ESTIMADO (DEPOIS) */}
+                            <div style={{ background: 'rgba(0, 230, 118, 0.05)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(0, 230, 118, 0.2)' }}>
+                              <div style={{ fontSize: '0.45rem', color: '#00E676', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>PROJEÇÃO PÓS-APORTE</div>
+                              {(() => {
+                                const isStock = selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII';
+                                const valToAdd = isStock
+                                  ? ((parseFloat(aporteQuantity) || 0) * (selectedMachine.valor / (selectedMachine.stock_quantity || 1)))
+                                  : (parseFloat(aporteValue) || 0);
+
+                                const next = calculateProjection(selectedMachine?.valor || 0, valToAdd.toString(), selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode);
+                                return (
+                                  <>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#00E676' }}>R$ {next.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.7 }}>/dia</span></div>
+                                    <div style={{ fontSize: '0.65rem', color: '#00E676', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>R$ {next.week.toFixed(2)}/semana</div>
+                                    <div style={{ fontSize: '0.65rem', color: '#00E676', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>R$ {next.month.toFixed(2)}/mês</div>
+                                  </>
+                                );
+                              })()}
+                            </div>
                           </div>
 
-                          <div style={{ padding: '1.5rem' }}>
-                            <div className="input-group">
-                              <label htmlFor="aporte-input" style={{ fontSize: '0.55rem', color: isStock ? '#9B5DE5' : '#00A3FF', fontWeight: 900, marginBottom: '8px', display: 'block', letterSpacing: '1px' }}>
-                                {isStock ? 'QUANTIDADE DE COTAS PARA COMPRAR' : 'VALOR DO INVESTIMENTO ADICIONAL (R$)'}
-                              </label>
-                              <div style={{ position: 'relative' }}>
-                                <input
-                                  id="aporte-input"
-                                  title={isStock ? "Quantidade de Cotas" : "Valor do Aporte"}
-                                  autoFocus
-                                  type="number"
-                                  step={isStock ? "1" : "0.01"}
-                                  placeholder="0,00"
-                                  value={isStock ? aporteQuantity : aporteValue}
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    if (isStock) {
-                                      setAporteQuantity(val ? Math.floor(parseFloat(val)).toString() : '');
-                                    } else {
-                                      setAporteValue(val);
-                                    }
-                                  }}
-                                  style={{ background: 'rgba(255,255,255,0.05)', border: isStock ? '1px solid rgba(155, 93, 229, 0.4)' : '1px solid rgba(0,163,255,0.2)', color: '#fff', padding: '15px', borderRadius: '14px', width: '100%', fontSize: '1.3rem', fontWeight: 800, outline: 'none' }}
-                                />
-                              </div>
-                              {isStock && aporteQuantity && !isNaN(parseFloat(aporteQuantity)) && (
-                                <div style={{ marginTop: '10px', fontSize: '0.7rem', color: '#9B5DE5', fontWeight: 900, textAlign: 'center', background: 'rgba(155, 93, 229, 0.1)', padding: '8px', borderRadius: '10px' }}>
-                                  CUSTO ESTIMADO: {formatBRLWithPrecision(parseFloat(aporteQuantity) * (selectedMachine.valor / (selectedMachine.stock_quantity || 1)))}
-                                </div>
-                              )}
+                          {((aporteValue && !isNaN(parseFloat(aporteValue))) || (aporteQuantity && !isNaN(parseFloat(aporteQuantity)))) && (
+                            <div style={{ marginTop: '18px', textAlign: 'center', animation: 'fadeIn 0.3s ease-out' }}>
+                              <span style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, background: 'rgba(0,230,118,0.1)', padding: '6px 14px', borderRadius: '20px', letterSpacing: '0.5px' }}>
+                                {(() => {
+                                  const isStock = selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII';
+                                  const valToAdd = isStock
+                                    ? ((parseFloat(aporteQuantity) || 0) * (selectedMachine.valor / (selectedMachine.stock_quantity || 1)))
+                                    : (parseFloat(aporteValue) || 0);
+                                  const nextDay = calculateProjection(selectedMachine?.valor || 0, valToAdd.toString(), selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode).day;
+                                  const currentDay = calculateProjection(selectedMachine?.valor || 0, '0', selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode).day;
+                                  const increase = ((nextDay / (currentDay || 0.00000001) - 1) * 100).toFixed(1);
+                                  return `🚀 +${increase}% DE AUMENTO NO LUCRO LÍQUIDO`;
+                                })()}
+                              </span>
                             </div>
+                          )}
+                        </div>
 
-                            <div style={{ marginTop: '1.5rem' }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                                {/* ATUAL */}
-                                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                  <div style={{ fontSize: '0.45rem', color: '#aaa', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>RENDIMENTO ATUAL</div>
-                                  {(() => {
-                                    const current = calculateProjection(selectedMachine?.valor || 0, '0', selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode);
-                                    return (
-                                      <>
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#fff' }}>R$ {current.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.5 }}>/dia</span></div>
-                                        <div style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 700, marginTop: '2px' }}>R$ {current.week.toFixed(2)}/semana</div>
-                                        <div style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 700, marginTop: '2px' }}>R$ {current.month.toFixed(2)}/mês</div>
-                                      </>
-                                    );
-                                  })()}
-                                </div>
-
-                                {/* ESTIMADO (DEPOIS) */}
-                                <div style={{ background: 'rgba(0, 230, 118, 0.05)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(0, 230, 118, 0.2)' }}>
-                                  <div style={{ fontSize: '0.45rem', color: '#00E676', fontWeight: 900, marginBottom: '8px', letterSpacing: '1px' }}>PROJEÇÃO PÓS-APORTE</div>
-                                  {(() => {
-                                    const isStock = selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII';
-                                    const valToAdd = isStock
-                                      ? ((parseFloat(aporteQuantity) || 0) * (selectedMachine.valor / (selectedMachine.stock_quantity || 1)))
-                                      : (parseFloat(aporteValue) || 0);
-
-                                    const next = calculateProjection(selectedMachine?.valor || 0, valToAdd.toString(), selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode);
-                                    return (
-                                      <>
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#00E676' }}>R$ {next.day.toFixed(2)}<span style={{ fontSize: '0.6rem', opacity: 0.7 }}>/dia</span></div>
-                                        <div style={{ fontSize: '0.65rem', color: '#00E676', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>R$ {next.week.toFixed(2)}/semana</div>
-                                        <div style={{ fontSize: '0.65rem', color: '#00E676', opacity: 0.6, fontWeight: 700, marginTop: '2px' }}>R$ {next.month.toFixed(2)}/mês</div>
-                                      </>
-                                    );
-                                  })()}
-                                </div>
-                              </div>
-
-                              {((aporteValue && !isNaN(parseFloat(aporteValue))) || (aporteQuantity && !isNaN(parseFloat(aporteQuantity)))) && (
-                                <div style={{ marginTop: '18px', textAlign: 'center', animation: 'fadeIn 0.3s ease-out' }}>
-                                  <span style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, background: 'rgba(0,230,118,0.1)', padding: '6px 14px', borderRadius: '20px', letterSpacing: '0.5px' }}>
-                                    {(() => {
-                                      const isStock = selectedMachine?.investment_type === 'ACAO' || selectedMachine?.investment_type === 'FII';
-                                      const valToAdd = isStock
-                                        ? ((parseFloat(aporteQuantity) || 0) * (selectedMachine.valor / (selectedMachine.stock_quantity || 1)))
-                                        : (parseFloat(aporteValue) || 0);
-                                      const nextDay = calculateProjection(selectedMachine?.valor || 0, valToAdd.toString(), selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode).day;
-                                      const currentDay = calculateProjection(selectedMachine?.valor || 0, '0', selectedMachine?.cdi_quota || 0, cdiAnual, selectedMachine?.created_at, currentDate, selectedMachine?.investment_type, selectedMachine?.yield_mode).day;
-                                      const increase = ((nextDay / (currentDay || 0.00000001) - 1) * 100).toFixed(1);
-                                      return `🚀 +${increase}% DE AUMENTO NO LUCRO LÍQUIDO`;
-                                    })()}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '12px', marginTop: '2rem' }}>
-                              <button className="action-btn" style={{ flex: 1, padding: '15px', borderRadius: '14px', fontSize: '0.7rem', fontWeight: 800 }} onClick={() => setShowAporteModal(false)}>VOLTAR</button>
-                              <button
-                                className="primary-btn"
-                                style={{
-                                  flex: 1.5,
-                                  background: '#00E676',
-                                  color: '#000',
-                                  padding: '15px',
-                                  borderRadius: '14px',
-                                  fontSize: '0.7rem',
-                                  fontWeight: 900,
-                                  boxShadow: '0 8px 20px rgba(0, 230, 118, 0.2)'
-                                }}
-                                onClick={handleAporte}
-                              >
-                                CONFIRMAR APORTE
-                              </button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })()}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '2rem' }}>
+                          <button className="action-btn" style={{ flex: 1, padding: '15px', borderRadius: '14px', fontSize: '0.7rem', fontWeight: 800 }} onClick={() => setShowAporteModal(false)}>VOLTAR</button>
+                          <button
+                            className="primary-btn"
+                            style={{
+                              flex: 1.5,
+                              background: '#00E676',
+                              color: '#000',
+                              padding: '15px',
+                              borderRadius: '14px',
+                              fontSize: '0.7rem',
+                              fontWeight: 900,
+                              boxShadow: '0 8px 20px rgba(0, 230, 118, 0.2)'
+                            }}
+                            onClick={handleAporte}
+                          >
+                            CONFIRMAR APORTE
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
 
               <AnimatePresence>
                 {showStairwayChart && (
@@ -4311,50 +4464,7 @@ function App() {
                         <label htmlFor="edit-mach-limit" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>META FINANCEIRA (R$)</label>
                         <input id="edit-mach-limit" title="Meta Financeira" type="number" placeholder="∞" value={editLimit} onChange={e => setEditLimit(e.target.value)} />
                       </div>
-                      <div style={{ marginBottom: '10px' }}>
-                        <label htmlFor="edit-mach-skin" style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 800, display: 'block', marginBottom: '4px' }}>SKIN VISUAL</label>
-                        <select
-                          id="edit-mach-skin"
-                          title="Seletor de Skin"
-                          value={editSkin || 'none'}
-                          onChange={e => setEditSkin(e.target.value)}
-                          style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(0, 163, 255, 0.3)', color: '#fff', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800 }}
-                        >
-                          <option value="none">VISUAL ORIGINAL (PADRÃO)</option>
-                          {[
-                            { key: 'carbon', name: 'CARBON FIBER', cssClass: 'skin-carbon' },
-                            { key: 'vaporwave', name: 'VAPORWAVE', cssClass: 'skin-vaporwave' },
-                            { key: 'glitch', name: 'GLITCH EFFECT', cssClass: 'skin-glitch' },
-                            { key: 'royal', name: 'ROYAL MARBLE', cssClass: 'skin-royal' },
-                            { key: 'ghost', name: 'GHOST FORM', cssClass: 'skin-ghost' },
-                            { key: 'cyber', name: 'CYBERPUNK NEON', cssClass: 'skin-cyber' },
-                            { key: 'forest', name: 'DEEP FOREST', cssClass: 'skin-forest' },
-                            { key: 'magma', name: 'VOLCANIC MAGMA', cssClass: 'skin-magma' },
-                            { key: 'ice', name: 'FROZEN ICE', cssClass: 'skin-ice' },
-                            { key: 'neon_pink', name: 'NEON PINK', cssClass: 'skin-neon-pink' },
-                            { key: 'gold_black', name: 'GOLD & BLACK', cssClass: 'skin-gold-black' },
-                            { key: 'sunset', name: 'SUMMER SUNSET', cssClass: 'skin-sunset' },
-                            { key: 'space', name: 'DEEP SPACE', cssClass: 'skin-space' },
-                            { key: 'emerald', name: 'EMERALD CRYSTAL', cssClass: 'skin-emerald' },
-                            { key: 'hacker', name: 'TERMINAL HACKER', cssClass: 'skin-hacker' },
-                            { key: 'plasma', name: 'PLASMA ENERGY', cssClass: 'skin-plasma' },
-                            { key: 'pixel_art', name: 'RETRO PIXEL', cssClass: 'skin-pixel_art' },
-                            { key: 'aurora', name: 'AURORA BOREALIS', cssClass: 'skin-aurora' },
-                            { key: 'obsidian', name: 'DARK OBSIDIAN', cssClass: 'skin-obsidian' },
-                            { key: 'quantum', name: 'QUANTUM FIELD', cssClass: 'skin-quantum' }
-                          ].map(skinKind => {
-                            const owned = skinCounts[skinKind.key] || 0;
-                            const equippedOnOthers = machines.filter(m => m.id !== editingMachine?.id && m.skin === skinKind.cssClass).length;
-                            const available = owned - equippedOnOthers;
-                            if (available <= 0 && editingMachine?.skin !== skinKind.cssClass) return null;
-                            return (
-                              <option key={skinKind.key} value={skinKind.cssClass}>
-                                {skinKind.name} — {available > 0 ? `${available} DISP.` : 'EM USO NESSA MÁQUINA'}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </div>
+
                       <div style={{ display: 'flex', gap: '10px', marginTop: '1.5rem' }}>
                         <button className="action-btn" style={{ flex: 1 }} onClick={() => setShowEditModal(false)}>CANCELAR</button>
                         <button className="primary-btn" style={{ flex: 1 }} onClick={updateMachine}>SALVAR ALTERAÇÕES</button>
@@ -4463,28 +4573,7 @@ function App() {
                           </div>
                         </div>
 
-                        {/* 3. GERENCIAR SKINS */}
-                        <div style={{ marginBottom: '24px' }}>
-                          <label style={{ fontSize: '0.65rem', color: '#00A3FF', fontWeight: 800, marginBottom: '12px', display: 'block', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Gerenciar Inventário</label>
-                          <div className="custom-scrollbar" style={{ maxHeight: '160px', overflowY: 'auto', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            {Object.keys(skinCounts).filter(s => skinCounts[s] > 0).length === 0 ? (
-                              <p style={{ fontSize: '0.6rem', opacity: 0.5, textAlign: 'center', margin: '10px 0' }}>Nenhuma skin no inventário.</p>
-                            ) : (
-                              Object.entries(skinCounts).map(([key, count]: [string, any]) => {
-                                if (count <= 0) return null;
-                                return (
-                                  <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                                    <div>
-                                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff' }}>{key.toUpperCase()}</div>
-                                      <div style={{ fontSize: '0.55rem', color: '#aaa' }}>Possui: {count}</div>
-                                    </div>
-                                    <button onClick={() => handleDeleteSkin(key)} style={{ background: 'rgba(255, 77, 77, 0.1)', border: '1px solid rgba(255, 77, 77, 0.2)', color: '#FF4D4D', padding: '4px 8px', borderRadius: '6px', fontSize: '0.5rem', fontWeight: 900, cursor: 'pointer' }}>DELETAR</button>
-                                  </div>
-                                );
-                              })
-                            )}
-                          </div>
-                        </div>
+
 
                         {/* 4. DADOS */}
                         <div>
@@ -5937,7 +6026,7 @@ function App() {
                         <button className="action-btn" onClick={() => setShowStockMarketModal(false)} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.05)' }}>✖</button>
                       </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%' }}>
                         <div className="input-group">
                           <label htmlFor="stock-ticker" style={{ fontSize: '0.65rem', color: '#9B5DE5', fontWeight: 900, marginBottom: '5px', display: 'block' }}>TICKER / CÓDIGO (EX: PETR4, HGLG11)</label>
                           <input
@@ -5947,11 +6036,11 @@ function App() {
                             placeholder="PETR4"
                             value={newStockTicker}
                             onChange={e => setNewStockTicker(e.target.value.toUpperCase())}
-                            style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '12px', color: '#fff', borderRadius: '12px' }}
+                            style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '12px', color: '#fff', borderRadius: '12px', boxSizing: 'border-box' }}
                           />
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' }}>
                           <div className="input-group">
                             <label htmlFor="stock-price" style={{ fontSize: '0.65rem', color: '#aaa', fontWeight: 900, marginBottom: '5px', display: 'block' }}>PREÇO ATUAL (R$)</label>
                             <input
@@ -5961,7 +6050,7 @@ function App() {
                               placeholder="0.00"
                               value={newStockPrice}
                               onChange={e => setNewStockPrice(e.target.value)}
-                              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px' }}
+                              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px', boxSizing: 'border-box' }}
                             />
                           </div>
                           <div className="input-group">
@@ -5973,7 +6062,7 @@ function App() {
                               placeholder="1"
                               value={newStockQuantity}
                               onChange={e => setNewStockQuantity(e.target.value)}
-                              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px' }}
+                              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px', boxSizing: 'border-box' }}
                             />
                           </div>
                         </div>
@@ -5987,7 +6076,7 @@ function App() {
                             placeholder="12.5"
                             value={newStockDY}
                             onChange={e => setNewStockDY(e.target.value)}
-                            style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px' }}
+                            style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px', boxSizing: 'border-box' }}
                           />
                         </div>
 
@@ -5998,7 +6087,7 @@ function App() {
                             title="Frequência de Pagamento"
                             value={newStockFrequency}
                             onChange={e => setNewStockFrequency(e.target.value as any)}
-                            style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px' }}
+                            style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '10px', color: '#fff', borderRadius: '8px', boxSizing: 'border-box' }}
                           >
                             <option value="daily">DIÁRIO (TESTE/SIMULAÇÃO)</option>
                             <option value="monthly">MENSAL (FIIs / ALGUMAS AÇÕES)</option>
@@ -6027,7 +6116,7 @@ function App() {
 
                         <div style={{ height: '1px', background: 'rgba(155, 93, 229, 0.2)', margin: '15px 0' }}></div>
 
-                        <div style={{ textAlign: 'center' }}>
+                        <div style={{ textAlign: 'center', width: '100%' }}>
                           <p style={{ fontSize: '0.6rem', color: '#9B5DE5', fontWeight: 800, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                             Sincronização com o Mercado Real
                           </p>
@@ -6247,14 +6336,14 @@ function App() {
                         <section style={{ marginBottom: '35px' }}>
                           <h3 style={{ color: '#00E676', fontSize: '0.9rem', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ background: 'rgba(0, 230, 118, 0.1)', padding: '4px 8px', borderRadius: '6px' }}>🚀</span>
-                            O QUE HÁ DE NOVO NA v0.44.0
+                            O QUE HÁ DE NOVO NA v0.45.0 (ZEN 2.0)
                           </h3>
                           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '12px' }}>
                             {[
-                              { t: 'Calculadora Pro Vertical', d: 'Nova experiência mobile para simulações de juros compostos. Layout limpo e vertical.', c: '#00E676' },
-                              { t: 'Reset Inteligente', d: 'Calculadora inicia zerada para facilitar novos planejamentos do zero.', c: '#00A3FF' },
-                              { t: 'Menu Fluido', d: 'Remoção total de barras de rolagem no menu principal para uma navegação mais suave.', c: '#FFD700' },
-                              { t: 'Fluxo de Caixa Otimizado', d: 'Tabela de projeção mensal compactada para caber perfeitamente na tela do celular.', c: '#9B5DE5' }
+                              { t: 'Modo Zen: Deep Calm', d: 'Nova experiência visual imersiva. Mergulhe em um universo calmo com estrelas realistas e anéis 3D giroscópicos.', c: '#00A3FF' },
+                              { t: 'Anéis 3D Caóticos', d: 'Cada anel do Modo Zen agora gira em eixos únicos e aleatórios, criando uma estrutura espacial viva e imprevisível.', c: '#9B5DE5' },
+                              { t: 'Otimização Mobile', d: 'Interface do Modo Zen totalmente adaptada para celulares. Layout fluído, sem cortes e com fontes ajustadas.', c: '#FFD700' },
+                              { t: 'Cronômetro de Yield', d: 'Visualização precisa do próximo pagamento de dividendos com contagem regressiva digital.', c: '#00E676' }
                             ].map((item, i) => (
                               <div key={i} style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '10px', borderLeft: `4px solid ${item.c}` }}>
                                 <strong style={{ color: item.c, fontSize: '0.85rem', display: 'block', marginBottom: '4px' }}>{item.t}</strong>
