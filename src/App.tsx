@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, memo, type ReactNode } from 'react'
+import React, { useEffect, useState, useMemo, useCallback, useRef, memo, type ReactNode } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -148,6 +148,21 @@ const AnimatedNumber = ({ value, format }: { value: number, format: (n: number) 
 
   return <>{format(displayValue)}</>;
 };
+
+const LiveClock = memo(() => {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div style={{ color: '#fff', fontSize: '0.75rem', fontWeight: 800 }}>
+      {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).toUpperCase()} | {now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).toUpperCase()}
+    </div>
+  );
+});
+
 
 const MachineCard = memo(({ m, i: _i, isBusinessDay, currentDateDayOnly, equippedItems: _equippedItems, onEdit, onAporte, onResgate }: any) => {
   const multipliers = getTaxMultipliers(m.created_at, false, new Date(currentDateDayOnly), m.investment_type);
@@ -1505,6 +1520,43 @@ function App() {
     return { years, months, days, hours, totalDays };
   }, [salary, totalPatrimony, monthlyInvestment, cdiAnual, freedomProgress]);
 
+  const filteredActivities = useMemo(() => {
+    return activities.filter(act => {
+      if (historyFilter === 'all') return true;
+      if (historyFilter === 'gains') return ['deposit', 'impulse', 'dividend'].includes(act.type);
+      if (historyFilter === 'expenses') return ['transfer', 'pay_debt', 'reset_balance'].includes(act.type);
+      if (historyFilter === 'investments') return ['create_machine', 'contribution', 'stock_purchase', 'resgate', 'partial_resgate', 'stock_sale', 'exchange'].includes(act.type);
+      return true;
+    });
+  }, [activities, historyFilter]);
+
+  const handleEditMachine = useCallback((machine: any) => {
+    setEditingMachine(machine);
+    setEditName(machine.nome);
+    setEditValue(machine.valor.toString());
+    setEditCDI(machine.cdi_quota.toString());
+    setEditDate(machine.vencimento || '');
+    setEditSkin(machine.skin || '');
+    setEditLimit(machine.max_capacity?.toString() || '');
+    setEditFrequency(machine.payment_frequency || 'monthly');
+    setEditQuantity(machine.stock_quantity?.toString() || '');
+    setShowEditModal(true);
+  }, []);
+
+  const handleAporteMachine = useCallback((machine: any) => {
+    setSelectedMachine(machine);
+    setAporteValue('');
+    setAporteQuantity('');
+    setShowAporteModal(true);
+  }, []);
+
+  const handleResgateMachine = useCallback((machine: any) => {
+    setShowConfirmResgate(machine);
+    setResgateValue('');
+    setResgateQuantity('');
+  }, []);
+
+
 
   // Detector de Level Up
   useEffect(() => {
@@ -1530,19 +1582,20 @@ function App() {
     const timer = setInterval(() => {
       const now = new Date();
       setCurrentDate(prev => {
-        // Detecção de mudança de dia para reset de rendimento diário
+        // Detecção de mudança de dia para reset de rendimento diário 
+        // Apenas verificamos uma vez por minuto no App para economizar recursos
         if (prev && prev.getDate() !== now.getDate()) {
           setMachines(prevM => prevM.map(m => ({ ...m, rendimento_dia: 0 })));
           setNotification('NOVO DIA INICIADO: RENDIMENTOS ZERADOS');
           return now;
         }
-        // Mudamos o estado apenas se o minuto/dia mudar para economizar renders
-        if (!prev || prev.getMinutes() !== now.getMinutes()) return now;
+        if (!prev || prev.getHours() !== now.getHours() || prev.getMinutes() !== now.getMinutes()) return now;
         return prev;
       });
     }, 1000)
     return () => clearInterval(timer)
   }, [])
+
 
 
   const historyStats = useMemo(() => {
@@ -2845,68 +2898,61 @@ function App() {
 
                 {/* DETALHES MINIMALISTAS (SEM CARDS) */}
                 <div className="zen-stats-row" style={{
-                  marginTop: '1.5rem',
+                  marginTop: '0.8rem',
                   display: 'flex',
                   gap: '2.5rem',
                   flexWrap: 'nowrap',
                   justifyContent: 'center',
-                  alignItems: 'center',
+                  alignItems: 'baseline',
                   opacity: 0.9,
                   width: '100%',
-                  maxWidth: '800px',
+                  maxWidth: '850px',
                   margin: '0 auto'
                 }}>
-                  {/* Linha decorativa vertical REMOVIDA */}
-
                   <div style={{ textAlign: 'center' }}>
                     <motion.div
                       animate={{ opacity: 1, y: 0 }}
-                      style={{ fontSize: '0.55rem', color: '#00A3FF', fontWeight: 900, letterSpacing: '3px', marginBottom: '8px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                      <Zap size={10} /> Provisão Diária
+                      style={{ fontSize: '0.5rem', color: '#00A3FF', fontWeight: 900, letterSpacing: '2px', marginBottom: '4px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                      <Zap size={10} /> DIÁRIA
                     </motion.div>
                     <motion.div
                       animate={{ opacity: 1, scale: 1 }}
-                      style={{ fontSize: '1.5rem', fontFamily: 'JetBrains Mono', fontWeight: 500, color: '#fff', textShadow: '0 0 20px rgba(0,163,255,0.4)' }}>
-                      +R$ {(yields.dailyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      style={{ fontSize: '1.3rem', fontFamily: 'JetBrains Mono', fontWeight: 500, color: '#fff', textShadow: '0 0 20px rgba(0,163,255,0.4)' }}>
+                      +R${(yields.dailyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </motion.div>
+                  </div>
+
+                  {/* CONTADOR DE RENDIMENTO (INTEGRADO) */}
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                      fontSize: '0.5rem', color: '#888', letterSpacing: '2px', fontWeight: 900,
+                      marginBottom: '4px', textTransform: 'uppercase',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                    }}>
+                      <TrendingUp size={10} /> PRÓXIMO PAGAMENTO
+                    </div>
+                    <div style={{
+                      fontSize: '1.8rem', fontFamily: 'JetBrains Mono', fontWeight: 900, color: '#fff',
+                      textShadow: '0 0 20px rgba(0, 230, 118, 0.4)'
+                    }}>
+                      <YieldCountdown onCycleEnd={processYieldCycle} />
+                    </div>
                   </div>
 
                   <div style={{ textAlign: 'center' }}>
                     <motion.div
                       animate={{ opacity: 1, y: 0 }}
-                      style={{ fontSize: '0.55rem', color: '#00E676', fontWeight: 900, letterSpacing: '3px', marginBottom: '8px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                      <TrendingUp size={10} /> Projetado Mês
+                      style={{ fontSize: '0.5rem', color: '#00E676', fontWeight: 900, letterSpacing: '2px', marginBottom: '4px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                      <TrendingUp size={10} /> PROJETADO MÊS
                     </motion.div>
                     <motion.div
                       animate={{ opacity: 1, scale: 1 }}
-                      style={{ fontSize: '1.5rem', fontFamily: 'JetBrains Mono', fontWeight: 500, color: '#fff', textShadow: '0 0 20px rgba(0,230,118,0.4)' }}>
-                      +R$ {(yields.monthlyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      style={{ fontSize: '1.3rem', fontFamily: 'JetBrains Mono', fontWeight: 500, color: '#fff', textShadow: '0 0 20px rgba(0,230,118,0.4)' }}>
+                      +R${(yields.monthlyYield || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </motion.div>
                   </div>
                 </div>
 
-                {/* CONTADOR DE RENDIMENTO (10s) */}
-                <motion.div
-                  animate={{ opacity: 1 }}
-                  style={{ marginTop: '5rem', textAlign: 'center' }}>
-
-                  <div style={{
-                    fontSize: '0.6rem', color: '#888', letterSpacing: '4px', fontWeight: 900,
-                    marginBottom: '10px', textTransform: 'uppercase',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                  }}>
-                    <TrendingUp size={12} /> PRÓXIMO PAGAMENTO
-                  </div>
-
-                  {/* Visualização de Cronômetro (Timer) */}
-                  <div style={{
-                    fontSize: '2.5rem', fontFamily: 'JetBrains Mono', fontWeight: 900, color: '#fff',
-                    textShadow: '0 0 20px rgba(0, 230, 118, 0.4)', letterSpacing: '2px'
-                  }}>
-                    <YieldCountdown onCycleEnd={processYieldCycle} />
-                  </div>
-
-                </motion.div>
 
               </motion.div>
 
@@ -3008,12 +3054,11 @@ function App() {
                 <div>
                   <div style={{ opacity: 0.4, fontSize: '0.6rem', letterSpacing: '1px' }}>PLAYER: <span className={equippedItems?.nickColor || ''}>{(session?.username || 'USUÁRIO').toUpperCase()}</span></div>
 
-                  {/* Time with seconds */}
+                  {/* Time with seconds - Isolated Component for Optimization */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '2px' }}>
-                    <div style={{ color: '#fff', fontSize: '0.75rem', fontWeight: 800 }}>
-                      {(currentDate || new Date()).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).toUpperCase()} | {(currentDate || new Date()).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).toUpperCase()}
-                    </div>
+                    <LiveClock />
                   </div>
+
 
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
@@ -3527,31 +3572,12 @@ function App() {
                       isBusinessDay={isBusinessDay}
                       currentDateDayOnly={currentDate.toDateString()}
                       equippedItems={equippedItems}
-                      onEdit={(machine: any) => {
-                        setEditingMachine(machine);
-                        setEditName(machine.nome);
-                        setEditValue(machine.valor.toString());
-                        setEditCDI(machine.cdi_quota.toString());
-                        setEditDate(machine.vencimento || '');
-                        setEditSkin(machine.skin || '');
-                        setEditLimit(machine.max_capacity?.toString() || '');
-                        setEditFrequency(machine.payment_frequency || 'monthly');
-                        setEditQuantity(machine.stock_quantity?.toString() || '');
-                        setShowEditModal(true);
-                      }}
-                      onAporte={(machine: any) => {
-                        setSelectedMachine(machine);
-                        setAporteValue('');
-                        setAporteQuantity('');
-                        setShowAporteModal(true);
-                      }}
-                      onResgate={(machine: any) => {
-                        setShowConfirmResgate(machine);
-                        setResgateValue('');
-                        setResgateQuantity('');
-                      }}
+                      onEdit={handleEditMachine}
+                      onAporte={handleAporteMachine}
+                      onResgate={handleResgateMachine}
                     />
                   ))}
+
                 </div>
               </div>
 
@@ -3618,21 +3644,10 @@ function App() {
                       <p style={{ fontSize: '0.65rem', opacity: 0.5, margin: 0, fontWeight: 700 }}>NENHUMA ATIVIDADE REGISTRADA AINDA.</p>
                     </div>
                   ) : (
-                    activities.filter(act => {
-                      if (historyFilter === 'all') return true;
-                      if (historyFilter === 'gains') return ['deposit', 'impulse', 'dividend'].includes(act.type);
-                      if (historyFilter === 'expenses') return ['transfer', 'pay_debt', 'reset_balance'].includes(act.type);
-                      if (historyFilter === 'investments') return ['create_machine', 'contribution', 'stock_purchase', 'resgate', 'partial_resgate', 'stock_sale', 'exchange'].includes(act.type);
-                      return true;
-                    }).length === 0 ? (
+                    filteredActivities.length === 0 ? (
                       <div style={{ textAlign: 'center', padding: '20px', color: '#aaa', fontSize: '0.6rem' }}>Nenhuma atividade encontrada neste filtro.</div>
-                    ) : activities.filter(act => {
-                      if (historyFilter === 'all') return true;
-                      if (historyFilter === 'gains') return ['deposit', 'impulse', 'dividend'].includes(act.type);
-                      if (historyFilter === 'expenses') return ['transfer', 'pay_debt', 'reset_balance'].includes(act.type);
-                      if (historyFilter === 'investments') return ['create_machine', 'contribution', 'stock_purchase', 'resgate', 'partial_resgate', 'stock_sale', 'exchange'].includes(act.type);
-                      return true;
-                    }).map((act) => (
+                    ) : filteredActivities.map((act) => (
+
 
                       <div key={act.id} style={{
                         background: 'rgba(255,255,255,0.03)',
