@@ -10,6 +10,7 @@ import {
   PieChart as PieIcon,
   Calculator,
   Eye,
+  EyeOff,
   Menu,
   X,
   ArrowRightLeft,
@@ -828,12 +829,6 @@ function App() {
   const [transferDescription, setTransferDescription] = useState('');
   const [historyFilter, setHistoryFilter] = useState<'all' | 'gains' | 'expenses' | 'investments'>('all');
   const [hideValues, setHideValues] = useState(false);
-
-  // Helper function to mask financial values
-  const maskValue = (value: string | number) => {
-    if (!hideValues) return typeof value === 'number' ? value : value;
-    return '•••••';
-  };
 
 
   const achievementStats = useMemo(() => {
@@ -3211,29 +3206,28 @@ function App() {
                   {/* Time with seconds - Isolated Component for Optimization */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '2px' }}>
                     <LiveClock />
-                    <button
-                      onClick={() => setHideValues(!hideValues)}
-                      title={hideValues ? 'Mostrar valores' : 'Ocultar valores'}
-                      style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '6px',
-                        padding: '4px 8px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                    >
-                      {hideValues ? <EyeOff size={14} color="#00A3FF" /> : <Eye size={14} color="#00A3FF" />}
-                    </button>
                   </div>
 
 
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                      <button
+                        onClick={() => setHideValues(!hideValues)}
+                        title={hideValues ? 'Mostrar valores' : 'Ocultar valores'}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '6px',
+                          padding: '4px 8px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {hideValues ? <EyeOff size={14} color="#00A3FF" /> : <Eye size={14} color="#00A3FF" />}
+                      </button>
+
                       <div style={{
                         display: 'inline-flex',
                         alignItems: 'center',
