@@ -827,6 +827,13 @@ function App() {
   const [transferValue, setTransferValue] = useState('');
   const [transferDescription, setTransferDescription] = useState('');
   const [historyFilter, setHistoryFilter] = useState<'all' | 'gains' | 'expenses' | 'investments'>('all');
+  const [hideValues, setHideValues] = useState(false);
+
+  // Helper function to mask financial values
+  const maskValue = (value: string | number) => {
+    if (!hideValues) return typeof value === 'number' ? value : value;
+    return '•••••';
+  };
 
 
   const achievementStats = useMemo(() => {
@@ -3204,6 +3211,24 @@ function App() {
                   {/* Time with seconds - Isolated Component for Optimization */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '2px' }}>
                     <LiveClock />
+                    <button
+                      onClick={() => setHideValues(!hideValues)}
+                      title={hideValues ? 'Mostrar valores' : 'Ocultar valores'}
+                      style={{
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '6px',
+                        padding: '4px 8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                    >
+                      {hideValues ? <EyeOff size={14} color="#00A3FF" /> : <Eye size={14} color="#00A3FF" />}
+                    </button>
                   </div>
 
 
@@ -3442,7 +3467,7 @@ function App() {
                   <div style={{ marginBottom: '1.5rem' }}>
                     <p className="balance-title" style={{ color: '#FFD700', fontSize: '0.6rem', marginBottom: '6px', letterSpacing: '1.5px' }}>PATRIMÔNIO TOTAL</p>
                     <h1 className="balance-value" style={{ fontSize: '2.5rem', color: '#fff', textShadow: '0 0 20px rgba(255,215,0,0.2)', margin: 0 }}>
-                      <AnimatedNumber value={totalPatrimony} format={(v) => formatBRLWithPrecision(v)} />
+                      {hideValues ? '•••••' : <AnimatedNumber value={totalPatrimony} format={(v) => formatBRLWithPrecision(v)} />}
                     </h1>
                   </div>
 
@@ -3452,7 +3477,7 @@ function App() {
                     <div style={{ background: 'rgba(0, 230, 118, 0.05)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(0, 230, 118, 0.15)' }}>
                       <p style={{ fontSize: '0.5rem', color: '#00E676', fontWeight: 900, marginBottom: '6px', letterSpacing: '1px' }}>DISPONÍVEL</p>
                       <h3 style={{ fontSize: '1.1rem', color: '#00E676', margin: 0, fontWeight: 900 }}>
-                        <AnimatedNumber value={balance} format={(v) => formatBRLWithPrecision(v)} />
+                        {hideValues ? '•••••' : <AnimatedNumber value={balance} format={(v) => formatBRLWithPrecision(v)} />}
                       </h3>
                     </div>
 
@@ -3460,7 +3485,7 @@ function App() {
                     <div style={{ background: 'rgba(0, 163, 255, 0.05)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(0, 163, 255, 0.15)' }}>
                       <p style={{ fontSize: '0.5rem', color: '#00A3FF', fontWeight: 900, marginBottom: '6px', letterSpacing: '1px' }}>INVESTIDO</p>
                       <h3 style={{ fontSize: '1.1rem', color: '#00A3FF', margin: 0, fontWeight: 900 }}>
-                        <AnimatedNumber value={totalInvested} format={(v) => formatBRLWithPrecision(v)} />
+                        {hideValues ? '•••••' : <AnimatedNumber value={totalInvested} format={(v) => formatBRLWithPrecision(v)} />}
                       </h3>
                     </div>
                   </div>
