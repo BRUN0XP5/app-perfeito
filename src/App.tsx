@@ -3387,8 +3387,8 @@ function App() {
                             </div>
                           </div>
 
-                          <div style={{ marginTop: 'auto', padding: '15px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
-                            <span style={{ fontSize: '0.45rem', opacity: 0.3, fontWeight: 900, letterSpacing: '2px' }}>CDI_TYCOON MODO_ALPHA v0.45.0</span>
+                          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                            <span style={{ fontSize: '0.45rem', opacity: 0.3, fontWeight: 900, letterSpacing: '2px' }}>CDI_TYCOON MODO_ALPHA 0.46.0</span>
                           </div>
                         </motion.div>
                       </div>
@@ -6459,7 +6459,7 @@ function App() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(0, 163, 255, 0.2)', paddingBottom: '1rem' }}>
                         <div>
                           <h2 style={{ color: '#00A3FF', margin: 0, fontSize: '1.3rem', fontWeight: 900 }}>❓ CENTRAL DE AJUDA & GUIA</h2>
-                          <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, letterSpacing: '1px', fontWeight: 800 }}>SISTEMA VERSÃO v0.45.0 | MODO ESPECIALISTA</p>
+                          <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, letterSpacing: '1px', fontWeight: 800 }}>SISTEMA VERSÃO 0.46.0 | MODO ESPECIALISTA</p>
                         </div>
                         <button title="Fechar Central de Ajuda" className="icon-btn-small" onClick={() => setShowHelpModal(false)} style={{ padding: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }}><X size={18} /></button>
                       </div>
@@ -6502,14 +6502,14 @@ function App() {
                         <section style={{ marginBottom: '35px' }}>
                           <h3 style={{ color: '#00E676', fontSize: '0.9rem', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ background: 'rgba(0, 230, 118, 0.1)', padding: '4px 8px', borderRadius: '6px' }}>🚀</span>
-                            O QUE HÁ DE NOVO NA v0.45.0 (ZEN 2.0)
+                            O QUE HÁ DE NOVO NA 0.46.0 (UNIVERSO EXPANDIDO)
                           </h3>
                           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '12px' }}>
                             {[
-                              { t: 'Modo Zen: Deep Calm', d: 'Nova experiência visual imersiva. Mergulhe em um universo calmo com estrelas realistas e anéis 3D giroscópicos.', c: '#00A3FF' },
-                              { t: 'Anéis 3D Caóticos', d: 'Cada anel do Modo Zen agora gira em eixos únicos e aleatórios, criando uma estrutura espacial viva e imprevisível.', c: '#9B5DE5' },
-                              { t: 'Otimização Mobile', d: 'Interface do Modo Zen totalmente adaptada para celulares. Layout fluído, sem cortes e com fontes ajustadas.', c: '#FFD700' },
-                              { t: 'Cronômetro de Yield', d: 'Visualização precisa do próximo pagamento de dividendos com contagem regressiva digital.', c: '#00E676' }
+                              { t: 'Supernovas Estelares', d: 'Flashes de energia azul distantes que iluminam o vácuo do Modo Zen de forma sutil.', c: '#00A3FF' },
+                              { t: 'Novos Planetas 3D', d: 'O universo agora conta com planetas flutuantes com atmosferas e iluminação dinâmica.', c: '#9B5DE5' },
+                              { t: 'Timer de Alta Precisão', d: 'Contagem de yield reconstruída com precisão de microssegundos e barra de progresso fluida.', c: '#FFD700' },
+                              { t: 'Correções Estéticas', d: 'LEDs das máquinas FII restaurados e anéis 3D estabilizados para uma experiência sem engasgos.', c: '#00E676' }
                             ].map((item, i) => (
                               <div key={i} style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '10px', borderLeft: `4px solid ${item.c}` }}>
                                 <strong style={{ color: item.c, fontSize: '0.85rem', display: 'block', marginBottom: '4px' }}>{item.t}</strong>
