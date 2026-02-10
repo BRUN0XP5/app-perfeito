@@ -3520,10 +3520,6 @@ input:focus {
   box-shadow: inset 0 0 10px rgba(0, 50, 200, 0.3);
 }
 
-.machine-card.fii-skin .status-leds .active {
-  background: #0088FF !important;
-  box-shadow: 0 0 8px #0088FF !important;
-}
 
 /* AÇÃO - ROXO SÓLIDO */
 .machine-card.acao-skin {

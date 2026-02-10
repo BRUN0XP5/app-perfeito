@@ -425,35 +425,85 @@ const MachineCard = memo(({ m, i: _i, isBusinessDay, currentDateDayOnly, equippe
   );
 });
 
-const YieldCountdown = memo(({ onCycleEnd }: { onCycleEnd: () => void }) => {
+const YieldCountdown = memo(({ onCycleEnd, variant = 'zen' }: { onCycleEnd: () => void, variant?: 'zen' | 'minimal' }) => {
   const [countdown, setCountdown] = useState(10);
+  const [progress, setProgress] = useState(0);
+  const callbackRef = useRef(onCycleEnd);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          onCycleEnd();
-          return 10;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
+    callbackRef.current = onCycleEnd;
   }, [onCycleEnd]);
 
-  const progress = ((10 - countdown) / 10) * 100;
+  useEffect(() => {
+    let startTime = Date.now();
+
+    const tick = () => {
+      const now = Date.now();
+      const elapsed = now - startTime;
+
+      if (elapsed >= 10000) {
+        callbackRef.current();
+        startTime = now; // Reset for next cycle
+        setCountdown(10);
+        setProgress(0);
+      } else {
+        const remaining = Math.max(1, 10 - Math.floor(elapsed / 1000));
+        setCountdown(remaining);
+        setProgress((elapsed / 10000) * 100);
+      }
+    };
+
+    const interval = setInterval(tick, 50);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (variant === 'minimal') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{
+          fontSize: '0.65rem',
+          color: '#fff',
+          fontWeight: 900,
+          fontFamily: 'JetBrains Mono',
+          minWidth: '25px'
+        }}>
+          {countdown}s
+        </span>
+        <div style={{ width: '40px', height: '2px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
+          <div
+            style={{
+              height: '100%',
+              width: `${progress}%`,
+              background: '#00E676',
+              transition: 'width 0.05s linear'
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-      <span style={{ fontSize: '0.65rem', color: '#FFD700', fontWeight: 900, fontFamily: 'JetBrains Mono', letterSpacing: '1px' }}>
+      <div style={{
+        fontSize: '1.2rem',
+        color: '#FFD700',
+        fontWeight: 900,
+        fontFamily: 'JetBrains Mono',
+        letterSpacing: '2px',
+        textShadow: '0 0 10px rgba(255, 215, 0, 0.3)'
+      }}>
         00:00:{countdown.toString().padStart(2, '0')}
-      </span>
-      <div style={{ width: '120px', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 1, ease: 'linear' }}
-          style={{ height: '100%', background: '#00E676', boxShadow: '0 0 10px #00E676' }}
+      </div>
+      <div style={{ width: '140px', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.03)' }}>
+        <div
+          style={{
+            height: '100%',
+            width: `${progress}%`,
+            background: 'linear-gradient(90deg, #00E676, #00ff84)',
+            boxShadow: '0 0 15px rgba(0, 230, 118, 0.5)',
+            transition: 'width 0.05s linear'
+          }}
         />
       </div>
     </div>
@@ -848,6 +898,53 @@ function App() {
   const [newStockFrequency, setNewStockFrequency] = useState<'daily' | 'monthly' | 'quarterly' | 'semiannual' | 'annual'>('monthly');
   const [newStockQuantity, setNewStockQuantity] = useState('');
   const [isUpdatingStocks, setIsUpdatingStocks] = useState(false);
+
+  // Zen Mode Stable Configurations
+  const zenRings = useMemo(() => {
+    return [...Array(10)].map((_, i) => ({
+      size: 35 + (i * 12),
+      duration: 15 + (Math.random() * 45),
+      axisX: Math.random(),
+      axisY: Math.random(),
+      axisZ: Math.random(),
+      direction: Math.random() > 0.5 ? 1 : -1,
+      color: i % 3 === 0 ? 'rgba(255, 255, 255, 0.3)' : i % 3 === 1 ? 'rgba(240, 248, 255, 0.25)' : 'rgba(255, 255, 255, 0.2)',
+      dash: i % 2 === 0 ? '4, 12' : 'none',
+      opacity: 0.4 + (Math.random() * 0.3)
+    }));
+  }, []);
+
+  const zenStars = useMemo(() => {
+    // 300 stars for high intensity
+    return [...Array(300)].map((_, i) => ({
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      size: Math.random() * 2.5 + 0.5,
+      opacity: Math.random() * 0.6 + 0.2,
+      duration: Math.random() * 5 + 3,
+      delay: Math.random() * -10
+    }));
+  }, []);
+
+  const zenExplosions = useMemo(() => {
+    return [...Array(20)].map((_, i) => ({
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      size: Math.random() * 40 + 20, // Smaller size
+      duration: Math.random() * 5 + 4,
+      delay: Math.random() * -20,
+      color: '#00A3FF' // Only blue
+    }));
+  }, []);
+
+  const zenPlanets = useMemo(() => {
+    return [
+      { left: 15, top: 20, size: 120, color: 'linear-gradient(135deg, #1e3a8a 0%, #1e1b4b 100%)', atmosphere: 'rgba(0, 163, 255, 0.2)', delay: -5 },
+      { left: 75, top: 65, size: 80, color: 'linear-gradient(135deg, #312e81 0%, #1e1b4b 100%)', atmosphere: 'rgba(155, 93, 229, 0.15)', delay: -12 },
+      { left: 85, top: 15, size: 40, color: 'linear-gradient(135deg, #4c1d95 0%, #2e1065 100%)', atmosphere: 'rgba(235, 93, 229, 0.1)', delay: -2 },
+    ];
+  }, []);
+
 
 
 
@@ -2811,6 +2908,21 @@ function App() {
 
               {/* DEPTH LAYERS: NEBULA & STARS */}
               <div style={{ position: 'absolute', width: '100%', height: '100%', overflow: 'hidden', pointerEvents: 'none' }}>
+                {/* EXPLODING STARS (Supernovas) - BEHIND STARS/RINGS BUT ABOVE VOID */}
+                <div className="explosions-container" style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+                  {zenExplosions.map((exp, i) => (
+                    <div key={i} className="star-explosion" style={{
+                      left: `${exp.left}%`,
+                      top: `${exp.top}%`,
+                      width: `${exp.size}px`,
+                      height: `${exp.size}px`,
+                      '--duration': `${exp.duration}s`,
+                      '--delay': `${exp.delay}s`,
+                      '--color': exp.color
+                    } as any} />
+                  ))}
+                </div>
+
                 <div className="zen-nebula-blue" style={{
                   position: 'absolute', width: '100%', height: '100%',
                   background: 'radial-gradient(circle at 20% 40%, rgba(0, 163, 255, 0.05) 0%, transparent 40%)',
@@ -2822,57 +2934,59 @@ function App() {
                   filter: 'blur(60px)', animation: 'pulseNebula 25s ease-in-out infinite reverse'
                 }} />
 
-                {/* STARS LAYER - STATIC (REALISTIC) */}
-                <div className="stars-layer" style={{ position: 'absolute', inset: 0, opacity: 0.6 }}>
-                  {[...Array(100)].map((_, i) => ( // More static stars
+                {/* STARS LAYER - STABLE HIGH DENSITY */}
+                <div className="stars-layer" style={{ position: 'absolute', inset: -100, opacity: 0.7 }}>
+                  {zenStars.map((star, i) => (
                     <div key={i} style={{
                       position: 'absolute',
-                      width: `${Math.random() * 2}px`,
-                      height: `${Math.random() * 2}px`,
+                      width: `${star.size}px`,
+                      height: `${star.size}px`,
                       background: '#fff',
-                      top: `${Math.random() * 100}%`,
-                      left: `${Math.random() * 100}%`,
+                      top: `${star.top}%`,
+                      left: `${star.left}%`,
                       borderRadius: '50%',
-                      animation: `twinkle ${Math.random() * 3 + 2}s infinite alternate`
+                      opacity: star.opacity,
+                      filter: 'blur(0.5px)',
+                      animation: `twinkle ${star.duration}s infinite alternate`,
+                      animationDelay: `${star.delay}s`
                     }} />
                   ))}
                 </div>
 
-                {/* ZEN RINGS (TRUE 3D CHAOS) */}
-                <div className="zen-rings-container" style={{
-                  position: 'absolute', inset: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  pointerEvents: 'none', perspective: '1000px'
-                }}>
-                  {[...Array(6)].map((_, i) => ( // 6 Rings for density
-                    <div key={`ring-${i}`} className="zen-ring" style={{
-                      width: `${45 + (i * 10)}vmin`,
-                      height: `${45 + (i * 10)}vmin`,
-                      border: i % 2 === 0 ? '1px dashed rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.05)',
-                      position: 'absolute',
-                      borderRadius: '50%',
-                      '--duration': `${20 + (Math.random() * 40)}s`, // Random speed
-                      '--axis-x': Math.random(),
-                      '--axis-y': Math.random(),
-                      '--axis-z': Math.random(),
-                      '--direction': Math.random() > 0.5 ? 1 : -1,
-                    } as any} />
+                {/* PLANETS LAYER */}
+                <div className="planets-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+                  {zenPlanets.map((p, i) => (
+                    <div key={i} className="zen-planet" style={{
+                      left: `${p.left}%`,
+                      top: `${p.top}%`,
+                      width: `${p.size}px`,
+                      height: `${p.size}px`,
+                      background: p.color,
+                      boxShadow: `0 0 40px ${p.atmosphere}, inset -20px -20px 50px rgba(0,0,0,0.8)`,
+                      animationDelay: `${p.delay}s`
+                    }} />
                   ))}
                 </div>
 
-                {/* SPACE DRIFT (LINEAR DEPTH) */}
-                <div className="star-drift" style={{ position: 'absolute', inset: -50, overflow: 'hidden' }}>
-                  {[...Array(80)].map((_, i) => (
-                    <div key={`star-${i}`} className="drift-star" style={{
-                      left: `${Math.random() * 100}%`,
-                      top: `${Math.random() * 100}%`,
-                      width: `${Math.random() * 2 + 1}px`,
-                      height: `${Math.random() * 2 + 1}px`,
-                      background: '#fff',
-                      '--opacity': Math.random() * 0.5 + 0.1,
+                {/* ZEN RINGS (TRUE 3D STABLE CHAOS) */}
+                <div className="zen-rings-container" style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  pointerEvents: 'none', perspective: '1200px'
+                }}>
+                  {zenRings.map((ring, i) => (
+                    <div key={`ring-${i}`} className="zen-ring" style={{
+                      width: `${ring.size}vmin`,
+                      height: `${ring.size}vmin`,
+                      border: ring.dash !== 'none' ? `${1}px dashed ${ring.color}` : `${1}px solid ${ring.color}`,
+                      position: 'absolute',
                       borderRadius: '50%',
-                      animationDuration: `${Math.random() * 40 + 20}s`,
-                      animationDelay: `-${Math.random() * 50}s`
+                      opacity: ring.opacity,
+                      '--duration': `${ring.duration}s`,
+                      '--axis-x': ring.axisX,
+                      '--axis-y': ring.axisY,
+                      '--axis-z': ring.axisZ,
+                      '--direction': ring.direction,
                     } as any} />
                   ))}
                 </div>
@@ -2954,7 +3068,7 @@ function App() {
                 {/* CONTADOR DE RENDIMENTO (10s) */}
                 <motion.div
                   animate={{ opacity: 1 }}
-                  style={{ marginTop: '5rem', textAlign: 'center' }}>
+                  style={{ marginTop: '1.5rem', textAlign: 'center' }}>
 
                   <div style={{
                     fontSize: '0.6rem', color: '#888', letterSpacing: '4px', fontWeight: 900,
@@ -2969,7 +3083,7 @@ function App() {
                     fontSize: '2.5rem', fontFamily: 'JetBrains Mono', fontWeight: 900, color: '#fff',
                     textShadow: '0 0 20px rgba(0, 230, 118, 0.4)', letterSpacing: '2px'
                   }}>
-                    <YieldCountdown onCycleEnd={processYieldCycle} />
+                    <YieldCountdown onCycleEnd={processYieldCycle} variant="zen" />
                   </div>
 
                 </motion.div>
@@ -3003,23 +3117,36 @@ function App() {
                   100% { transform: rotate3d(var(--axis-x), var(--axis-y), var(--axis-z), calc(360deg * var(--direction))); }
                 }
                 
-
-
-                /* SPACE DRIFT (DEEP CALM) */
-                .drift-star {
+                /* STAR EXPLOSIONS (SUPERNOVAS) */
+                .star-explosion {
                   position: absolute;
-                  background: #fff;
                   border-radius: 50%;
-                  box-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
+                  background: radial-gradient(circle, var(--color) 0%, transparent 70%);
                   opacity: 0;
-                  animation: driftMove linear infinite;
+                  animation: superNova var(--duration) linear infinite;
+                  animation-delay: var(--delay);
+                  transform: translate(-50%, -50%);
                 }
 
-                @keyframes driftMove {
-                  0% { transform: translateY(0); opacity: 0; }
-                  20% { opacity: var(--opacity, 0.5); }
-                  80% { opacity: var(--opacity, 0.5); }
-                  100% { transform: translateY(-50px); opacity: 0; } /* Subtle upward float */
+                @keyframes superNova {
+                  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+                  5% { transform: translate(-50%, -50%) scale(0.1); opacity: 1; }
+                  15% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+                  100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
+                }
+
+                /* ZEN PLANETS */
+                .zen-planet {
+                  position: absolute;
+                  border-radius: 50%;
+                  animation: planetFloat 30s ease-in-out infinite;
+                  opacity: 0.8;
+                }
+
+                @keyframes planetFloat {
+                  0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); }
+                  33% { transform: translateY(-20px) translateX(10px) rotate(2deg); }
+                  66% { transform: translateY(10px) translateX(-15px) rotate(-1deg); }
                 }
               `}</style>
 
@@ -3580,7 +3707,7 @@ function App() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255, 215, 0, 0.1)', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255, 215, 0, 0.2)' }}>
                     <span style={{ fontSize: '0.5rem', color: '#FFD700', opacity: 0.6, fontWeight: 800 }}>PRÓXIMO_PAGAMENTO</span>
-                    <YieldCountdown onCycleEnd={() => machines.length > 0 && processYieldCycle()} />
+                    <YieldCountdown onCycleEnd={() => machines.length > 0 && processYieldCycle()} variant="minimal" />
                   </div>
                 </div>
                 <div className="machine-list">
