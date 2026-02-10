@@ -916,7 +916,7 @@ function App() {
 
   const zenStars = useMemo(() => {
     // 300 stars for high intensity
-    return [...Array(300)].map((_, i) => ({
+    return [...Array(300)].map((_) => ({
       left: Math.random() * 100,
       top: Math.random() * 100,
       size: Math.random() * 2.5 + 0.5,
@@ -927,7 +927,7 @@ function App() {
   }, []);
 
   const zenExplosions = useMemo(() => {
-    return [...Array(20)].map((_, i) => ({
+    return [...Array(20)].map((_) => ({
       left: Math.random() * 100,
       top: Math.random() * 100,
       size: Math.random() * 40 + 20, // Smaller size
