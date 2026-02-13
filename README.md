@@ -157,7 +157,7 @@
 
 ---
 
-## 🔗 Comece a investir agora: https://app-perfeito.vercel.app
+## 🔗 Comece a investir agora: https://cdi-tycoon.vercel.app
 
 ---
 🚀 Por que usar o CDI Tycoon?
